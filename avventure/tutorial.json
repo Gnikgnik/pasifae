@@ -1,0 +1,210 @@
+{
+  "meta": {
+    "titolo": "Il Meccanismo del Tempo",
+    "autore": "tutorial",
+    "versione": "1.0.0",
+    "stanza_iniziale": "soglia",
+    "intro": "Un piccolo tutorial. Imparerai i comandi base — e scoprirai che, ora, il mondo ha un orologio: il tempo scorre a ogni tuo turno. Scrivi «aiuto» per i comandi, «annulla» per disfare l'ultimo turno."
+  },
+  "flags": {
+    "porta_aperta": false,
+    "visto_corridoio": false,
+    "avviso_orologio": false
+  },
+  "verbi": {},
+  "preposizioni": {},
+  "stanze": {
+    "soglia": {
+      "nome": "Soglia",
+      "desc": "Una stanzetta spoglia. Su un leggio c'è un biglietto. Un passaggio porta a nord.",
+      "uscite": {
+        "nord": "corridoio"
+      },
+      "buia": false
+    },
+    "corridoio": {
+      "nome": "Corridoio",
+      "desc": "Un corridoio lineare. A nord una sala con una leva; a sud si torna alla soglia.",
+      "uscite": {
+        "nord": "sala_leva",
+        "sud": "soglia"
+      },
+      "buia": false
+    },
+    "sala_leva": {
+      "nome": "Sala della Leva",
+      "desc": "Al centro, una leva. A nord una porta massiccia, ora chiusa. Accanto, inciso: «tira la leva, poi affrettati: la porta non resta aperta a lungo».",
+      "uscite": {
+        "nord": {
+          "to": "finale",
+          "se": "porta_aperta",
+          "bloccata": "La porta a nord è chiusa. C'è una leva, qui: prova a usarla."
+        },
+        "sud": "corridoio"
+      },
+      "buia": false
+    },
+    "finale": {
+      "nome": "Camera del Trofeo",
+      "desc": "Una saletta luminosa: ce l'hai fatta.",
+      "uscite": {},
+      "buia": false
+    }
+  },
+  "oggetti": {
+    "biglietto": {
+      "nome": "biglietto",
+      "nomi": [
+        "biglietto",
+        "leggio",
+        "foglio"
+      ],
+      "aggettivi": [],
+      "posizione": "soglia",
+      "props": {
+        "scenario": true,
+        "desc": "C'è scritto: «Muoviti con le direzioni (nord, sud...). Guarda intorno con GUARDA. Osserva le cose con ESAMINA. Raccogli con PRENDI. E ricorda: ogni comando fa passare un turno. Se sbagli, scrivi ANNULLA.»"
+      }
+    },
+    "chiave": {
+      "nome": "chiave d'ottone",
+      "nomi": [
+        "chiave"
+      ],
+      "aggettivi": [],
+      "posizione": "soglia",
+      "props": {
+        "prendibile": true,
+        "in_stanza": "Sul leggio luccica una chiave d'ottone (prova: PRENDI CHIAVE)."
+      }
+    },
+    "leva": {
+      "nome": "leva",
+      "nomi": [
+        "leva"
+      ],
+      "aggettivi": [],
+      "posizione": "sala_leva",
+      "props": {
+        "scenario": true,
+        "desc": "Una leva d'acciaio. Sembra comandare la porta a nord. (prova: USA LEVA)"
+      }
+    }
+  },
+  "regole": [
+    {
+      "id": "avviso_orologio",
+      "quando": {
+        "evento": "turno"
+      },
+      "se": [
+        {
+          "mosse_min": 4
+        },
+        {
+          "flag": "avviso_orologio",
+          "uguale": false
+        }
+      ],
+      "allora": [
+        {
+          "set_flag": "avviso_orologio",
+          "valore": true
+        },
+        {
+          "stampa": "(Tutorial: sono passati alcuni turni. L'orologio del mondo avanza a ogni tua azione: è questo che permette timer e eventi automatici.)"
+        }
+      ],
+      "altrimenti": []
+    },
+    {
+      "id": "ingresso_corridoio",
+      "quando": {
+        "evento": "entra",
+        "stanza": "corridoio"
+      },
+      "se": [
+        {
+          "flag": "visto_corridoio",
+          "uguale": false
+        }
+      ],
+      "allora": [
+        {
+          "set_flag": "visto_corridoio",
+          "valore": true
+        },
+        {
+          "stampa": "(Tutorial: una regola-evento «ingresso» è scattata appena sei entrato qui.)"
+        }
+      ],
+      "altrimenti": []
+    },
+    {
+      "id": "tira_leva",
+      "quando": {
+        "verbo": "usa",
+        "oggetto": "leva"
+      },
+      "se": [
+        {
+          "flag": "porta_aperta",
+          "uguale": false
+        }
+      ],
+      "allora": [
+        {
+          "set_flag": "porta_aperta",
+          "valore": true
+        },
+        {
+          "avvia_timer": "porta",
+          "turni": 3
+        },
+        {
+          "stampa": "La porta a nord si apre con un sibilo. Si richiuderà tra 3 turni: sbrigati! (e se la perdi, ricorda ANNULLA)"
+        }
+      ],
+      "altrimenti": [
+        {
+          "stampa": "La porta è già aperta."
+        }
+      ]
+    },
+    {
+      "id": "porta_si_chiude",
+      "quando": {
+        "evento": "timer",
+        "timer": "porta"
+      },
+      "se": [],
+      "allora": [
+        {
+          "set_flag": "porta_aperta",
+          "valore": false
+        },
+        {
+          "stampa": "Un sibilo: la porta a nord si è richiusa. (tira di nuovo la leva, o ANNULLA i turni sprecati)"
+        }
+      ],
+      "altrimenti": []
+    },
+    {
+      "id": "vittoria_finale",
+      "quando": {
+        "evento": "entra",
+        "stanza": "finale"
+      },
+      "se": [],
+      "allora": [
+        {
+          "punti": 100
+        },
+        {
+          "vittoria": "Hai attraversato la porta in tempo. Hai imparato: comandi base, orologio dei turni, eventi automatici, timer e annulla. Fine del tutorial!"
+        }
+      ],
+      "altrimenti": []
+    }
+  ]
+}

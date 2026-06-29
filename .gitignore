@@ -1,0 +1,24 @@
+# Artefatti Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Ambiente virtuale
+.venv/
+venv/
+env/
+
+# Build PyInstaller
+build/
+dist/
+*.manifest
+
+# Salvataggi di partita generati a runtime
+salvataggi/
+
+# Sistema operativo / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

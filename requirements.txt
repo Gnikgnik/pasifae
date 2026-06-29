@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Dipendenze di esecuzione di Pasifae.
+#
+#   python3 -m venv .venv && source .venv/bin/activate   (su Windows: .venv\Scripts\activate)
+#   pip install -r requirements.txt
+#
+PySide6>=6.5        # interfaccia grafica: Pasifae Editor e Pasifae Play
+urwid>=2.1          # editor da terminale (edit.py)
+#                     il player a riga di comando (play.py / play_curses.py)
+#                     usa solo la libreria standard.
+
+# Opzionale — necessario solo per "Strumenti > Compila gioco autonomo":
+# pyinstaller>=6

@@ -1,0 +1,147 @@
+{
+  "meta": {
+    "titolo": "Il Duello della Cripta",
+    "autore": "demo",
+    "versione": "1.0.0",
+    "stanza_iniziale": "atrio",
+    "intro": "Una sentinella sbarra la cripta. Parla o combatti."
+  },
+  "flags": {
+    "pg_hp": 20,
+    "pg_attacco": 5,
+    "pg_difesa": 2,
+    "accesso": false
+  },
+  "verbi": {},
+  "preposizioni": {},
+  "stanze": {
+    "atrio": {
+      "nome": "Atrio della Cripta",
+      "desc": "Un atrio polveroso. Una pesante porta a ovest conduce alla cripta.",
+      "uscite": {
+        "ovest": {
+          "to": "cripta",
+          "se": "accesso",
+          "bloccata": "La sentinella ti sbarra la strada verso la cripta."
+        }
+      },
+      "buia": false
+    },
+    "cripta": {
+      "nome": "Cripta",
+      "desc": "Hai raggiunto la cripta. Un sarcofago dorato luccica.",
+      "uscite": {
+        "est": "atrio"
+      },
+      "buia": false
+    }
+  },
+  "oggetti": {
+    "sigillo": {
+      "nome": "sigillo del re",
+      "nomi": [
+        "sigillo"
+      ],
+      "aggettivi": [],
+      "posizione": "atrio",
+      "props": {
+        "prendibile": true,
+        "in_stanza": "Su una colonna riposa un sigillo di bronzo."
+      }
+    },
+    "sentinella": {
+      "nome": "sentinella",
+      "nomi": [
+        "sentinella",
+        "guardia"
+      ],
+      "aggettivi": [],
+      "posizione": "atrio",
+      "props": {
+        "png": true,
+        "saluto": "La sentinella ti fissa, lancia in pugno.",
+        "stato_iniziale": 0,
+        "combattente": true,
+        "hp": 12,
+        "attacco": 4,
+        "difesa": 1,
+        "fuga": true,
+        "intro_scontro": "La sentinella abbassa la lancia e carica!",
+        "sconfitto": [
+          {
+            "set_flag": "accesso",
+            "valore": true
+          },
+          {
+            "punti": 20
+          },
+          {
+            "stampa": "La sentinella crolla. La via per la cripta è libera."
+          }
+        ],
+        "dialogo": [
+          {
+            "etichetta": "Chi sei?",
+            "testo": "«Custodisco la cripta. Mostrami il sigillo del re, o vattene.»",
+            "allora": [
+              {
+                "stato": 1
+              }
+            ]
+          },
+          {
+            "etichetta": "Mostra il sigillo",
+            "se": [
+              {
+                "stato_min": 1
+              },
+              {
+                "oggetto_in": [
+                  "sigillo",
+                  "inventario"
+                ]
+              }
+            ],
+            "una_volta": true,
+            "testo": "«Il sigillo del re… puoi passare.»",
+            "allora": [
+              {
+                "set_flag": "accesso",
+                "valore": true
+              },
+              {
+                "punti": 10
+              }
+            ]
+          },
+          {
+            "etichetta": "Sfidala a duello",
+            "se": [
+              {
+                "stato_min": 1
+              }
+            ],
+            "testo": "«E sia.»",
+            "allora": [
+              {
+                "inizia_scontro": "sentinella"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "sarcofago": {
+      "nome": "sarcofago dorato",
+      "nomi": [
+        "sarcofago"
+      ],
+      "aggettivi": [],
+      "posizione": "cripta",
+      "props": {
+        "scenario": true
+      }
+    }
+  },
+  "regole": []
+}

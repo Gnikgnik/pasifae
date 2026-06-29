@@ -1,0 +1,571 @@
+{
+  "meta": {
+    "titolo": "La Caverna della Moneta",
+    "autore": "esempio",
+    "stanza_iniziale": "ingresso",
+    "intro": "Una breve avventura di prova per il motore advcore.",
+    "versione": "1.0.0"
+  },
+  "flags": {
+    "lampada_accesa": false,
+    "porta_aperta": false,
+    "lucchetto_aperto": false
+  },
+  "verbi": {
+    "vai": {
+      "sinonimi": [
+        "va",
+        "muoviti",
+        "cammina"
+      ],
+      "tipo": "intransitivo",
+      "preposizioni": []
+    },
+    "guarda": {
+      "sinonimi": [
+        "osserva",
+        "l"
+      ],
+      "tipo": "intransitivo",
+      "preposizioni": []
+    },
+    "esamina": {
+      "sinonimi": [
+        "x",
+        "ispeziona"
+      ],
+      "tipo": "transitivo",
+      "preposizioni": []
+    },
+    "prendi": {
+      "sinonimi": [
+        "raccogli",
+        "afferra"
+      ],
+      "tipo": "transitivo",
+      "preposizioni": []
+    },
+    "lascia": {
+      "sinonimi": [
+        "posa",
+        "molla"
+      ],
+      "tipo": "transitivo",
+      "preposizioni": []
+    },
+    "inventario": {
+      "sinonimi": [
+        "i",
+        "inv"
+      ],
+      "tipo": "intransitivo",
+      "preposizioni": []
+    },
+    "accendi": {
+      "sinonimi": [
+        "illumina"
+      ],
+      "tipo": "transitivo",
+      "preposizioni": []
+    },
+    "spegni": {
+      "sinonimi": [],
+      "tipo": "transitivo",
+      "preposizioni": []
+    },
+    "metti": {
+      "sinonimi": [
+        "inserisci",
+        "infila"
+      ],
+      "tipo": "ditransitivo",
+      "preposizioni": [
+        "in",
+        "su"
+      ]
+    },
+    "apri": {
+      "sinonimi": [],
+      "tipo": "transitivo",
+      "preposizioni": []
+    },
+    "chiudi": {
+      "sinonimi": [],
+      "tipo": "transitivo",
+      "preposizioni": []
+    },
+    "indossa": {
+      "sinonimi": [
+        "vesti"
+      ],
+      "tipo": "transitivo",
+      "preposizioni": []
+    },
+    "togli": {
+      "sinonimi": [
+        "sfila"
+      ],
+      "tipo": "transitivo",
+      "preposizioni": []
+    },
+    "punteggio": {
+      "sinonimi": [
+        "punti"
+      ],
+      "tipo": "intransitivo",
+      "preposizioni": []
+    },
+    "usa": {
+      "sinonimi": [
+        "utilizza"
+      ],
+      "tipo": "ditransitivo",
+      "preposizioni": [
+        "con"
+      ]
+    },
+    "parla": {
+      "sinonimi": [
+        "chiacchiera"
+      ],
+      "tipo": "transitivo",
+      "preposizioni": []
+    }
+  },
+  "preposizioni": {
+    "in": [
+      "dentro",
+      "nella",
+      "nel",
+      "in"
+    ],
+    "su": [
+      "sopra",
+      "sulla",
+      "sul",
+      "su"
+    ]
+  },
+  "stanze": {
+    "ingresso": {
+      "nome": "Ingresso della caverna",
+      "desc": "Una fenditura nella roccia si apre verso nord, nel buio. La luce del giorno arriva fin qui ma non oltre.",
+      "uscite": {
+        "nord": "corridoio"
+      },
+      "buia": false
+    },
+    "corridoio": {
+      "nome": "Corridoio buio",
+      "desc": "Un angusto corridoio scavato nella pietra. Nel muro a destra noti una stretta fessura metallica. Una botola nel pavimento conduce verso il basso.",
+      "uscite": {
+        "sud": "ingresso",
+        "giu": {
+          "to": "tesoro",
+          "se": "porta_aperta",
+          "bloccata": "La botola e' sprangata. Deve esserci un meccanismo per aprirla."
+        }
+      },
+      "buia": true
+    },
+    "tesoro": {
+      "nome": "Camera del tesoro",
+      "desc": "Una piccola camera scintillante. Al centro, su un piedistallo, riposa un antico calice d'oro. A ovest, una porticina è sbarrata da un lucchetto.",
+      "uscite": {
+        "su": "corridoio",
+        "ovest": {
+          "to": "cripta",
+          "se": "lucchetto_aperto",
+          "bloccata": "La porticina è chiusa da un robusto lucchetto."
+        }
+      },
+      "buia": true
+    },
+    "cripta": {
+      "nome": "Cripta dimenticata",
+      "desc": "Una nicchia silenziosa, coperta di polvere. Su una mensola di pietra brilla un diadema.",
+      "uscite": {
+        "est": "tesoro"
+      },
+      "buia": true
+    }
+  },
+  "oggetti": {
+    "lampada": {
+      "nome": "lampada d'ottone",
+      "nomi": [
+        "lampada",
+        "lume"
+      ],
+      "aggettivi": [
+        "ottone"
+      ],
+      "posizione": "ingresso",
+      "props": {
+        "prendibile": true,
+        "luce": "lampada_accesa",
+        "desc": "Una vecchia lampada a olio d'ottone. Sembra ancora funzionante."
+      }
+    },
+    "moneta": {
+      "nome": "moneta d'argento",
+      "nomi": [
+        "moneta",
+        "soldo"
+      ],
+      "aggettivi": [
+        "argento"
+      ],
+      "posizione": "corridoio",
+      "props": {
+        "prendibile": true,
+        "desc": "Una moneta d'argento consumata, con un foro al centro."
+      }
+    },
+    "fessura": {
+      "nome": "fessura metallica",
+      "nomi": [
+        "fessura",
+        "fenditura"
+      ],
+      "aggettivi": [
+        "metallica"
+      ],
+      "posizione": "corridoio",
+      "props": {
+        "scenario": true,
+        "statico": true,
+        "desc": "Una fessura grande quanto una moneta. Forse vuole essere alimentata."
+      }
+    },
+    "calice": {
+      "nome": "calice d'oro",
+      "nomi": [
+        "calice",
+        "coppa",
+        "tesoro"
+      ],
+      "aggettivi": [
+        "oro",
+        "antico"
+      ],
+      "posizione": "tesoro",
+      "props": {
+        "prendibile": true,
+        "desc": "Un calice d'oro massiccio, freddo e pesante."
+      }
+    },
+    "baule": {
+      "nome": "baule di legno",
+      "nomi": [
+        "baule",
+        "cassa"
+      ],
+      "aggettivi": [
+        "legno"
+      ],
+      "posizione": "tesoro",
+      "props": {
+        "contenitore": true,
+        "aperto": false,
+        "desc": "Un robusto baule di legno con cerniere di ferro."
+      }
+    },
+    "mantello": {
+      "nome": "mantello di velluto",
+      "nomi": [
+        "mantello",
+        "manto"
+      ],
+      "aggettivi": [
+        "velluto"
+      ],
+      "posizione": "baule",
+      "props": {
+        "prendibile": true,
+        "indossabile": true,
+        "desc": "Un caldo mantello di velluto cremisi."
+      }
+    },
+    "gnomo": {
+      "nome": "gnomo barbuto",
+      "nomi": [
+        "gnomo",
+        "nano"
+      ],
+      "aggettivi": [
+        "barbuto"
+      ],
+      "posizione": "ingresso",
+      "props": {
+        "png": true,
+        "desc": "Uno gnomo grinzoso con una lunga barba e occhi vispi.",
+        "saluto": "Lo gnomo ti osserva curioso. «Pochi arrivano fin qui, viaggiatore.»",
+        "dialogo": [
+          {
+            "etichetta": "Chiedi del passaggio",
+            "testo": "«Quella botola laggiù? Vuole una moneta nella fessura, altrimenti non si apre.»"
+          },
+          {
+            "etichetta": "Chiedi un aiuto",
+            "una_volta": true,
+            "testo": "«Tieni, una vecchia chiave di ferro. A me non serve più.»",
+            "allora": [
+              {
+                "sposta_oggetto": "chiave",
+                "a": "inventario"
+              },
+              {
+                "punti": 10
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "chiave": {
+      "nome": "chiave di ferro",
+      "nomi": [
+        "chiave"
+      ],
+      "aggettivi": [
+        "ferro"
+      ],
+      "posizione": "gnomo",
+      "props": {
+        "prendibile": true,
+        "desc": "Una pesante chiave di ferro arrugginita."
+      }
+    },
+    "lucchetto": {
+      "nome": "lucchetto",
+      "nomi": [
+        "lucchetto"
+      ],
+      "aggettivi": [],
+      "posizione": "tesoro",
+      "props": {
+        "statico": true,
+        "desc": "Un lucchetto di ferro che sbarra la porticina a ovest."
+      }
+    },
+    "diadema": {
+      "nome": "diadema di cristallo",
+      "nomi": [
+        "diadema",
+        "corona"
+      ],
+      "aggettivi": [
+        "cristallo"
+      ],
+      "posizione": "cripta",
+      "props": {
+        "prendibile": true,
+        "desc": "Un delicato diadema di cristallo che cattura la luce."
+      }
+    }
+  },
+  "regole": [
+    {
+      "id": "accendi_lampada",
+      "quando": {
+        "verbo": "accendi",
+        "oggetto": "lampada"
+      },
+      "se": [
+        {
+          "flag": "lampada_accesa",
+          "uguale": false
+        },
+        {
+          "oggetto_in": [
+            "lampada",
+            "inventario"
+          ]
+        }
+      ],
+      "allora": [
+        {
+          "set_flag": "lampada_accesa",
+          "valore": true
+        },
+        {
+          "stampa": "Accendi la lampada: una calda luce dorata invade lo spazio intorno a te."
+        }
+      ],
+      "altrimenti": [
+        {
+          "stampa": "Non succede nulla. (Devi avere la lampada con te e spenta.)"
+        }
+      ]
+    },
+    {
+      "id": "spegni_lampada",
+      "quando": {
+        "verbo": "spegni",
+        "oggetto": "lampada"
+      },
+      "se": [
+        {
+          "flag": "lampada_accesa",
+          "uguale": true
+        }
+      ],
+      "allora": [
+        {
+          "set_flag": "lampada_accesa",
+          "valore": false
+        },
+        {
+          "stampa": "Spegni la lampada. Il buio ti avvolge."
+        }
+      ],
+      "altrimenti": [
+        {
+          "stampa": "La lampada e' gia' spenta."
+        }
+      ]
+    },
+    {
+      "id": "moneta_nella_fessura",
+      "quando": {
+        "verbo": "metti",
+        "oggetto": "moneta",
+        "prep": "in",
+        "oggetto_indiretto": "fessura"
+      },
+      "se": [
+        {
+          "oggetto_in": [
+            "moneta",
+            "inventario"
+          ]
+        },
+        {
+          "flag": "porta_aperta",
+          "uguale": false
+        }
+      ],
+      "allora": [
+        {
+          "sposta_oggetto": "moneta",
+          "a": "fessura"
+        },
+        {
+          "set_flag": "porta_aperta",
+          "valore": true
+        },
+        {
+          "stampa": "Infili la moneta nella fessura. Un meccanismo scatta e la botola si apre con un tonfo!"
+        }
+      ],
+      "altrimenti": [
+        {
+          "stampa": "La fessura non reagisce."
+        }
+      ]
+    },
+    {
+      "id": "prendi_calice",
+      "quando": {
+        "verbo": "prendi",
+        "oggetto": "calice"
+      },
+      "se": [
+        {
+          "oggetto_in": [
+            "calice",
+            "tesoro"
+          ]
+        }
+      ],
+      "allora": [
+        {
+          "sposta_oggetto": "calice",
+          "a": "inventario"
+        },
+        {
+          "punti": 100
+        },
+        {
+          "vittoria": "Afferri il calice d'oro. Hai conquistato il tesoro della caverna. HAI VINTO!"
+        }
+      ],
+      "altrimenti": [
+        {
+          "stampa": "Hai gia' il calice."
+        }
+      ]
+    },
+    {
+      "id": "usa_chiave_lucchetto",
+      "quando": {
+        "verbo": "usa",
+        "oggetto": "chiave",
+        "prep": "con",
+        "oggetto_indiretto": "lucchetto"
+      },
+      "se": [
+        {
+          "oggetto_in": [
+            "chiave",
+            "inventario"
+          ]
+        },
+        {
+          "flag": "lucchetto_aperto",
+          "uguale": false
+        }
+      ],
+      "allora": [
+        {
+          "set_flag": "lucchetto_aperto",
+          "valore": true
+        },
+        {
+          "punti": 20
+        },
+        {
+          "stampa": "Giri la chiave nel lucchetto: scatta e la porticina a ovest si apre."
+        }
+      ],
+      "altrimenti": [
+        {
+          "stampa": "La chiave non gira: o non ce l'hai, o è già aperto."
+        }
+      ]
+    },
+    {
+      "id": "prendi_diadema",
+      "quando": {
+        "verbo": "prendi",
+        "oggetto": "diadema"
+      },
+      "se": [
+        {
+          "oggetto_in": [
+            "diadema",
+            "cripta"
+          ]
+        }
+      ],
+      "allora": [
+        {
+          "sposta_oggetto": "diadema",
+          "a": "inventario"
+        },
+        {
+          "punti": 50
+        },
+        {
+          "stampa": "Prendi il diadema di cristallo. Un tesoro nascosto!"
+        }
+      ],
+      "altrimenti": [
+        {
+          "stampa": "Hai già il diadema."
+        }
+      ]
+    }
+  ]
+}

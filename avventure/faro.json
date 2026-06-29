@@ -1,0 +1,447 @@
+{
+  "meta": {
+    "titolo": "Il Faro Abbandonato",
+    "autore": "tutorial advcore",
+    "intro": "Naufrago su uno scoglio, l'unica speranza è riaccendere il vecchio faro.",
+    "stanza_iniziale": "molo",
+    "versione": "1.0.1"
+  },
+  "flags": {
+    "lanterna_accesa": false,
+    "botola_aperta": false,
+    "corrente": false,
+    "tentativi": 0
+  },
+  "verbi": {
+    "accendi": {
+      "sinonimi": [
+        "illumina"
+      ],
+      "tipo": "transitivo",
+      "preposizioni": []
+    }
+  },
+  "preposizioni": {},
+  "stanze": {
+    "molo": {
+      "nome": "Il molo",
+      "desc": "Assi scivolose sull'acqua nera. Il faro si erge a nord, spento.",
+      "uscite": {
+        "nord": "atrio"
+      },
+      "buia": false
+    },
+    "atrio": {
+      "nome": "Atrio del faro",
+      "desc": "Un ingresso umido. Scale salgono e una botola scende nel pavimento.",
+      "uscite": {
+        "sud": "molo",
+        "ovest": "cucina",
+        "est": "magazzino",
+        "su": "sommita",
+        "giu": {
+          "to": "cantina",
+          "se": "botola_aperta",
+          "bloccata": "Una botola di ferro chiusa blocca la discesa."
+        }
+      },
+      "buia": false
+    },
+    "cucina": {
+      "nome": "Cucina",
+      "desc": "Pentole arrugginite pendono dalle pareti, sopra un vecchio tavolo di legno.",
+      "uscite": {
+        "est": "atrio"
+      },
+      "buia": false
+    },
+    "magazzino": {
+      "nome": "Magazzino",
+      "desc": "Scaffali rotti e un grosso baule di legno nell'angolo.",
+      "uscite": {
+        "ovest": "atrio"
+      },
+      "buia": true
+    },
+    "cantina": {
+      "nome": "Cantina",
+      "desc": "Un antro freddo. Un generatore tace nel buio.",
+      "uscite": {
+        "su": "atrio"
+      },
+      "buia": true
+    },
+    "sommita": {
+      "nome": "Sommità del faro",
+      "desc": "La grande lampada del faro domina la notte.",
+      "uscite": {
+        "giu": "atrio"
+      },
+      "buia": false
+    }
+  },
+  "oggetti": {
+    "lanterna": {
+      "nome": "lanterna",
+      "nomi": [
+        "lanterna",
+        "lume"
+      ],
+      "aggettivi": [],
+      "posizione": "cucina",
+      "props": {
+        "prendibile": true,
+        "luce": "lanterna_accesa",
+        "in_stanza": "Sul tavolo è posata una lanterna spenta."
+      }
+    },
+    "fiammiferi": {
+      "nome": "scatola di fiammiferi",
+      "nomi": [
+        "fiammiferi",
+        "cerini",
+        "scatola"
+      ],
+      "aggettivi": [],
+      "posizione": "cucina",
+      "props": {
+        "prendibile": true,
+        "in_stanza": "Accanto, una scatola di fiammiferi."
+      }
+    },
+    "baule": {
+      "nome": "baule di legno",
+      "nomi": [
+        "baule",
+        "cassa"
+      ],
+      "aggettivi": [],
+      "posizione": "magazzino",
+      "props": {
+        "contenitore": true
+      }
+    },
+    "chiave": {
+      "nome": "chiave arrugginita",
+      "nomi": [
+        "chiave"
+      ],
+      "aggettivi": [],
+      "posizione": "baule",
+      "props": {
+        "prendibile": true
+      }
+    },
+    "giubbotto": {
+      "nome": "giubbotto di salvataggio",
+      "nomi": [
+        "giubbotto",
+        "salvagente"
+      ],
+      "aggettivi": [],
+      "posizione": "baule",
+      "props": {
+        "prendibile": true,
+        "indossabile": true
+      }
+    },
+    "botola": {
+      "nome": "botola",
+      "nomi": [
+        "botola"
+      ],
+      "aggettivi": [],
+      "posizione": "atrio",
+      "props": {
+        "scenario": true
+      }
+    },
+    "generatore": {
+      "nome": "generatore",
+      "nomi": [
+        "generatore",
+        "motore"
+      ],
+      "aggettivi": [],
+      "posizione": "cantina",
+      "props": {
+        "scenario": true
+      }
+    },
+    "guardiano": {
+      "nome": "vecchio guardiano",
+      "nomi": [
+        "guardiano",
+        "vecchio",
+        "fantasma"
+      ],
+      "aggettivi": [],
+      "posizione": "cantina",
+      "props": {
+        "png": true,
+        "saluto": "Il vecchio guardiano fluttua nella penombra. «Vuoi riaccendere il mio faro, vero?»",
+        "dialogo": [
+          {
+            "etichetta": "Chiedi del faro",
+            "testo": "«La lampada lassù è morta. Senza corrente non vivrà: al generatore qui sotto manca un pezzo.»"
+          },
+          {
+            "etichetta": "Chiedi aiuto col generatore",
+            "testo": "«Tieni, il mio vecchio fusibile. Falle tornare la luce.»",
+            "una_volta": true,
+            "allora": [
+              {
+                "sposta_oggetto": "fusibile",
+                "a": "inventario"
+              },
+              {
+                "punti": 10
+              }
+            ]
+          },
+          {
+            "etichetta": "Mostra il giubbotto",
+            "testo": "«Bene, te lo sei messo. Il mare stanotte non perdona.»",
+            "se": [
+              {
+                "oggetto_in": [
+                  "giubbotto",
+                  "inventario"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "fusibile": {
+      "nome": "fusibile",
+      "nomi": [
+        "fusibile"
+      ],
+      "aggettivi": [],
+      "posizione": "guardiano",
+      "props": {
+        "prendibile": true
+      }
+    },
+    "faro": {
+      "nome": "lampada del faro",
+      "nomi": [
+        "faro",
+        "lampada",
+        "lente"
+      ],
+      "aggettivi": [],
+      "posizione": "sommita",
+      "props": {
+        "scenario": true
+      }
+    }
+  },
+  "regole": [
+    {
+      "id": "accendi_lanterna",
+      "quando": {
+        "verbo": "accendi",
+        "oggetto": "lanterna"
+      },
+      "se": [
+        {
+          "oggetto_in": [
+            "lanterna",
+            "inventario"
+          ]
+        },
+        {
+          "oggetto_in": [
+            "fiammiferi",
+            "inventario"
+          ]
+        },
+        {
+          "flag": "lanterna_accesa",
+          "uguale": false
+        }
+      ],
+      "allora": [
+        {
+          "set_flag": "lanterna_accesa",
+          "valore": true
+        },
+        {
+          "punti": 10
+        },
+        {
+          "stampa": "Accendi la lanterna: una luce calda scaccia l'ombra."
+        }
+      ],
+      "altrimenti": [
+        {
+          "stampa": "Ti servono la lanterna in mano e dei fiammiferi."
+        }
+      ]
+    },
+    {
+      "id": "accendi_faro",
+      "quando": {
+        "verbo": "accendi",
+        "oggetto": "faro"
+      },
+      "se": [
+        {
+          "stanza_corrente": "sommita"
+        },
+        {
+          "flag": "corrente",
+          "uguale": true
+        }
+      ],
+      "allora": [
+        {
+          "punti": 50
+        },
+        {
+          "vittoria": "La grande lente si accende e squarcia la notte. Una nave vira verso lo scoglio: SEI SALVO!"
+        }
+      ],
+      "altrimenti": [
+        {
+          "stampa": "La lampada è spenta: senza corrente non si accende."
+        }
+      ]
+    },
+    {
+      "id": "apri_botola",
+      "quando": {
+        "verbo": "apri",
+        "oggetto": "botola"
+      },
+      "se": [
+        {
+          "oggetto_in": [
+            "chiave",
+            "inventario"
+          ]
+        },
+        {
+          "flag": "botola_aperta",
+          "uguale": false
+        }
+      ],
+      "allora": [
+        {
+          "set_flag": "botola_aperta",
+          "valore": true
+        },
+        {
+          "punti": 15
+        },
+        {
+          "stampa": "Infili la chiave: la serratura cede e la botola si apre sul buio."
+        }
+      ],
+      "altrimenti": [
+        {
+          "incrementa": "tentativi",
+          "di": 1
+        },
+        {
+          "stampa": "La botola è chiusa a chiave."
+        }
+      ]
+    },
+    {
+      "id": "esamina_botola",
+      "quando": {
+        "verbo": "esamina",
+        "oggetto": "botola"
+      },
+      "se": [
+        {
+          "flag": "tentativi",
+          "maggiore": 1
+        },
+        {
+          "flag": "botola_aperta",
+          "uguale": false
+        }
+      ],
+      "allora": [
+        {
+          "stampa": "Una serratura robusta. La chiave dev'essere nascosta qui vicino, forse in un baule."
+        }
+      ],
+      "altrimenti": [
+        {
+          "stampa": "Una botola di ferro nel pavimento, con una grossa serratura."
+        }
+      ]
+    },
+    {
+      "id": "usa_fusibile_generatore",
+      "quando": {
+        "verbo": "usa",
+        "oggetto": "fusibile",
+        "prep": "con",
+        "oggetto_indiretto": "generatore"
+      },
+      "se": [
+        {
+          "oggetto_in": [
+            "fusibile",
+            "inventario"
+          ]
+        },
+        {
+          "flag": "corrente",
+          "uguale": false
+        }
+      ],
+      "allora": [
+        {
+          "set_flag": "corrente",
+          "valore": true
+        },
+        {
+          "punti": 20
+        },
+        {
+          "stampa": "Inserisci il fusibile. Il generatore romba: torna la corrente."
+        }
+      ],
+      "altrimenti": [
+        {
+          "stampa": "Non succede nulla."
+        }
+      ]
+    },
+    {
+      "id": "usa_fiammiferi_generatore",
+      "quando": {
+        "verbo": "usa",
+        "oggetto": "fiammiferi",
+        "prep": "con",
+        "oggetto_indiretto": "generatore"
+      },
+      "se": [
+        {
+          "oggetto_in": [
+            "fiammiferi",
+            "inventario"
+          ]
+        }
+      ],
+      "allora": [
+        {
+          "sconfitta": "Una fiamma viva accanto al generatore a gasolio... un lampo acceca tutto. GAME OVER."
+        }
+      ],
+      "altrimenti": [
+        {
+          "stampa": "Meglio non avvicinare fiamme al generatore."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+# Dipendenze per eseguire la suite di test automatici.
+# Installazione:  pip install -r requirements-dev.txt
+pytest>=8
+pytest-qt>=4
