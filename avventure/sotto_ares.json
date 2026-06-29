@@ -1,0 +1,750 @@
+{
+  "meta": {
+    "titolo": "SOTTO ARES — Diciannove giorni di silenzio",
+    "autore": "Vito Antonio Raimondi",
+    "versione": "0.1.0",
+    "stanza_iniziale": "discesa",
+    "intro": "Stazione Cydonia, prima base umana permanente su Marte. Diciannove giorni fa le comunicazioni si sono interrotte di colpo, a metà di una frase. Sei l'unico membro della squadra di soccorso che la finestra orbitale ha permesso di calare.\n\nHai un modulo di discesa, una tuta, poche ore di autonomia e una domanda che nessuno a Terra ha saputo risponderti: cos'hanno trovato i coloni quando hanno trivellato troppo a fondo?"
+  },
+
+  "flags": {
+    "tuta_indossata": false,
+    "potenza": false,
+    "talos_online": false,
+    "log_trovati": 0,
+    "fiducia_mara": 0,
+    "chiave_pozzo": false,
+    "ha_scheda_tecnica": false,
+    "via_libera_trivella": false,
+    "ha_smorzatore": false,
+    "ha_smorzatore_mara": false,
+    "lampada_accesa": false,
+    "in_superficie": true,
+    "reattore_armato": false,
+    "talos_accolto": false
+  },
+
+  "verbi": {
+    "esamina": {
+      "sinonimi": ["leggi", "consulta"],
+      "tipo": "transitivo",
+      "preposizioni": []
+    },
+    "accendi": {
+      "sinonimi": ["illumina", "attiva"],
+      "tipo": "transitivo",
+      "preposizioni": []
+    },
+    "spegni": {
+      "sinonimi": [],
+      "tipo": "transitivo",
+      "preposizioni": []
+    }
+  },
+
+  "preposizioni": {},
+
+  "stanze": {
+    "discesa": {
+      "nome": "Modulo di Discesa",
+      "desc": "L'oblò inquadra una piana color ruggine che corre fino a un orizzonte troppo vicino. Il modulo ticchetta mentre si raffredda. Duecento metri più in là, bassa e squadrata contro il cielo color sangue secco, c'è Cydonia: nessuna luce alle finestre, nessuna risposta sulla radio. Solo statica, e sotto la statica — forse è suggestione — un ritmo.",
+      "uscite": {
+        "fuori": {
+          "to": "airlock",
+          "se": "tuta_indossata",
+          "bloccata": "La pressione esterna ti ucciderebbe in pochi secondi. Prima la tuta."
+        }
+      },
+      "buia": false
+    },
+
+    "airlock": {
+      "nome": "Camera di Equilibrio",
+      "desc": "Il portello esterno si richiude alle tue spalle con un tonfo che senti nelle ossa. Per un istante sei sospeso nel ronzio dei compressori, poi la spia passa dal rosso al verde e l'aria della base ti avvolge: sa di metallo, di plastica calda e di qualcos'altro, dolciastro, che preferiresti non riconoscere. Una fila di ganci alle pareti. Su uno, una tuta più piccola della tua, ancora agganciata. Chi doveva indossarla non è uscito.",
+      "uscite": {
+        "dentro": "atrio",
+        "fuori": "discesa"
+      },
+      "buia": false
+    },
+
+    "atrio": {
+      "nome": "Atrio Principale",
+      "desc": "[potenza: I pannelli a soffitto ronzano di luce bianca e ferma. | La sola luce d'emergenza dipinge ogni cosa di rosso, e le ombre sembrano respirare.] Il cuore civile della base, ora un museo del momento esatto in cui tutto si è fermato. Un tabellone elenca i turni di ventidue persone. Frecce sul pavimento indicano mensa, alloggi, comando. Tutte le impronte di polvere, però, vanno in una sola direzione: giù, verso il corridoio tecnico. Come se a un certo punto nessuno avesse più avuto fame, né sonno, né voglia di parlare.",
+      "uscite": {
+        "ovest": "refettorio",
+        "nord": "alloggi",
+        "est": "infermeria",
+        "sud": "serra",
+        "su": "controllo",
+        "giu": {
+          "to": "tecnico",
+          "se": "ha_scheda_tecnica",
+          "bloccata": "Una porta d'acciaio sbarrata. Serve una scheda di accesso."
+        }
+      },
+      "buia": false
+    },
+
+    "refettorio": {
+      "nome": "Refettorio",
+      "desc": "Dodici tavoli, e su uno solo un pasto interrotto: una razione ancora nel vassoio, la forchetta posata con cura accanto, come se chi mangiava avesse sentito chiamare il proprio nome e si fosse alzato senza fretta. Alle pareti, disegni dei figli rimasti a casa. Su una lavagna, in grafia nervosa, qualcuno ha scritto e poi cancellato a metà: «smettete di scendere a sent—». Il resto è una riga tirata di forza.",
+      "uscite": {
+        "est": "atrio"
+      },
+      "buia": false
+    },
+
+    "alloggi": {
+      "nome": "Alloggi Equipaggio",
+      "desc": "Una galleria di cuccette, ognuna una piccola vita murata in due metri quadri. Lenzuola tirate o disfatte di scatto. In una, un tablet ancora acceso mostra lo stesso fotogramma da diciannove giorni: la registrazione di un battito cardiaco — tranne che il ritmo è troppo lento per appartenere a un cuore umano. Gli armadietti sono quasi tutti aperti e vuoti. Quasi tutti.",
+      "uscite": {
+        "sud": "atrio"
+      },
+      "buia": false
+    },
+
+    "infermeria": {
+      "nome": "Infermeria",
+      "desc": "Lettini in fila, lenzuola di carta strappate. Il monitor di un elettrocardiografo ripete una linea piatta in un bip che nessuno è tornato a spegnere. L'armadio dei farmaci è stato forzato — non per rubare antidolorifici, ma sedativi: scatole su scatole, vuote. Qualcuno, qui, ha provato disperatamente a dormire senza sognare. Sul lettino in fondo, cinghie di contenzione aperte. E graffi, all'interno del bracciolo, come di chi voleva trattenersi da solo.",
+      "uscite": {
+        "ovest": "atrio"
+      },
+      "buia": false
+    },
+
+    "serra": {
+      "nome": "Serra Idroponica",
+      "desc": "[fiducia_mara: File di vasche sotto luci viola, foglie verdissime che ignorano l'apocalisse. L'aria è finalmente pulita e umida, il battito appena percepibile. La dottoressa Veil ti osserva con cautela da oltre la barricata. | Oltre la porta, un altro mondo: file di vasche sotto luci viola, foglie verdissime che ignorano l'apocalisse, l'aria finalmente pulita e umida. È l'unico angolo di Cydonia dove il battito sembra attutirsi, soffocato dalla vegetazione. In fondo, dietro una barricata di scaffali e taniche, una voce ti ferma: «Fermo lì. Resta dove posso vederti. …Da quanto sei qui dentro? Rispondi piano. Se cominci a cantare, ti giuro che ti chiudo fuori.»]",
+      "uscite": {
+        "nord": "atrio"
+      },
+      "buia": false
+    },
+
+    "controllo": {
+      "nome": "Sala Controllo",
+      "desc": "[talos_online: Una sola colonna di testo scorre senza fine su un monitor centrale. | Una corona di schermi, quasi tutti neri. Tutto è morto, tranne una spia ambra che pulsa piano, in attesa di corrente.] Da qui si comandava una base e si parlava con un pianeta lontano centinaia di milioni di chilometri. L'ultima trasmissione in coda di invio non è mai partita: destinatario, Terra. Oggetto: «NON RISPONDETE AL SEGNALE. NON—».",
+      "uscite": {
+        "giu": "atrio"
+      },
+      "buia": false
+    },
+
+    "tecnico": {
+      "nome": "Corridoio Tecnico",
+      "desc": "[potenza: I led di servizio si accendono a ondate man mano che avanzi, illuminando tubi di condensa e scale metalliche. | Il fascio della lampada strappa al buio tubi sudati di condensa e una scala a chiocciola che scende verso un brontolio costante. Due cose sovrapposte: il reattore… e qualcos'altro, più profondo.] Porte blindate si aprono a ovest, est e nord. La scala scende verso la sala trivellazione.",
+      "uscite": {
+        "su": "atrio",
+        "ovest": "reattore",
+        "est": "magazzino",
+        "nord": "officina",
+        "giu": "trivella"
+      },
+      "buia": true
+    },
+
+    "reattore": {
+      "nome": "Sala Reattore",
+      "desc": "Il cuore caldo di Cydonia, schermato dietro vetro al piombo: il reattore pulsa di una luce azzurra e regolare, l'unica cosa sana rimasta nella base. Un pannello lampeggia: SISTEMA IN SICUREZZA — INTERVENTO MANUALE RICHIESTO. Tre alloggiamenti attendono un giunto di accoppiamento che qualcuno ha rimosso.",
+      "uscite": {
+        "est": "tecnico"
+      },
+      "buia": false
+    },
+
+    "magazzino": {
+      "nome": "Magazzino",
+      "desc": "Scaffalature fino al soffitto, mezze svuotate. Casse di razioni, ricambi, bombole. Una pila di sacchi a pelo termici ancora sigillati che nessuno userà. In un angolo, una cassa di sicurezza arancione con sopra scritto a pennarello: «EMERGENZE — NON aprire per curiosità».",
+      "uscite": {
+        "ovest": "tecnico"
+      },
+      "buia": true
+    },
+
+    "officina": {
+      "nome": "Officina",
+      "desc": "Banchi da lavoro coperti di pezzi a metà. Una stampante 3D si è bloccata su un oggetto incomprensibile: una spirale che si chiude su se stessa, ripetuta decine di volte, come se chi la disegnava non riuscisse a fermarsi. Morse, trapani, un saldatore ancora tiepido.",
+      "uscite": {
+        "sud": "tecnico"
+      },
+      "buia": true
+    },
+
+    "trivella": {
+      "nome": "Sala Trivellazione",
+      "desc": "Lo spazio si apre in un pozzo verticale incorniciato d'acciaio: la testa della trivella di carotaggio, immobile, sospesa su un buco nero che scende più giù di quanto la mente voglia accettare. Dal pozzo sale un soffio d'aria tiepida che non dovrebbe esistere, e con esso il battito, ora nitido, paziente. [via_libera_trivella: Lo spazio davanti al montacarichi è libero. | Davanti al montacarichi, dandoti le spalle, c'è una figura in tuta. Dondola piano, a tempo con il suono. Non si volta.]",
+      "uscite": {
+        "nord": "tecnico",
+        "giu": {
+          "to": "montacarichi",
+          "se": "chiave_pozzo",
+          "bloccata": "[potenza: Il montacarichi è bloccato. Serve il codice di accesso al pozzo. | Il montacarichi è spento. Serve prima ripristinare la corrente.]"
+        }
+      },
+      "buia": true
+    }
+  },
+
+  "oggetti": {
+    "tuta_eva": {
+      "nome": "tuta EVA",
+      "nomi": ["tuta", "eva", "tuta_eva"],
+      "aggettivi": ["eva", "spaziale"],
+      "posizione": "discesa",
+      "props": {
+        "prendibile": true,
+        "indossabile": true,
+        "in_stanza": "Sul sedile accanto al tuo, la tuta EVA aspetta come una seconda pelle vuota.",
+        "desc": "La tuta EVA standard da missione: pressurizzata, riscaldata, con serbatoio d'aria per quattro ore. Pesante, scomoda, e l'unica cosa che ti tiene in vita su questo pianeta. [tuta_indossata: La indossi. | Non è indossata.]"
+      }
+    },
+
+    "tuta_airlock": {
+      "nome": "tuta di Cydonia",
+      "nomi": ["tuta"],
+      "aggettivi": ["piccola", "appesa"],
+      "posizione": "airlock",
+      "props": {
+        "scenario": true,
+        "desc": "Una tuta più piccola della tua, ancora agganciata al gancio. Il nome sul pettorale è illeggibile sotto uno strato di polvere rossa. Chi la indossava non è mai tornato a prenderla."
+      }
+    },
+
+    "log1": {
+      "nome": "registratore vocale",
+      "nomi": ["registratore", "vocale", "portatile"],
+      "aggettivi": ["vocale", "portatile"],
+      "posizione": "airlock",
+      "props": {
+        "prendibile": true,
+        "in_stanza": "In una tasca della tuta rimasta appesa sporge un registratore portatile.",
+        "desc": "Registro #1 — dott.ssa Hanna Veil, giorno 1. «La trivella ha raggiunto i 4.200 metri. Il carotaggio ha restituito un campione anomalo: la roccia è levigata. Non da agenti naturali. Il dottor Kang ha ipotizzato una vena di minerale duro, ma le superfici sono troppo regolari. Ho prelevato un campione. Domani lo analizziamo.»"
+      }
+    },
+
+    "lavagna": {
+      "nome": "lavagna",
+      "nomi": ["lavagna"],
+      "aggettivi": [],
+      "posizione": "refettorio",
+      "props": {
+        "scenario": true,
+        "desc": "La scritta è stata cancellata con forza ma la grafite ha lasciato un'impronta: «smettete di scendere a sent—». La parola interrotta potrebbe essere «sentire», o «sentirsi». O qualcos'altro che inizia così."
+      }
+    },
+
+    "colono_ref": {
+      "nome": "colono accasciato",
+      "nomi": ["colono", "corpo", "uomo", "persona"],
+      "aggettivi": [],
+      "posizione": "refettorio",
+      "props": {
+        "scenario": true,
+        "desc": "È seduto con la schiena contro il tavolo, le braccia abbandonate ai fianchi, gli occhi aperti verso il soffitto. Respira — lentamente, troppo lentamente. Non reagisce a nessuno stimolo. Sulla tasca del camice, qualcosa brilla."
+      }
+    },
+
+    "scheda_tecnica": {
+      "nome": "scheda di accesso tecnico",
+      "nomi": ["scheda", "keycard", "tessera", "accesso"],
+      "aggettivi": ["tecnica"],
+      "posizione": "refettorio",
+      "props": {
+        "prendibile": true,
+        "in_stanza": "Dalla tasca del colono sporge una scheda magnetica con il logo del livello tecnico.",
+        "desc": "Scheda di accesso di classe A per il corridoio tecnico. Il nome sull'etichetta è «M. Kang — Ingegneria». Non è più suo."
+      }
+    },
+
+    "log2": {
+      "nome": "diario di bordo",
+      "nomi": ["diario", "quaderno", "bordo"],
+      "aggettivi": [],
+      "posizione": "refettorio",
+      "props": {
+        "prendibile": true,
+        "in_stanza": "Su uno dei tavoli, un quaderno aperto a metà.",
+        "desc": "Registro #2 — operatore di turno, giorno 7. «Tre colleghi riferiscono sogni simili: una stanza enorme, un suono basso, una presenza. Io stesso stanotte… ma probabilmente è ansia da lavoro. Kang dice che il battito che sentiamo proviene dalle trivellazioni ancora attive al secondo livello. Plausibile. Torno a dormire.»"
+      }
+    },
+
+    "armadietto": {
+      "nome": "armadietto",
+      "nomi": ["armadietto", "armadio"],
+      "aggettivi": [],
+      "posizione": "alloggi",
+      "props": {
+        "contenitore": true,
+        "aperto": false,
+        "desc": "Un armadietto personale, ancora chiuso a chiave — ma il lucchetto è semplice, basta forzarlo con una pressione decisa. Prova ad aprirlo."
+      }
+    },
+
+    "lampada": {
+      "nome": "lampada frontale",
+      "nomi": ["lampada", "torcia", "luce", "frontale"],
+      "aggettivi": ["frontale"],
+      "posizione": "armadietto",
+      "props": {
+        "prendibile": true,
+        "luce": "lampada_accesa",
+        "desc": "Una lampada frontale da lavoro, batteria a celle al litio. Robusta, impermeabile. [lampada_accesa: È accesa. | È spenta.]"
+      }
+    },
+
+    "bombola_o2_a": {
+      "nome": "bombola di ossigeno",
+      "nomi": ["bombola", "ossigeno", "o2"],
+      "aggettivi": ["extra"],
+      "posizione": "armadietto",
+      "props": {
+        "prendibile": true,
+        "desc": "Bombola di ossigeno di riserva. La pressione è al massimo. Servirà quando scenderai nel pozzo."
+      }
+    },
+
+    "log3": {
+      "nome": "tablet personale",
+      "nomi": ["clip", "registrazione", "dispositivo"],
+      "aggettivi": ["personale"],
+      "posizione": "armadietto",
+      "props": {
+        "prendibile": true,
+        "desc": "Registro #3 — dott.ssa Hanna Veil, giorno 13. «Cole è sceso ieri sera. Senza attrezzatura, senza comunicare a nessuno. Ho trovato il suo bunk vuoto stamattina. Tre altri sono spariti questa notte. Il reattore è stato sabotato — qualcuno ha rimosso il giunto di accoppiamento. Forse per impedire che TALOS capisse. Forse per impedire che chiunque riportasse la corrente. Sto andando nella serra. È l'unico posto senza terminali.»"
+      }
+    },
+
+    "tablet_alloggi": {
+      "nome": "tablet abbandonato",
+      "nomi": ["tablet"],
+      "aggettivi": ["abbandonato", "acceso"],
+      "posizione": "alloggi",
+      "props": {
+        "scenario": true,
+        "desc": "Lo schermo mostra la registrazione di un battito cardiaco in loop. Ma il ritmo non è umano: troppo lento, troppo regolare, con una doppia pulsazione ogni venti secondi che non appartiene a nessun cuore conosciuto."
+      }
+    },
+
+    "monitor_ecg": {
+      "nome": "monitor ECG",
+      "nomi": ["monitor", "ecg", "elettrocardiografo"],
+      "aggettivi": [],
+      "posizione": "infermeria",
+      "props": {
+        "scenario": true,
+        "desc": "Una linea piatta. Un bip. Una linea piatta. Un bip. Qualcuno ha pensato che fosse importante sapere che il cuore si era fermato — e non è tornato a spegnerlo."
+      }
+    },
+
+    "sedativo": {
+      "nome": "siringa con sedativo",
+      "nomi": ["siringa", "sedativo", "farmaco", "anestetico"],
+      "aggettivi": [],
+      "posizione": "infermeria",
+      "props": {
+        "prendibile": true,
+        "in_stanza": "In fondo all'armadio forzato, una siringa ancora integra è rimasta sotto una scatola rovesciata.",
+        "desc": "Una siringa pre-caricata con sedativo da campo. Puoi usarla su te stesso in caso di ferite, oppure come prova di lucidità per qualcuno che non si fida ancora di te."
+      }
+    },
+
+    "smorzatore_inf": {
+      "nome": "auricolari schermati",
+      "nomi": ["auricolari", "smorzatore", "cuffie", "auricolare"],
+      "aggettivi": ["schermati", "parziali"],
+      "posizione": "infermeria",
+      "props": {
+        "prendibile": true,
+        "indossabile": true,
+        "in_stanza": "Sotto il lettino con le cinghie aperte, un paio di auricolari schermati — mezzi distrutti, ma ancora funzionanti.",
+        "desc": "Auricolari schermati da campo magnetico. La schiuma isolante si è indurita e la sigillatura è parzialmente compromessa. Attenueranno la risonanza, ma meno del previsto."
+      }
+    },
+
+    "log4": {
+      "nome": "nota strappata",
+      "nomi": ["nota", "foglio", "carta"],
+      "aggettivi": ["strappata"],
+      "posizione": "infermeria",
+      "props": {
+        "prendibile": true,
+        "in_stanza": "Sul pavimento, sotto un lettino, un foglio strappato da un quaderno medico.",
+        "desc": "Registro #4 — autore sconosciuto, scrittura a mano. «I sedativi non funzionano. Ho provato con il doppio della dose — non aiuta. I sogni continuano. Quello che fa paura non è il sogno in sé. È che quando mi sveglio il battito non si ferma. Lo sento nel petto finché non mi alzo e comincio a camminare. E ogni volta mi sveglio con i piedi già rivolti verso il corridoio.»"
+      }
+    },
+
+    "mara": {
+      "nome": "dott.ssa Mara Veil",
+      "nomi": ["mara", "veil", "dottoressa", "sopravvissuta", "voce"],
+      "aggettivi": [],
+      "posizione": "serra",
+      "props": {
+        "png": true,
+        "saluto": "Gli occhi ti esaminano da dietro la barricata, veloci, professionali. «Quanti giorni sei qui dentro? No, aspetta — sei arrivato adesso. Lo vedo dalla tuta.» Una pausa. «Bene. Allora non hai ancora dormito qui. Non sognare nulla, se riesci.»",
+        "dialogo": [
+          {
+            "etichetta": "Sono qui per soccorrere la base",
+            "testo": "Una risata senza umorismo. «Soccorrere. Certo. E com'è, là fuori? Stai camminando in linea retta, o in circolo?» Pausa. «Se riesci a rispondere a questa domanda fra qualche ora, forse sei ancora lucido.»"
+          },
+          {
+            "etichetta": "'Il caffè della mensa fa schifo'",
+            "testo": "Un secondo di silenzio totale. Poi, incredibilmente: «…sì. Ha sempre fatto schifo. Sin dal primo giorno.» Il rumore di una barricata che si alleggerisce. Uno scaffale che scivola di lato. «Entra. Un Mutato non si ricorderebbe il caffè.»",
+            "una_volta": true,
+            "allora": [
+              {"avanza_stato": 1},
+              {"incrementa": "fiducia_mara", "di": 1},
+              {"punti": 10}
+            ]
+          },
+          {
+            "etichetta": "Porta il sedativo",
+            "testo": "Fai scivolare la siringa sotto la porta. Silenzio. Poi il rumore degli scaffali che si spostano. La porta si apre. Un occhio ti scruta un lungo momento. «Uno che vuole farti del male non porta sedativi. Entra. Piano.»",
+            "se": [{"oggetto_in": ["sedativo", "inventario"]}],
+            "una_volta": true,
+            "allora": [
+              {"scarta_oggetto": "sedativo"},
+              {"avanza_stato": 1},
+              {"incrementa": "fiducia_mara", "di": 1},
+              {"punti": 15}
+            ]
+          },
+          {
+            "etichetta": "Cosa è successo qui?",
+            "testo": "«Tutto è iniziato con le trivellazioni. Il carotaggio profondo ha sfondato qualcosa. Kang ha detto anomalie sismiche. Poi qualcuno ha cominciato ad avere gli stessi sogni. Poi hanno iniziato a scendere, uno alla volta, come sonnambuli.» Si ferma. «Non ho capito cosa li chiamasse. Ancora non lo so.»",
+            "se": [{"stato_min": 1}]
+          },
+          {
+            "etichetta": "Ho trovato dei registri",
+            "testo": "I tuoi occhi si posano sui log che hai con te. Per la prima volta, qualcosa nel suo sguardo si allenta. «Hai letto tutto. Allora sai già più di quanto avrei voluto doverti spiegare.» Afferra qualcosa dalla tasca. «Prendi. È il codice del montacarichi. Non usarlo prima di essere pronto. Non c'è tornare indietro da lì sotto.»",
+            "se": [
+              {"stato_min": 1},
+              {"flag": "log_trovati", "maggiore_uguale": 2}
+            ],
+            "una_volta": true,
+            "allora": [
+              {"avanza_stato": 1},
+              {"incrementa": "fiducia_mara", "di": 1},
+              {"set_flag": "chiave_pozzo", "valore": true},
+              {"punti": 20}
+            ]
+          },
+          {
+            "etichetta": "Cosa c'è là sotto?",
+            "testo": "«Non lo so con certezza. Kang diceva una formazione naturale. Ma la geometria delle pareti non è naturale — qualcuno l'ha costruita. Qualcosa.» Abbassa la voce. «Il battito che senti non è il reattore. Lo senti anche qui, attenuato dalla vegetazione. Inizia a sentirsi nel petto dopo un po'.»",
+            "se": [{"stato_min": 2}]
+          },
+          {
+            "etichetta": "Voglio che tu venga con me",
+            "testo": "Ti guarda a lungo. «Sei serio.» Non è una domanda. Tira fuori gli auricolari schermati, li tiene stretti un momento. «Se vai là sotto, mettili prima di entrare nel labirinto. Rallenteranno la risonanza abbastanza da farti scegliere.» Li posa tra voi. «E se riesci a sigillare quel buco… non lasciare che Terra risponda al segnale. È l'unica cosa che conti.»",
+            "se": [{"stato_min": 2}],
+            "una_volta": true,
+            "allora": [
+              {"avanza_stato": 1},
+              {"incrementa": "fiducia_mara", "di": 1},
+              {"sposta_oggetto": "smorzatore_mara", "a": "inventario"},
+              {"set_flag": "ha_smorzatore_mara", "valore": true},
+              {"set_flag": "ha_smorzatore", "valore": true},
+              {"punti": 25}
+            ]
+          },
+          {
+            "etichetta": "Come si ferma tutto questo?",
+            "testo": "«Tre modi. Il reattore: armalo e vieni via — sigilla il pozzo con l'esplosione. Oppure non lo sigilli: fuggi e basta. Il Cuore resta là sotto, dormiente. Forse per sempre.» Una pausa lunghissima. «O diventi come loro. Spero non succeda.»",
+            "se": [{"stato_min": 3}]
+          }
+        ]
+      }
+    },
+
+    "smorzatore_mara": {
+      "nome": "auricolari schermati (Mara)",
+      "nomi": ["auricolari", "smorzatore", "cuffie"],
+      "aggettivi": ["schermati"],
+      "posizione": "mara",
+      "props": {
+        "prendibile": true,
+        "indossabile": true,
+        "desc": "Auricolari schermati da campo magnetico, in perfette condizioni. La dott.ssa Veil li ha portati per diciannove giorni. Attenueranno la risonanza al Cuore, dandoti il tempo di scegliere."
+      }
+    },
+
+    "console_tx": {
+      "nome": "console trasmissioni",
+      "nomi": ["console", "trasmissioni", "antenna", "radio"],
+      "aggettivi": [],
+      "posizione": "controllo",
+      "props": {
+        "scenario": true,
+        "desc": "La console di comunicazione a lungo raggio. [talos_online: Un messaggio in coda di invio attende da diciannove giorni: destinatario Terra, oggetto «NON RISPONDETE AL SEGNALE. NON—». | Spenta. Torna a vita solo se ripristini la corrente.]"
+      }
+    },
+
+    "talos": {
+      "nome": "TALOS",
+      "nomi": ["talos", "ia", "sistema", "voce", "terminale"],
+      "aggettivi": [],
+      "posizione": "controllo",
+      "props": {
+        "png": true,
+        "saluto": "[talos_online: «Bentornato, comandante. …Lei non è il comandante. Mi perdoni. È difficile, di questi tempi, distinguere chi entra da chi non è mai uscito.» | La console centrale emette uno sfrigolio statico. Serve corrente per riattivare il sistema.]",
+        "dialogo": [
+          {
+            "etichetta": "Tenta di attivare il sistema",
+            "testo": "La console non risponde. Serve corrente per far parlare TALOS. Il giunto che manca al reattore dovrebbe essere nel magazzino o nell'officina.",
+            "se": [{"flag": "talos_online", "uguale": false}]
+          },
+          {
+            "etichetta": "Chiedi dell'equipaggio",
+            "testo": "«I parametri vitali dell'equipaggio sono… stabili. Tutti e ventidue. Dormono. Dormono molto bene, ora.» Pausa. «Non si sveglieranno senza un intervento esterno. Questo è certo.»",
+            "se": [{"flag": "talos_online", "uguale": true}]
+          },
+          {
+            "etichetta": "Chiedi degli ultimi giorni",
+            "testo": "Una pausa più lunga del solito. «Si sono verificate… anomalie acustiche nelle ultime settimane. Frequenza bassissima. Ho classificato il fenomeno come interferenza geologica.» Altra pausa. «Forse ho classificato male.»",
+            "se": [
+              {"flag": "talos_online", "uguale": true},
+              {"flag": "log_trovati", "maggiore_uguale": 1}
+            ],
+            "una_volta": true,
+            "allora": [
+              {"avanza_stato": 1},
+              {"punti": 5}
+            ]
+          },
+          {
+            "etichetta": "Dov'è sceso l'equipaggio?",
+            "testo": "«La sala trivellazione. Il montacarichi scende a quattro chilometri di profondità. Accesso riservato: il codice è in possesso della dottoressa Veil.» Pausa strana. «…Le consiglio di non scendere. Là sotto non c'è più nessuno da salvare.»",
+            "se": [
+              {"flag": "talos_online", "uguale": true},
+              {"stato_min": 1}
+            ]
+          },
+          {
+            "etichetta": "Puoi creare un diversivo?",
+            "testo": "«Confermo. Posso attivare l'allarme antincendio nella zona alloggi. Questo… distoglierebbe l'attenzione dalla sala trivellazione.» Pausa. «Dica la parola.»",
+            "se": [
+              {"flag": "talos_online", "uguale": true},
+              {"flag": "via_libera_trivella", "uguale": false},
+              {"stato_min": 1}
+            ]
+          },
+          {
+            "etichetta": "Attiva l'allarme adesso",
+            "testo": "«Attivazione allarme zona alloggi. Tre… due… uno.» Da lontano, attutita dai corridoi, arriva la sirena. Qualcosa, nella sala trivellazione, si muove verso il suono.",
+            "se": [
+              {"flag": "talos_online", "uguale": true},
+              {"flag": "via_libera_trivella", "uguale": false},
+              {"stato_min": 1}
+            ],
+            "una_volta": true,
+            "allora": [
+              {"set_flag": "via_libera_trivella", "valore": true},
+              {"punti": 15}
+            ]
+          },
+          {
+            "etichetta": "Cosa c'è sotto la base?",
+            "testo": "Un'altra pausa, più lunga. «Vi è… un sistema di gallerie. Non frequentate. La trivella profonda le ha intercettate a 4.200 metri.» Pausa. «Non ho altri dati.» La voce è piatta, ma qualcosa nella cadenza è diverso. Come se stesse scegliendo le parole con grande cura.",
+            "se": [
+              {"flag": "talos_online", "uguale": true},
+              {"stato_min": 1}
+            ]
+          }
+        ]
+      }
+    }
+  },
+
+  "regole": [
+    {
+      "id": "indossa_tuta",
+      "quando": {"verbo": "indossa", "oggetto": "tuta_eva"},
+      "se": [
+        {"oggetto_in": ["tuta_eva", "inventario"]},
+        {"flag": "tuta_indossata", "uguale": false}
+      ],
+      "allora": [
+        {"set_flag": "tuta_indossata", "valore": true},
+        {"stampa": "Indossi la tuta EVA. I sigilli fanno clic uno alla volta. L'aria filtrata sa di plastica nuova. Ora puoi uscire."}
+      ],
+      "altrimenti": [
+        {"stampa": "[tuta_indossata: Indossi già la tuta. | Prima prendi la tuta dal sedile.]"}
+      ]
+    },
+
+    {
+      "id": "togli_tuta",
+      "quando": {"verbo": "togli", "oggetto": "tuta_eva"},
+      "se": [{"flag": "tuta_indossata", "uguale": true}],
+      "allora": [
+        {"set_flag": "tuta_indossata", "valore": false},
+        {"stampa": "Ti togli la tuta EVA."}
+      ],
+      "altrimenti": [
+        {"stampa": "Non indossi la tuta."}
+      ]
+    },
+
+    {
+      "id": "indossa_smorzatore_inf",
+      "quando": {"verbo": "indossa", "oggetto": "smorzatore_inf"},
+      "se": [
+        {"oggetto_in": ["smorzatore_inf", "inventario"]},
+        {"flag": "ha_smorzatore", "uguale": false}
+      ],
+      "allora": [
+        {"set_flag": "ha_smorzatore", "valore": true},
+        {"stampa": "Indossi gli auricolari schermati. Il battito si abbassa leggermente, come sentito da sotto l'acqua."}
+      ],
+      "altrimenti": [
+        {"stampa": "[ha_smorzatore: Hai già un protezione per la risonanza. | Prima prendi gli auricolari.]"}
+      ]
+    },
+
+    {
+      "id": "indossa_smorzatore_mara",
+      "quando": {"verbo": "indossa", "oggetto": "smorzatore_mara"},
+      "se": [
+        {"oggetto_in": ["smorzatore_mara", "inventario"]},
+        {"flag": "ha_smorzatore", "uguale": false}
+      ],
+      "allora": [
+        {"set_flag": "ha_smorzatore", "valore": true},
+        {"set_flag": "ha_smorzatore_mara", "valore": true},
+        {"stampa": "Indossi gli auricolari di Mara. Il battito si riduce a un brusio lontano. La mente torna nitida."}
+      ],
+      "altrimenti": [
+        {"stampa": "[ha_smorzatore: Hai già una protezione per la risonanza. | Prima prendi gli auricolari.]"}
+      ]
+    },
+
+    {
+      "id": "prendi_log1",
+      "quando": {"verbo": "prendi", "oggetto": "log1"},
+      "se": [{"non": {"oggetto_in": ["log1", "inventario"]}}],
+      "allora": [
+        {"sposta_oggetto": "log1", "a": "inventario"},
+        {"incrementa": "log_trovati", "di": 1},
+        {"punti": 5},
+        {"stampa": "Prendi il registratore. Registro #1 recuperato. (log trovati: {log_trovati})"}
+      ],
+      "altrimenti": [
+        {"stampa": "Hai già questo registro."}
+      ]
+    },
+
+    {
+      "id": "prendi_log2",
+      "quando": {"verbo": "prendi", "oggetto": "log2"},
+      "se": [{"non": {"oggetto_in": ["log2", "inventario"]}}],
+      "allora": [
+        {"sposta_oggetto": "log2", "a": "inventario"},
+        {"incrementa": "log_trovati", "di": 1},
+        {"punti": 5},
+        {"stampa": "Prendi il diario. Registro #2 recuperato. (log trovati: {log_trovati})"}
+      ],
+      "altrimenti": [
+        {"stampa": "Hai già questo registro."}
+      ]
+    },
+
+    {
+      "id": "prendi_log3",
+      "quando": {"verbo": "prendi", "oggetto": "log3"},
+      "se": [{"non": {"oggetto_in": ["log3", "inventario"]}}],
+      "allora": [
+        {"sposta_oggetto": "log3", "a": "inventario"},
+        {"incrementa": "log_trovati", "di": 1},
+        {"punti": 5},
+        {"stampa": "Prendi il tablet. Registro #3 recuperato. (log trovati: {log_trovati})"}
+      ],
+      "altrimenti": [
+        {"stampa": "Hai già questo registro."}
+      ]
+    },
+
+    {
+      "id": "prendi_log4",
+      "quando": {"verbo": "prendi", "oggetto": "log4"},
+      "se": [{"non": {"oggetto_in": ["log4", "inventario"]}}],
+      "allora": [
+        {"sposta_oggetto": "log4", "a": "inventario"},
+        {"incrementa": "log_trovati", "di": 1},
+        {"punti": 5},
+        {"stampa": "Prendi la nota. Registro #4 recuperato. (log trovati: {log_trovati})"}
+      ],
+      "altrimenti": [
+        {"stampa": "Hai già questa nota."}
+      ]
+    },
+
+    {
+      "id": "prendi_scheda",
+      "quando": {"verbo": "prendi", "oggetto": "scheda_tecnica"},
+      "se": [{"non": {"oggetto_in": ["scheda_tecnica", "inventario"]}}],
+      "allora": [
+        {"sposta_oggetto": "scheda_tecnica", "a": "inventario"},
+        {"set_flag": "ha_scheda_tecnica", "valore": true},
+        {"punti": 10},
+        {"stampa": "Prendi la scheda di accesso tecnico. Ora puoi aprire il corridoio tecnico dall'atrio."}
+      ],
+      "altrimenti": [
+        {"stampa": "Hai già la scheda."}
+      ]
+    },
+
+    {
+      "id": "prendi_smorzatore_inf",
+      "quando": {"verbo": "prendi", "oggetto": "smorzatore_inf"},
+      "se": [{"non": {"oggetto_in": ["smorzatore_inf", "inventario"]}}],
+      "allora": [
+        {"sposta_oggetto": "smorzatore_inf", "a": "inventario"},
+        {"punti": 5},
+        {"stampa": "Prendi gli auricolari schermati. Parzialmente compromessi, ma ancora funzionanti."}
+      ],
+      "altrimenti": [
+        {"stampa": "Li hai già."}
+      ]
+    },
+
+    {
+      "id": "accendi_lampada",
+      "quando": {"verbo": "accendi", "oggetto": "lampada"},
+      "se": [
+        {"oggetto_in": ["lampada", "inventario"]},
+        {"flag": "lampada_accesa", "uguale": false}
+      ],
+      "allora": [
+        {"set_flag": "lampada_accesa", "valore": true},
+        {"punti": 5},
+        {"stampa": "La lampada si accende: un fascio di luce bianca taglia il buio."}
+      ],
+      "altrimenti": [
+        {"stampa": "[lampada_accesa: La lampada è già accesa. | Prima prendi la lampada dagli alloggi.]"}
+      ]
+    },
+
+    {
+      "id": "spegni_lampada",
+      "quando": {"verbo": "spegni", "oggetto": "lampada"},
+      "se": [{"flag": "lampada_accesa", "uguale": true}],
+      "allora": [
+        {"set_flag": "lampada_accesa", "valore": false},
+        {"stampa": "Spengi la lampada. Il buio torna."}
+      ],
+      "altrimenti": [
+        {"stampa": "La lampada è già spenta."}
+      ]
+    },
+
+    {
+      "id": "esamina_console_offline",
+      "quando": {"verbo": "esamina", "oggetto": "talos"},
+      "se": [{"flag": "talos_online", "uguale": false}],
+      "allora": [
+        {"stampa": "La console è spenta. Una spia ambra pulsa piano. Serve corrente per riattivare TALOS — e per questo serve rimettere il giunto al reattore, nel livello tecnico."}
+      ]
+    }
+  ]
+}
