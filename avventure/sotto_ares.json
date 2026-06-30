@@ -16,6 +16,7 @@
     "chiave_pozzo": false,
     "ha_scheda_tecnica": false,
     "via_libera_trivella": false,
+    "montacarichi_pronto": false,
     "ha_smorzatore": false,
     "ha_smorzatore_mara": false,
     "lampada_accesa": false,
@@ -146,7 +147,7 @@
 
     "reattore": {
       "nome": "Sala Reattore",
-      "desc": "Il cuore caldo di Cydonia, schermato dietro vetro al piombo: il reattore pulsa di una luce azzurra e regolare, l'unica cosa sana rimasta nella base. Un pannello lampeggia: SISTEMA IN SICUREZZA — INTERVENTO MANUALE RICHIESTO. Tre alloggiamenti attendono un giunto di accoppiamento che qualcuno ha rimosso.",
+      "desc": "Il cuore caldo di Cydonia, schermato dietro vetro al piombo: il reattore pulsa di una luce azzurra, regolare. [potenza: Il pannello ora legge SISTEMA ATTIVO. Da qui senti la base intera tornare a respirare, piano per piano. | Un pannello lampeggia: SISTEMA IN SICUREZZA — INTERVENTO MANUALE RICHIESTO.]",
       "uscite": {
         "est": "tecnico"
       },
@@ -178,8 +179,8 @@
         "nord": "tecnico",
         "giu": {
           "to": "montacarichi",
-          "se": "chiave_pozzo",
-          "bloccata": "[potenza: Il montacarichi è bloccato. Serve il codice di accesso al pozzo. | Il montacarichi è spento. Serve prima ripristinare la corrente.]"
+          "se": "montacarichi_pronto",
+          "bloccata": "Il montacarichi non risponde. Mancano tre cose, e le conosci bene: la corrente al reattore, il codice del pozzo, e la via libera oltre quella figura immobile davanti alla gabbia."
         }
       },
       "buia": true
@@ -553,6 +554,85 @@
           }
         ]
       }
+    },
+
+    "alloggiamento": {
+      "nome": "alloggiamenti del reattore",
+      "nomi": ["alloggiamento", "alloggiamenti", "pannello", "innesto"],
+      "aggettivi": ["vuoti"],
+      "posizione": "reattore",
+      "props": {
+        "scenario": true,
+        "desc": "[potenza: I tre alloggiamenti sono occupati: il giunto pulsa di una luce verde costante. | Tre alloggiamenti vuoti aspettano un giunto di accoppiamento. Senza, il reattore resta in sicurezza — e con esso tutto il resto della base.]"
+      }
+    },
+
+    "giunto": {
+      "nome": "giunto di accoppiamento",
+      "nomi": ["giunto", "accoppiamento", "componente"],
+      "aggettivi": [],
+      "posizione": "officina",
+      "props": {
+        "prendibile": true,
+        "in_stanza": "Su un banco vicino alla porta, appoggiato con cura — non gettato — un giunto di accoppiamento del reattore.",
+        "desc": "Il giunto mancante del reattore. Qualcuno lo ha rimosso e portato fin qui, lontano dal pannello, e poi lasciato lì. Come una decisione presa e poi non più disfatta."
+      }
+    },
+
+    "cassa": {
+      "nome": "cassa di sicurezza",
+      "nomi": ["cassa", "sicurezza"],
+      "aggettivi": ["arancione", "sigillata"],
+      "posizione": "magazzino",
+      "props": {
+        "contenitore": true,
+        "aperto": false,
+        "desc": "Una cassa di sicurezza arancione. La scritta a pennarello è inequivocabile: «EMERGENZE — NON aprire per curiosità». Il fermo non è nemmeno chiuso a chiave."
+      }
+    },
+
+    "bombola_o2_b": {
+      "nome": "bombola di ossigeno",
+      "nomi": ["bombola", "ossigeno", "o2"],
+      "aggettivi": ["sigillata", "emergenza"],
+      "posizione": "cassa",
+      "props": {
+        "prendibile": true,
+        "desc": "Un'altra bombola d'ossigeno, sigillata nel suo involucro. È quella che serve davvero, quando si scende sotto la crosta."
+      }
+    },
+
+    "flare": {
+      "nome": "segnalatore luminoso",
+      "nomi": ["segnalatore", "flare", "razzo"],
+      "aggettivi": ["luminoso", "rosso"],
+      "posizione": "cassa",
+      "props": {
+        "prendibile": true,
+        "desc": "Un segnalatore di emergenza a combustione, luce rossa e fumo denso. Pensato per essere visto da lontano — o per attirare qualcosa, lontano da te."
+      }
+    },
+
+    "mutato": {
+      "nome": "il Mutato",
+      "nomi": ["mutato", "figura", "sagoma"],
+      "aggettivi": ["silenzioso", "dondolante"],
+      "posizione": "trivella",
+      "props": {
+        "combattente": true,
+        "hp": 14,
+        "attacco": 3,
+        "difesa": 1,
+        "fuga": true,
+        "intro_scontro": "Ti avvicini. La figura si volta di scatto — il volto è quasi umano, ma gli occhi non mettono a fuoco nulla. Si avventa.",
+        "uccisione": "Il Mutato ti atterra contro l'acciaio del montacarichi. L'ultima cosa che vedi è il suo volto chinarsi sul tuo — e ti accorgi che sta sorridendo.",
+        "sconfitto": [
+          {"set_flag": "via_libera_trivella", "valore": true},
+          {"punti": 10},
+          {"stampa": "Il Mutato crolla a terra senza un suono, e per un istante il suo volto sembra di nuovo umano. Lo spazio davanti al montacarichi è libero — ma il prezzo è stato il sangue, non l'ingegno."}
+        ],
+        "desc": "[via_libera_trivella: Non c'è più nessuno, qui — solo l'eco del battito che sale dal pozzo. | Una figura in tuta, di spalle, dondola piano davanti al montacarichi, a tempo con un suono che senti più nel petto che nelle orecchie. Non si volta, qualunque cosa tu faccia. Finché non ti avvicini abbastanza.]"
+      }
     }
   },
 
@@ -745,6 +825,74 @@
       "allora": [
         {"stampa": "La console è spenta. Una spia ambra pulsa piano. Serve corrente per riattivare TALOS — e per questo serve rimettere il giunto al reattore, nel livello tecnico."}
       ]
+    },
+
+    {
+      "id": "prendi_giunto",
+      "quando": {"verbo": "prendi", "oggetto": "giunto"},
+      "se": [{"non": {"oggetto_in": ["giunto", "inventario"]}}],
+      "allora": [
+        {"sposta_oggetto": "giunto", "a": "inventario"},
+        {"punti": 10},
+        {"stampa": "Prendi il giunto di accoppiamento. È pesante, freddo, e sembra ancora intatto."}
+      ],
+      "altrimenti": [
+        {"stampa": "Hai già il giunto."}
+      ]
+    },
+
+    {
+      "id": "inserisci_giunto",
+      "quando": {"verbo": "usa", "oggetto": "giunto"},
+      "se": [
+        {"oggetto_in": ["giunto", "inventario"]},
+        {"stanza_corrente": "reattore"},
+        {"flag": "potenza", "uguale": false}
+      ],
+      "allora": [
+        {"sposta_oggetto": "giunto", "a": "reattore"},
+        {"set_flag": "potenza", "valore": true},
+        {"set_flag": "talos_online", "valore": true},
+        {"punti": 25},
+        {"stampa": "Inserisci il giunto nell'alloggiamento vuoto. Per un istante non succede nulla. Poi un *clunk* profondo, e il reattore torna a pulsare più forte. In lontananza, ovunque nella base, le luci si accendono a catena. Da qualche parte, un sistema dimenticato comincia a ricalcolare se stesso."}
+      ],
+      "altrimenti": [
+        {"stampa": "[potenza: Il reattore è già acceso: il giunto è al suo posto. | Ti serve il giunto con te, qui nella sala reattore, per inserirlo nell'alloggiamento.]"}
+      ]
+    },
+
+    {
+      "id": "usa_flare_trivella",
+      "quando": {"verbo": "usa", "oggetto": "flare"},
+      "se": [
+        {"oggetto_in": ["flare", "inventario"]},
+        {"stanza_corrente": "trivella"},
+        {"flag": "via_libera_trivella", "uguale": false}
+      ],
+      "allora": [
+        {"scarta_oggetto": "flare"},
+        {"set_flag": "via_libera_trivella", "valore": true},
+        {"punti": 15},
+        {"stampa": "Accendi il segnalatore e lo lanci lontano, verso il corridoio opposto. La luce rossa acceca per un istante. La figura davanti al montacarichi si volta — lentamente — e si allontana verso il bagliore, dondolando. Lo spazio davanti alla gabbia, adesso, è libero."}
+      ],
+      "altrimenti": [
+        {"stampa": "[via_libera_trivella: Non serve più: la via è già libera. | Non è il momento di usare il segnalatore.]"}
+      ]
+    },
+
+    {
+      "id": "calcola_montacarichi_pronto",
+      "quando": {"evento": "turno"},
+      "se": [
+        {"flag": "potenza", "uguale": true},
+        {"flag": "chiave_pozzo", "uguale": true},
+        {"flag": "via_libera_trivella", "uguale": true},
+        {"flag": "montacarichi_pronto", "uguale": false}
+      ],
+      "allora": [
+        {"set_flag": "montacarichi_pronto", "valore": true}
+      ],
+      "altrimenti": []
     }
   ]
 }
