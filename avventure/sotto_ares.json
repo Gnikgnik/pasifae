@@ -22,7 +22,9 @@
     "lampada_accesa": false,
     "in_superficie": true,
     "reattore_armato": false,
-    "talos_accolto": false
+    "talos_accolto": false,
+    "sceso_pozzo": false,
+    "risonanza": 0
   },
 
   "verbi": {
@@ -38,6 +40,11 @@
     },
     "spegni": {
       "sinonimi": [],
+      "tipo": "transitivo",
+      "preposizioni": []
+    },
+    "arma": {
+      "sinonimi": ["sovraccarica", "innesca"],
       "tipo": "transitivo",
       "preposizioni": []
     }
@@ -78,6 +85,7 @@
         "est": "infermeria",
         "sud": "serra",
         "su": "controllo",
+        "fuori": "airlock",
         "giu": {
           "to": "tecnico",
           "se": "ha_scheda_tecnica",
@@ -182,6 +190,81 @@
           "se": "montacarichi_pronto",
           "bloccata": "Il montacarichi non risponde. Mancano tre cose, e le conosci bene: la corrente al reattore, il codice del pozzo, e la via libera oltre quella figura immobile davanti alla gabbia."
         }
+      },
+      "buia": true
+    },
+
+    "montacarichi": {
+      "nome": "Pozzo — Montacarichi",
+      "desc": "La gabbia scende per quattro chilometri in un tempo che sembra non finire. I led sfilano in alto come stelle che cadono al contrario. La radio gracchia la voce di TALOS, sempre più lontana, sempre più disturbata: «…sconsiglio… non c'è ossigeno… per tornare… conti i respiri…», poi solo il battito, che adesso è dentro il tuo petto. La gabbia si ferma. Le porte si aprono su un calore vivo e su un buio che la lampada fatica a bucare.",
+      "uscite": {
+        "su": "trivella",
+        "giu": "caverna"
+      },
+      "buia": true
+    },
+
+    "caverna": {
+      "nome": "Caverna d'Accesso",
+      "desc": "Non è una grotta. Le pareti sono lisce come ossidiana e curve secondo angoli che l'occhio non riesce a tenere. La trivella ha sfondato qui, lasciando una ferita di roccia frantumata che stona con la perfezione di tutto il resto. A terra, le impronte dei coloni: tutte rivolte verso l'unica apertura, una soglia che il fascio della lampada non riesce a riempire.",
+      "uscite": {
+        "su": "montacarichi",
+        "giu": "soglia"
+      },
+      "buia": true
+    },
+
+    "soglia": {
+      "nome": "Il Labirinto — la Soglia",
+      "desc": "Oltre l'apertura, i corridoi si moltiplicano. Le pareti sono incise: una stessa figura ripetuta all'infinito, un nodo, una spirale, e — quando la lampada la coglie di taglio — qualcosa che somiglia a una testa cornuta china nell'atto di ascoltare. Il battito ti arriva netto, insistente, da nord: ogni fibra del tuo corpo vuole seguirlo. Non stai esplorando un labirinto. Stai venendo condotto al suo centro — a meno che tu non impari ad allontanartene.",
+      "uscite": {
+        "su": "caverna",
+        "sud": "soglia2",
+        "nord": "deviazione",
+        "est": "deviazione",
+        "ovest": "deviazione"
+      },
+      "buia": true
+    },
+
+    "soglia2": {
+      "nome": "Il Labirinto — il Secondo Anello",
+      "desc": "I corridoi si stringono. Qui il richiamo cambia direzione, ma non intenzione: il battito tira da ovest, più insistente di prima, come se qualcosa avesse notato che ti stai avvicinando e non volesse più aspettare che tu ti perda da solo.",
+      "uscite": {
+        "su": "soglia",
+        "est": "soglia3",
+        "nord": "deviazione",
+        "sud": "deviazione",
+        "ovest": "deviazione"
+      },
+      "buia": true
+    },
+
+    "soglia3": {
+      "nome": "Il Labirinto — l'Ultimo Anello",
+      "desc": "Non ci sono più pareti che si ripiegano: solo un unico corridoio rimasto, e il battito che ora sembra salire da sotto i tuoi piedi, da est, così vicino da farti dubitare che tu lo stia ancora sentendo con le orecchie. Un passo verso ovest, lontano da lui, e l'aria stessa sembra cedere.",
+      "uscite": {
+        "su": "soglia2",
+        "ovest": "cuore",
+        "nord": "deviazione",
+        "sud": "deviazione",
+        "est": "deviazione"
+      },
+      "buia": true
+    },
+
+    "deviazione": {
+      "nome": "Un corridoio ripiegato",
+      "desc": "Per un istante il fascio della lampada non trova nulla che riconosca: le pareti si curvano in un modo che l'occhio rifiuta di seguire, e il battito ti riempie il petto come se avessi fatto esattamente ciò che voleva.",
+      "uscite": {},
+      "buia": true
+    },
+
+    "cuore": {
+      "nome": "Il Labirinto — il Cuore",
+      "desc": "Il corridoio si apre in una camera grande come una cattedrale, e al centro c'è Lui. Non lo guardi davvero — gli occhi scivolano via, come da un volto in un sogno — ma ne percepisci la mole: una struttura organica e geometrica insieme, che si solleva e si abbassa, piano, e a ogni movimento il battito ti riempie il cranio. Tutt'intorno, in cerchio, gli equipaggi di Cydonia: in piedi, immobili, rivolti verso il centro, in attesa.",
+      "uscite": {
+        "su": "soglia3"
       },
       "buia": true
     }
@@ -633,6 +716,58 @@
         ],
         "desc": "[via_libera_trivella: Non c'è più nessuno, qui — solo l'eco del battito che sale dal pozzo. | Una figura in tuta, di spalle, dondola piano davanti al montacarichi, a tempo con un suono che senti più nel petto che nelle orecchie. Non si volta, qualunque cosa tu faccia. Finché non ti avvicini abbastanza.]"
       }
+    },
+
+    "bombola_o2_c": {
+      "nome": "bombola d'ossigeno abbandonata",
+      "nomi": ["bombola", "ossigeno", "o2"],
+      "aggettivi": ["abbandonata", "mezza"],
+      "posizione": "caverna",
+      "props": {
+        "prendibile": true,
+        "in_stanza": "Sul margine della ferita di roccia, abbandonata, una bombola d'ossigeno mezza piena. Qualcuno, qui, ha esitato un istante. Poi è entrato lo stesso.",
+        "desc": "Ossigeno residuo, ma sufficiente per un innesto di emergenza. Ultimo punto di rifornimento prima del labirinto."
+      }
+    },
+
+    "campione": {
+      "nome": "campione organico",
+      "nomi": ["campione", "tessuto", "frammento"],
+      "aggettivi": ["organico", "pulsante"],
+      "posizione": "cuore",
+      "props": {
+        "prendibile": true,
+        "desc": "Un frammento minuscolo, staccato da qualcosa che non dovrebbe poter perdere pezzi e restare vivo. Nel palmo chiuso lo senti pulsare, piano, allo stesso ritmo del battito che riempie la camera. Portarlo via è una risposta a una domanda che nessuno a Terra ha ancora osato porre."
+      }
+    },
+
+    "cole": {
+      "nome": "Comandante Idris Cole",
+      "nomi": ["cole", "comandante", "idris"],
+      "aggettivi": [],
+      "posizione": "cuore",
+      "props": {
+        "png": true,
+        "saluto": "Tra gli equipaggi immobili in cerchio, una tuta con i gradi da comandante si volta verso di te. «Sei arrivato», dice Cole, con una voce che è anche un'altra voce. «Manca solo chi porti il messaggio a casa.»",
+        "dialogo": [
+          {
+            "etichetta": "Cosa sei diventato?",
+            "testo": "«Non è un mostro. È una porta. L'abbiamo bussata noi.» Il volto di Cole non si muove come dovrebbe, in sincrono con le parole. «Vieni a vedere chi risponde.»"
+          },
+          {
+            "etichetta": "Cosa devo fare adesso?",
+            "testo": "«Puoi sigillare questa porta per sempre — il reattore, lassù, sa come farlo bruciare tutto. Puoi portare a casa la prova che qui c'è ancora qualcosa che pensa. O puoi restare, come sono rimasto io. Non c'è una risposta giusta. C'è solo quella che riesci a vivere.»"
+          },
+          {
+            "etichetta": "Fai un passo nel cerchio",
+            "testo": "Smetti di avere fretta. Fai un passo nel cerchio. Ti volti verso il centro, come gli altri. E finalmente — che pace — il sogno è lo stesso per tutti.",
+            "una_volta": true,
+            "allora": [
+              {"sconfitta": "ASSORBITO. Sei entrato nel cerchio di tua volontà. Il battito non si ferma. Ora è anche il tuo."}
+            ]
+          }
+        ]
+      }
     }
   },
 
@@ -891,6 +1026,242 @@
       ],
       "allora": [
         {"set_flag": "montacarichi_pronto", "valore": true}
+      ],
+      "altrimenti": []
+    },
+
+    {
+      "id": "discesa_pozzo_avvia_ossigeno",
+      "quando": {"evento": "entra", "stanza": "montacarichi"},
+      "se": [],
+      "allora": [
+        {"set_flag": "sceso_pozzo", "valore": true},
+        {"set_flag": "in_superficie", "valore": false},
+        {"avvia_timer": "t_ossigeno", "turni": 25},
+        {"stampa": "L'aria della tuta passa all'autonomia interna. Da qui in poi, conta i respiri."}
+      ],
+      "altrimenti": []
+    },
+
+    {
+      "id": "risalita_trivella_ferma_ossigeno",
+      "quando": {"evento": "entra", "stanza": "trivella"},
+      "se": [{"flag": "sceso_pozzo", "uguale": true}],
+      "allora": [
+        {"ferma_timer": "t_ossigeno"},
+        {"set_flag": "in_superficie", "valore": true},
+        {"stampa": "Il montacarichi si ferma. Sei tornato in superficie: l'aria della base ti avvolge di nuovo. Sei al sicuro, per ora."}
+      ],
+      "altrimenti": []
+    },
+
+    {
+      "id": "labirinto_deviazione",
+      "quando": {"evento": "entra", "stanza": "deviazione"},
+      "se": [],
+      "allora": [
+        {"incrementa": "risonanza", "di": 1},
+        {"teleporta": "soglia"},
+        {"stampa": "I corridoi si ripiegano su se stessi. Ti ritrovi esattamente dove eri, ma il battito sembra più vicino, più impaziente. Forse dovresti allontanarti da lui, non seguirlo."}
+      ],
+      "altrimenti": []
+    },
+
+    {
+      "id": "cuore_avvia_risonanza",
+      "quando": {"evento": "entra", "stanza": "cuore"},
+      "se": [{"flag": "ha_smorzatore", "uguale": true}],
+      "allora": [
+        {"avvia_timer": "t_risonanza", "turni": 16},
+        {"stampa": "Gli auricolari attutiscono il peggio. Hai tempo — non molto, ma abbastanza per scegliere."}
+      ],
+      "altrimenti": [
+        {"avvia_timer": "t_risonanza", "turni": 8},
+        {"stampa": "Il battito ti riempie il cranio senza filtro. Non hai molto tempo prima di smettere di volerne uscire."}
+      ]
+    },
+
+    {
+      "id": "labirinto_ritiro_sicuro",
+      "quando": {"evento": "entra", "stanza": "soglia3"},
+      "se": [],
+      "allora": [
+        {"ferma_timer": "t_risonanza"}
+      ],
+      "altrimenti": []
+    },
+
+    {
+      "id": "prendi_campione",
+      "quando": {"verbo": "prendi", "oggetto": "campione"},
+      "se": [{"non": {"oggetto_in": ["campione", "inventario"]}}],
+      "allora": [
+        {"sposta_oggetto": "campione", "a": "inventario"},
+        {"punti": 20},
+        {"stampa": "Chiudi le dita attorno al frammento. Pulsa, piano, nel palmo — allo stesso ritmo del battito. Qualunque cosa sia, adesso è anche una tua responsabilità."}
+      ],
+      "altrimenti": [
+        {"stampa": "Lo hai già preso."}
+      ]
+    },
+
+    {
+      "id": "arma_reattore",
+      "quando": {"verbo": "arma", "oggetto": "alloggiamento"},
+      "se": [
+        {"stanza_corrente": "reattore"},
+        {"flag": "potenza", "uguale": true},
+        {"flag": "reattore_armato", "uguale": false}
+      ],
+      "allora": [
+        {"set_flag": "reattore_armato", "valore": true},
+        {"avvia_timer": "t_fusione", "turni": 12},
+        {"punti": 20},
+        {"stampa": "Forzi il pannello in sovraccarico. Un allarme sale di tono, poi si stabilizza in un conto alla rovescia silenzioso. Il reattore, e con esso tutto ciò che sta sotto, ha adesso un tempo. Non c'è modo di fermarlo."}
+      ],
+      "altrimenti": [
+        {"stampa": "[reattore_armato: Il reattore è già armato: il conto alla rovescia è cominciato. | Il reattore è ancora spento: prima ripristina la potenza inserendo il giunto.]"}
+      ]
+    },
+
+    {
+      "id": "usa_console_trasmissione",
+      "quando": {"verbo": "usa", "oggetto": "console_tx"},
+      "se": [
+        {"stanza_corrente": "controllo"},
+        {"flag": "talos_online", "uguale": true}
+      ],
+      "allora": [
+        {"vittoria": "CONTATTO. Completi la trasmissione in coda: destinatario Terra. Ripartite \"con una risposta\". L'ultima riga, mentre il pianeta cresce nell'oblò, è il battito — debolissimo — che ora senti anche nel tuo petto. Hanno risposto. Stanno arrivando. Non vedono l'ora di conoscervi."}
+      ],
+      "altrimenti": [
+        {"stampa": "La console è spenta. Serve corrente al reattore prima che qualsiasi messaggio possa partire."}
+      ]
+    },
+
+    {
+      "id": "usa_bombola_o2_a_sotto",
+      "quando": {"verbo": "usa", "oggetto": "bombola_o2_a"},
+      "se": [
+        {"oggetto_in": ["bombola_o2_a", "inventario"]},
+        {"flag": "in_superficie", "uguale": false}
+      ],
+      "allora": [
+        {"scarta_oggetto": "bombola_o2_a"},
+        {"avvia_timer": "t_ossigeno", "turni": 25},
+        {"punti": 5},
+        {"stampa": "Innesti la bombola di riserva. L'ossigeno torna al massimo."}
+      ],
+      "altrimenti": [
+        {"stampa": "[in_superficie: Non ti serve, qui l'aria è respirabile. | Prima devi avere la bombola con te.]"}
+      ]
+    },
+
+    {
+      "id": "usa_bombola_o2_b_sotto",
+      "quando": {"verbo": "usa", "oggetto": "bombola_o2_b"},
+      "se": [
+        {"oggetto_in": ["bombola_o2_b", "inventario"]},
+        {"flag": "in_superficie", "uguale": false}
+      ],
+      "allora": [
+        {"scarta_oggetto": "bombola_o2_b"},
+        {"avvia_timer": "t_ossigeno", "turni": 25},
+        {"punti": 5},
+        {"stampa": "Innesti la bombola di riserva. L'ossigeno torna al massimo."}
+      ],
+      "altrimenti": [
+        {"stampa": "[in_superficie: Non ti serve, qui l'aria è respirabile. | Prima devi avere la bombola con te.]"}
+      ]
+    },
+
+    {
+      "id": "usa_bombola_o2_c_sotto",
+      "quando": {"verbo": "usa", "oggetto": "bombola_o2_c"},
+      "se": [
+        {"oggetto_in": ["bombola_o2_c", "inventario"]},
+        {"flag": "in_superficie", "uguale": false}
+      ],
+      "allora": [
+        {"scarta_oggetto": "bombola_o2_c"},
+        {"avvia_timer": "t_ossigeno", "turni": 25},
+        {"punti": 5},
+        {"stampa": "Innesti la bombola abbandonata. L'ossigeno torna al massimo."}
+      ],
+      "altrimenti": [
+        {"stampa": "[in_superficie: Non ti serve, qui l'aria è respirabile. | Prima devi avere la bombola con te.]"}
+      ]
+    },
+
+    {
+      "id": "finale_contatto_campione",
+      "quando": {"evento": "entra", "stanza": "discesa"},
+      "se": [
+        {"flag": "sceso_pozzo", "uguale": true},
+        {"flag": "reattore_armato", "uguale": false},
+        {"oggetto_in": ["campione", "inventario"]}
+      ],
+      "allora": [
+        {"vittoria": "CONTATTO. Risali a bordo del modulo con il campione stretto in una mano. Mentre Cydonia si allontana sotto di te, senti ancora il battito — debolissimo, ma presente, nel tuo stesso petto. Hai portato a casa una risposta. Non sei sicuro che fosse quella giusta da portare."}
+      ],
+      "altrimenti": []
+    },
+
+    {
+      "id": "finale_fuga_insieme",
+      "quando": {"evento": "entra", "stanza": "discesa"},
+      "se": [
+        {"flag": "sceso_pozzo", "uguale": true},
+        {"flag": "reattore_armato", "uguale": false},
+        {"flag": "fiducia_mara", "maggiore_uguale": 3}
+      ],
+      "allora": [
+        {"vittoria": "FUGA INSIEME. Mara ti aspetta già a bordo del modulo, gli auricolari ancora al collo. Decollate senza guardare indietro. Il Cuore resta laggiù, dormiente ma non sigillato. Due sopravvissuti, e un segreto che continua a battere, quattro chilometri sotto i vostri piedi."}
+      ],
+      "altrimenti": []
+    },
+
+    {
+      "id": "finale_fuga_sola",
+      "quando": {"evento": "entra", "stanza": "discesa"},
+      "se": [
+        {"flag": "sceso_pozzo", "uguale": true},
+        {"flag": "reattore_armato", "uguale": false}
+      ],
+      "allora": [
+        {"vittoria": "FUGA. Risali a bordo del modulo da solo. Cydonia si allontana sotto di te, muta come l'hai trovata. Il Cuore resta laggiù, dormiente. Non hai sigillato nulla, non hai portato nulla a casa — solo la certezza di ciò che hai visto, e la domanda che nessuno a Terra saprà porre come si deve."}
+      ],
+      "altrimenti": []
+    },
+
+    {
+      "id": "finale_fusione_scaduta",
+      "quando": {"evento": "timer", "timer": "t_fusione"},
+      "se": [{"flag": "in_superficie", "uguale": true}],
+      "allora": [
+        {"vittoria": "SIGILLO — FUGA SUL FILO. Il reattore collassa nell'istante in cui il modulo si stacca dalla piattaforma. Sotto di te, Cydonia diventa una stella che si spegne. Vittoria amara: hai sigillato ciò che non avresti dovuto svegliare, e porti a casa solo domande."}
+      ],
+      "altrimenti": [
+        {"vittoria": "SIGILLO — SACRIFICIO. Il sovraccarico parte mentre sei ancora sotto, e resti a assicurarti che non si fermi. La base implode sul pozzo. L'ultimo suono non è il battito: è il silenzio. Terra è salva. Tu no."}
+      ]
+    },
+
+    {
+      "id": "finale_risonanza_scaduta",
+      "quando": {"evento": "timer", "timer": "t_risonanza"},
+      "se": [],
+      "allora": [
+        {"sconfitta": "ASSORBITO. Smetti di avere fretta. Fai un passo nel cerchio. Ti volti verso il centro, come gli altri. E finalmente — che pace — il sogno è lo stesso per tutti."}
+      ],
+      "altrimenti": []
+    },
+
+    {
+      "id": "finale_ossigeno_scaduto",
+      "quando": {"evento": "timer", "timer": "t_ossigeno"},
+      "se": [],
+      "allora": [
+        {"sconfitta": "SOFFOCAMENTO. L'ultimo respiro sa di metallo. Il battito non si ferma. Continua anche dopo di te."}
       ],
       "altrimenti": []
     }
