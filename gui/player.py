@@ -281,15 +281,17 @@ class Player(QMainWindow):
             for p in parti:
                 acc += len(p); self._anim_cuts.append(acc)
             self._anim_step = 0
+            self._disegna_statico()
             self._anim.start()
-        self._ridisegna()
+        else:
+            self._ridisegna()
 
     def _anima_passo(self):
         self._anim_step += 1
         if self._anim_step >= len(self._anim_cuts):
             self._anim_finisci()
         else:
-            self._ridisegna()
+            self._aggiorna_ultima_voce()
 
     def _anim_finisci(self):
         self._anim.stop()
@@ -297,7 +299,24 @@ class Player(QMainWindow):
         self._anim_step = 0
         self._ridisegna()
 
+    def _blocco_html(self, genere: str, testo: str, p: dict) -> str:
+        corpo = html.escape(testo).replace("\n", "<br>")
+        stile = (f"font-family:{tema.FONT_TESTO}; font-size:16px; "
+                 f"line-height:165%; ")
+        if genere == "comando":
+            return (f'<div style="{stile}color:{p["muto"]}; '
+                    f'margin:2px 0 14px 0;"><i>{corpo}</i></div>')
+        return (f'<div style="{stile}color:{p["testo"]}; '
+                f'margin:0 0 16px 0;">{corpo}</div>')
+
+    def _scorri_in_fondo(self):
+        barra = self.vista.verticalScrollBar()
+        barra.setValue(barra.maximum())
+
     def _ridisegna(self):
+        """Ridisegna l'intera cronologia. Costa proporzionalmente alla sua
+        lunghezza: usato solo per eventi rari (nuovo messaggio non animato,
+        cambio tema, fine animazione), mai per-fotogramma."""
         p = tema.PALETTE[self.tema]
         ultimo = len(self._voci) - 1
         blocchi = []
@@ -305,18 +324,35 @@ class Player(QMainWindow):
             if (i == ultimo and self._anim_cuts
                     and self._anim_step < len(self._anim_cuts)):
                 testo = testo[:self._anim_cuts[self._anim_step]]
-            corpo = html.escape(testo).replace("\n", "<br>")
-            if genere == "comando":
-                blocchi.append(f'<div style="color:{p["muto"]}; '
-                               f'margin:2px 0 14px 0;"><i>{corpo}</i></div>')
-            else:
-                blocchi.append(f'<div style="color:{p["testo"]}; '
-                               f'margin:0 0 16px 0;">{corpo}</div>')
-        self.vista.setHtml(
-            f'<div style="font-family:{tema.FONT_TESTO}; font-size:16px; '
-            f'line-height:165%;">' + "".join(blocchi) + "</div>")
-        barra = self.vista.verticalScrollBar()
-        barra.setValue(barra.maximum())
+            blocchi.append(self._blocco_html(genere, testo, p))
+        self.vista.setHtml("".join(blocchi))
+        self._scorri_in_fondo()
+
+    def _disegna_statico(self):
+        """Ridisegna tutta la cronologia tranne l'ultima voce (quella che sta
+        per animarsi) e memorizza il punto in cui inizia, cosicché i singoli
+        fotogrammi dell'animazione tocchino solo quella voce e non l'intero
+        documento (altrimenti il ridisegno rallenta con la partita e sotto
+        Linux produce un fastidioso farfallio)."""
+        p = tema.PALETTE[self.tema]
+        blocchi = [self._blocco_html(g, t, p) for g, t in self._voci[:-1]]
+        self.vista.setHtml("".join(blocchi))
+        cursore = self.vista.textCursor()
+        cursore.movePosition(cursore.MoveOperation.End)
+        self._anim_anchor = cursore.position()
+        self._aggiorna_ultima_voce()
+
+    def _aggiorna_ultima_voce(self):
+        p = tema.PALETTE[self.tema]
+        genere, testo = self._voci[-1]
+        if self._anim_cuts and self._anim_step < len(self._anim_cuts):
+            testo = testo[:self._anim_cuts[self._anim_step]]
+        cursore = self.vista.textCursor()
+        cursore.setPosition(self._anim_anchor)
+        cursore.movePosition(cursore.MoveOperation.End, cursore.MoveMode.KeepAnchor)
+        cursore.removeSelectedText()
+        cursore.insertHtml(self._blocco_html(genere, testo, p))
+        self._scorri_in_fondo()
 
     def _aggiorna_stato(self):
         if self.mondo is None:

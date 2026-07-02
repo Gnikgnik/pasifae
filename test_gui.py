@@ -220,6 +220,32 @@ def test_player_percorso_diretto(qtbot):
     assert p.motore is not None and p.input.isEnabled()
 
 
+def test_animazione_non_riscrive_tutta_la_cronologia(qtbot):
+    """L'animazione "telescrivente" avanza ogni 22ms: se ogni fotogramma
+    riscrive con setHtml() l'intera cronologia (che cresce nel tempo), il
+    ridisegno rallenta con la partita e produce il farfallio visto su Linux.
+    Un fotogramma deve toccare solo la voce in corso di animazione."""
+    p = Player(str(AVV / "faro.json"))
+    qtbot.addWidget(p)
+    for i in range(30):
+        p._voci.append(("risposta", f"voce numero {i} già mostrata per intero"))
+
+    chiamate = []
+    originale = p.vista.setHtml
+    p.vista.setHtml = lambda h: (chiamate.append(h), originale(h))[-1]
+
+    p._mostra("una risposta con diverse parole da animare piano piano", "risposta")
+    passi = len(p._anim_cuts)
+    assert passi > 3
+    for _ in range(passi):
+        p._anima_passo()
+
+    # il numero di setHtml() non deve crescere con i fotogrammi dell'animazione
+    assert len(chiamate) <= 3, len(chiamate)
+    assert p.vista.toPlainText().splitlines()[-1] == \
+        "una risposta con diverse parole da animare piano piano"
+
+
 def test_compila_nome_sicuro():
     from gui import compila
     assert compila.nome_sicuro("La Caverna! #1") == "La_Caverna_1"
