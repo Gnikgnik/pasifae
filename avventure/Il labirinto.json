@@ -1,0 +1,236 @@
+{
+  "meta": {
+    "titolo": "Il labirinto delle illusioni",
+    "autore": "Vito Antonio Raimondi",
+    "versione": "0.1.0",
+    "stanza_iniziale": "biblioteca",
+    "intro": "Ti risvegli lentamente mentre un senso di disorientamento ti pervade. Pian piano affiora alla mente il tuo nome, ma proprio non ricordi come sei arrivato qui. Cercando di superare il senso di nausea che ti pervade, lentamente ti metti in piedi, mentre fitte dolorose attraversano la tua testa."
+  },
+  "flags": {
+    "portale_aperto": false,
+    "scritta_visibile": false,
+    "tappeto_esplorabile": false
+  },
+  "verbi": {},
+  "preposizioni": {},
+  "stanze": {
+    "biblioteca": {
+      "nome": "Biblioteca sommersa di Astrath",
+      "desc": "Ti trovi in un grande salone, illuminato da torce a muro che producono ombre danzanti tutto intorno a te. Alti scaffali di legno antico corrono lungo le pareti. Migliaia di libri prendono posto sugli scaffali. Sul lato stretto a sud del salone c'è una grande libreria di un legno più chiaro, dove ci sono dei vuoti tra i libri. Sulla parete nord invece c'è un grande portale che sembra fatto di avorio. Al centro della stanza c'è una statua che rappresenta un astronomo cieco che tiene in mano un astrolabio di ottone. Di fianco alla statua c'è un grande tavolo di quercia, consumato dal tempo, sul quale sono sparpagliati libri, carte, un calamaio di ottone antico e una lampada ad olio accesa.\nLa scrivania giace su un grande e polveroso tappeto indiano, dalla fattura preziosa ma talmente consunto che i colori originiali si scorgono a malapena. \nIn un angolo della stanza c'è un piccolo automa di ferro battuto, immobile. Ha una fessura sulla schiena a forma di quadrifoglio e stringe tra le mani uno Specchio Concavo.\nSopra la statua c'è un lucernario schermato da tre vetrate colorate mobili (Rossa, Blu, Gialla) azionabili da tre leve sul muro.\n",
+      "uscite": {
+        "giu": {
+          "to": "catacombe",
+          "se": "portale_aperto",
+          "bloccata": "La pesante porta è bloccata"
+        }
+      },
+      "buia": false
+    },
+    "catacombe": {
+      "nome": "Catacombe del tempo",
+      "desc": "Sei entrato finalmente nelle catacombe del tempo",
+      "uscite": {
+        "sud": "biblioteca"
+      },
+      "buia": false
+    }
+  },
+  "oggetti": {
+    "scaffali": {
+      "nome": "Scaffali antichi",
+      "nomi": [
+        "scaffali",
+        "scaffale",
+        "libreria",
+        "librerie"
+      ],
+      "aggettivi": [],
+      "posizione": "biblioteca",
+      "props": {
+        "desc": "Affascinato, guardi questa antica libreria. Contiene libri antichi e apparentemente prezioni. Alcuni di questi tomi, sono scritti a mano e pieni di miniature. Gli argomenti sono i più disparati: botanica, astrologia, astronomia, alchimia, zoologia. Non puoi non chiederti a chi appartenga tutto questo.",
+        "prendibile": false,
+        "scenario": true,
+        "contenitore": false,
+        "aperto": false,
+        "indossabile": false,
+        "png": false,
+        "combattente": false
+      }
+    },
+    "libreria": {
+      "nome": "Libreria di legno chiaro",
+      "nomi": [
+        "libreria"
+      ],
+      "aggettivi": [
+        "legno chiaro"
+      ],
+      "posizione": "biblioteca",
+      "props": {
+        "desc": "E' una libreria diversa dalle altre. Il legno è chiaro e ci sono tre spazi tra i libri, molto evidenti.",
+        "prendibile": false,
+        "scenario": false,
+        "contenitore": true,
+        "aperto": true,
+        "indossabile": false,
+        "png": false,
+        "combattente": false
+      }
+    },
+    "calamaio": {
+      "nome": "Calamaio di ottone",
+      "nomi": [
+        "calamaio"
+      ],
+      "aggettivi": [],
+      "posizione": "scrivania",
+      "props": {
+        "desc": "Un vecchio calamaio di ottone, aperto.",
+        "prendibile": false,
+        "scenario": true,
+        "contenitore": true,
+        "aperto": true,
+        "indossabile": false,
+        "png": false,
+        "combattente": false
+      }
+    },
+    "lente": {
+      "nome": "Lente di cristallo",
+      "nomi": [
+        "lente"
+      ],
+      "aggettivi": [],
+      "posizione": "calamaio",
+      "props": {
+        "desc": "Una piccola lente di cristallo, di squisita fattura. Può essere utile per scorgere i dettagli.",
+        "prendibile": true,
+        "scenario": false,
+        "contenitore": false,
+        "aperto": false,
+        "indossabile": false,
+        "png": false,
+        "combattente": false
+      }
+    },
+    "scrivania": {
+      "nome": "Grande scrivania di quercia",
+      "nomi": [
+        "scrivania"
+      ],
+      "aggettivi": [],
+      "posizione": "biblioteca",
+      "props": {
+        "desc": "E' una grande scrivania di pesante quercia, consumata dal tempo.",
+        "prendibile": false,
+        "scenario": true,
+        "contenitore": true,
+        "aperto": true,
+        "indossabile": false,
+        "png": false,
+        "combattente": false
+      }
+    },
+    "astronomo": {
+      "nome": "Statua dell'astronomo cieco",
+      "nomi": [
+        "astronomo",
+        "statua"
+      ],
+      "aggettivi": [],
+      "posizione": "biblioteca",
+      "props": {
+        "desc": "La statua rappresenta un'astronomo che regge in una mano un astrolabio d'ottone ricoperto di ossidazione. Sulla base della staua noti un segno.",
+        "prendibile": false,
+        "scenario": true,
+        "contenitore": true,
+        "aperto": true,
+        "indossabile": false,
+        "png": false,
+        "combattente": false
+      }
+    },
+    "segno": {
+      "nome": "Segno alla base della statua",
+      "nomi": [
+        "segno"
+      ],
+      "aggettivi": [],
+      "posizione": "astronomo",
+      "props": {
+        "desc": "[scritta_visibile: La conoscenza illumina il cammino, ma solo l'ordine rivela la verità. Cerca il sapere calpestato. | E' una scritta ma i caratteri sono così piccoli che è illeggibile.]",
+        "prendibile": false,
+        "scenario": true,
+        "contenitore": false,
+        "aperto": false,
+        "indossabile": false,
+        "png": false,
+        "combattente": false
+      }
+    }
+  },
+  "regole": [
+    {
+      "id": "leggi_scritta",
+      "quando": {
+        "verbo": "usa",
+        "oggetto": "lente",
+        "prep": "su",
+        "oggetto_indiretto": "segno"
+      },
+      "se": [
+        {
+          "flag": "scritta_visibile",
+          "uguale": false
+        },
+        {
+          "oggetto_in": [
+            "lente",
+            "inventario"
+          ]
+        }
+      ],
+      "allora": [
+        {
+          "set_flag": "scritta_visibile",
+          "valore": true
+        },
+        {
+          "stampa": "Adesso la scritta è leggibile!"
+        }
+      ],
+      "altrimenti": []
+    },
+    {
+      "id": "esplorazione_tappeto",
+      "quando": {
+        "verbo": "esamina",
+        "oggetto": "segno"
+      },
+      "se": [
+        {
+          "flag": "scritta_visibile",
+          "uguale": true
+        },
+        {
+          "flag": "tappeto_esplorabile",
+          "uguale": false
+        }
+      ],
+      "allora": [
+        {
+          "set_flag": "tappeto_esplorabile",
+          "valore": true
+        },
+        {
+          "stampa": "[scritta_visibile: La conoscenza illumina il cammino, ma solo l'ordine rivela la verità. Cerca il sapere calpestato. | E' una scritta ma i caratteri sono così piccoli che è illeggibile.]"
+        }
+      ],
+      "altrimenti": [
+        {
+          "stampa": "[scritta_visibile: La conoscenza illumina il cammino, ma solo l'ordine rivela la verità. Cerca il sapere calpestato. | E' una scritta ma i caratteri sono così piccoli che è illeggibile.]"
+        }
+      ]
+    }
+  ]
+}
