@@ -48,6 +48,25 @@ def test_contenitore_metti_dentro():
     assert "chiuso" in mot.esegui("metti mantello nel baule").lower()
 
 
+def test_contenitore_annidato_in_scope():
+    # scatola aperta dentro un baule aperto: l'anello dentro la scatola deve
+    # essere visibile/prendibile anche se annidato a due livelli.
+    m = Mondo(meta={"titolo": "Minimal", "stanza_iniziale": "qui"})
+    m.stanze["qui"] = Stanza(id="qui", nome="Qui", desc="Una stanza spoglia.")
+    m.oggetti["baule"] = Oggetto(id="baule", nome="baule", nomi=["baule"],
+                                 posizione="qui",
+                                 props={"contenitore": True, "aperto": True})
+    m.oggetti["scatola"] = Oggetto(id="scatola", nome="scatola", nomi=["scatola"],
+                                   posizione="baule",
+                                   props={"contenitore": True, "aperto": True})
+    m.oggetti["anello"] = Oggetto(id="anello", nome="anello", nomi=["anello"],
+                                  posizione="scatola", props={"prendibile": True})
+    mot = Motore(m)
+    mot.avvia()
+    assert "Prendi" in mot.esegui("prendi anello")
+    assert m.oggetti["anello"].posizione == "inventario"
+
+
 def test_indossabile():
     m, mot = _al_tesoro()
     mot.esegui("apri baule")

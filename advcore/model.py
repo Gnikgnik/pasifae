@@ -89,13 +89,17 @@ class Mondo:
 
     def in_scope(self) -> list[Oggetto]:
         """Oggetti che il giocatore puo' nominare: stanza corrente + inventario
-        + contenuto dei contenitori aperti in scope."""
+        + contenuto dei contenitori aperti in scope (anche annidati)."""
         visti = self.oggetti_in(self.stanza_corrente) + self.inventario()
-        # contenuto dei contenitori aperti gia' in scope
-        aperti = [o for o in visti
-                  if o.props.get("contenitore") and o.props.get("aperto")]
-        for cont in aperti:
-            visti = visti + self.oggetti_in(cont.id)
+        # contenuto dei contenitori aperti gia' in scope, ricorsivamente:
+        # un contenitore trovato dentro un altro va espanso a sua volta.
+        da_espandere = list(visti)
+        while da_espandere:
+            o = da_espandere.pop()
+            if o.props.get("contenitore") and o.props.get("aperto"):
+                contenuto = self.oggetti_in(o.id)
+                visti = visti + contenuto
+                da_espandere.extend(contenuto)
         return visti
 
     def luce_disponibile(self) -> bool:
