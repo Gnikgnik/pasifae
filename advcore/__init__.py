@@ -5,7 +5,7 @@ Editor e player importano da qui. Non contiene I/O di interfaccia: il motore
 prende stringhe e restituisce stringhe.
 """
 
-__version__ = "1.11.1"
+__version__ = "1.12.0"
 
 from .model import Mondo, Stanza, Oggetto, Verbo, Regola, INVENTARIO
 from .storage import carica_mondo, salva_mondo

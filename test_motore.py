@@ -117,6 +117,63 @@ def test_condizione_mosse_min():
     assert "ORA" in mot.esegui("guarda")         # mossa 3
 
 
+def _mondo_baule():
+    """Baule chiuso a chiave: la regola dell'autore decide se aprirlo."""
+    from advcore import Mondo, Stanza, Oggetto, Regola
+    m = Mondo(meta={"stanza_iniziale": "cripta"})
+    m.stanze["cripta"] = Stanza(id="cripta", nome="Cripta", desc="Una cripta.")
+    m.oggetti["baule"] = Oggetto(
+        id="baule", nome="baule", nomi=["baule"], posizione="cripta",
+        props={"scenario": True, "contenitore": True, "aperto": False})
+    m.oggetti["chiave"] = Oggetto(
+        id="chiave", nome="chiave", nomi=["chiave"], posizione="cripta",
+        props={"prendibile": True})
+    m.oggetti["medaglione"] = Oggetto(
+        id="medaglione", nome="medaglione", nomi=["medaglione"],
+        posizione="baule", props={"prendibile": True})
+    m.regole = [
+        Regola(id="serratura", quando={"verbo": "apri", "oggetto": "baule"},
+               se=[{"oggetto_in": ["chiave", "inventario"]}],
+               allora=[{"apri_oggetto": "baule"},
+                       {"stampa": "La serratura scatta e il baule si apre."}],
+               altrimenti=[{"stampa": "È chiuso a chiave."}]),
+        Regola(id="coperchio", quando={"verbo": "chiudi", "oggetto": "baule"},
+               allora=[{"chiudi_oggetto": "baule"},
+                       {"stampa": "Richiudi il coperchio."}]),
+    ]
+    return m
+
+
+def test_apri_oggetto_condizionato():
+    mot = Motore(_mondo_baule())
+    mot.avvia()
+    # senza chiave: la regola rifiuta e il baule resta chiuso
+    assert "chiuso a chiave" in mot.esegui("apri baule")
+    assert mot.mondo.oggetti["baule"].props.get("aperto") is False
+    assert "Non vedo" in mot.esegui("prendi medaglione")   # contenuto fuori scope
+    # con la chiave: l'effetto apri_oggetto apre davvero
+    mot.esegui("prendi chiave")
+    assert "si apre" in mot.esegui("apri baule")
+    assert mot.mondo.oggetti["baule"].props.get("aperto") is True
+    assert "medaglione" in mot.esegui("prendi medaglione")  # ora in scope
+
+
+def test_chiudi_oggetto_e_casi_limite():
+    from advcore.rules import esegui_effetti
+    mot = Motore(_mondo_baule())
+    mot.avvia()
+    mot.esegui("prendi chiave")
+    mot.esegui("apri baule")
+    assert "Richiudi" in mot.esegui("chiudi baule")
+    assert mot.mondo.oggetti["baule"].props.get("aperto") is False
+    # su un non-contenitore o su un id inesistente l'effetto non fa nulla
+    out: list[str] = []
+    esegui_effetti([{"apri_oggetto": "chiave"},
+                    {"apri_oggetto": "fantasma"}], mot.mondo, out)
+    assert "aperto" not in mot.mondo.oggetti["chiave"].props
+    assert out == []
+
+
 def _mondo_combat():
     from advcore import Mondo, Stanza, Oggetto
     m = Mondo(meta={"stanza_iniziale": "a"})

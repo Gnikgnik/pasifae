@@ -225,6 +225,7 @@ motore condividono lo stesso vocabolario).
 | `{stampa}` | mostra un messaggio (con testo dinamico) |
 | `{sposta_oggetto, a}` | sposta un oggetto in un luogo |
 | `{scarta_oggetto[, stampa]}` | toglie un oggetto dal gioco |
+| `{apri_oggetto}` / `{chiudi_oggetto}` | apre/chiude un contenitore (per aperture condizionate: la regola su `apri` scavalca il verbo predefinito) |
 | `{teleporta}` | sposta il giocatore in un'altra stanza |
 | `{vittoria}` / `{sconfitta}` | termina la partita |
 | `{stato}` / `{avanza_stato}` | imposta/avanza il livello di conversazione |

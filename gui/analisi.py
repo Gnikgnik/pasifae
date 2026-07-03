@@ -166,6 +166,10 @@ def _riferimenti(v: dict):
             out.append(("luogo", v["a"]))
     if "scarta_oggetto" in v:
         out.append(("oggetto", v["scarta_oggetto"]))
+    if "apri_oggetto" in v:
+        out.append(("oggetto", v["apri_oggetto"]))
+    if "chiudi_oggetto" in v:
+        out.append(("oggetto", v["chiudi_oggetto"]))
     if "teleporta" in v:
         out.append(("stanza", v["teleporta"]))
     if "inizia_scontro" in v:

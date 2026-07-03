@@ -149,7 +149,8 @@ class DialogoVoce(QDialog):
         if kind == "valore":
             cb = QComboBox(); cb.setEditable(True); cb.addItems(["vero", "falso"])
             return cb
-        if kind in ("flag", "luogo", "timer", "oggetto", "stanza", "png", "verbo"):
+        if kind in ("flag", "luogo", "timer", "oggetto", "stanza", "png",
+                    "verbo", "contenitore"):
             return combo_cerca(self.opz[kind])
         if kind == "intero":
             s = QSpinBox(); s.setRange(-9999, 9999); return s

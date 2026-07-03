@@ -25,6 +25,16 @@ def test_assembla_effetti():
         {"sposta_oggetto": "k", "a": "stanza"}
 
 
+def test_apri_chiudi_contenitore():
+    # assemblaggio, inverso (per la modifica) e riassunto leggibile
+    assert R.ASSEMBLA["apri_oggetto"]({"oggetto": "baule"}) == {"apri_oggetto": "baule"}
+    assert R.ASSEMBLA["chiudi_oggetto"]({"oggetto": "baule"}) == {"chiudi_oggetto": "baule"}
+    assert R.da_dict({"apri_oggetto": "baule"}) == ("apri_oggetto", {"oggetto": "baule"})
+    assert R.da_dict({"chiudi_oggetto": "baule"}) == ("chiudi_oggetto", {"oggetto": "baule"})
+    assert "baule" in R.riassunto_effetto({"apri_oggetto": "baule"})
+    assert "chiude" in R.riassunto_effetto({"chiudi_oggetto": "baule"})
+
+
 def test_val_da_testo():
     assert R.val_da_testo("vero") is True
     assert R.val_da_testo("falso") is False

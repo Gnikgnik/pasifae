@@ -26,6 +26,8 @@ Vocabolario degli EFFETTI (campi "allora"/"altrimenti"):
   {"punti": n}                            aggiunge n al punteggio
   {"sposta_oggetto": id, "a": dove}       dove: "inventario" | id stanza/contenitore
   {"scarta_oggetto": id}                  toglie l'oggetto dal gioco (scarico/rovinato)
+  {"apri_oggetto": id}                    apre un contenitore (props["aperto"] = True)
+  {"chiudi_oggetto": id}                  chiude un contenitore (props["aperto"] = False)
   {"stampa": testo}
   {"teleporta": id_stanza}
   {"vittoria": testo} / {"sconfitta": testo}
@@ -122,6 +124,12 @@ def _esegui_uno(e: dict, mondo: Mondo, out: list[str]) -> None:
         if ogg is not None:
             dest = e["a"]
             ogg.posizione = INVENTARIO if dest == "inventario" else dest
+    elif "apri_oggetto" in e or "chiudi_oggetto" in e:
+        # solo sui contenitori: apre/chiude commutando props["aperto"]
+        oid = e.get("apri_oggetto") or e.get("chiudi_oggetto")
+        ogg = mondo.oggetti.get(oid)
+        if ogg is not None and ogg.props.get("contenitore"):
+            ogg.props["aperto"] = "apri_oggetto" in e
     elif "scarta_oggetto" in e:
         ogg = mondo.oggetti.get(e["scarta_oggetto"])
         if ogg is not None:

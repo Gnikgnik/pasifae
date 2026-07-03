@@ -35,6 +35,8 @@ TIPI_EFFETTO = [
     ("assegna punti", "punti"),
     ("sposta oggetto", "sposta_oggetto"),
     ("scarta oggetto (scarico/rovinato)", "scarta_oggetto"),
+    ("apri contenitore", "apri_oggetto"),
+    ("chiudi contenitore", "chiudi_oggetto"),
     ("stampa testo", "stampa"),
     ("teleporta giocatore", "teleporta"),
     ("vittoria", "vittoria"),
@@ -65,6 +67,8 @@ CAMPI = {
     "sposta_oggetto": [("oggetto", "oggetto", "oggetto"), ("a", "verso", "luogo")],
     "scarta_oggetto": [("oggetto", "oggetto", "oggetto"),
                        ("messaggio", "messaggio (facolt.)", "testo_lungo")],
+    "apri_oggetto": [("oggetto", "contenitore", "contenitore")],
+    "chiudi_oggetto": [("oggetto", "contenitore", "contenitore")],
     "stampa": [("testo", "testo", "testo_lungo")],
     "teleporta": [("stanza", "verso la stanza", "stanza")],
     "vittoria": [("testo", "messaggio", "testo_lungo")],
@@ -94,6 +98,8 @@ ASSEMBLA = {
     "scarta_oggetto": lambda v: ({"scarta_oggetto": v["oggetto"]}
                                  | ({"stampa": v["messaggio"].strip()}
                                     if v.get("messaggio", "").strip() else {})),
+    "apri_oggetto": lambda v: {"apri_oggetto": v["oggetto"]},
+    "chiudi_oggetto": lambda v: {"chiudi_oggetto": v["oggetto"]},
     "stampa": lambda v: {"stampa": v["testo"]},
     "teleporta": lambda v: {"teleporta": v["stanza"]},
     "vittoria": lambda v: {"vittoria": v["testo"]},
@@ -203,6 +209,10 @@ def da_dict(voce: dict):
         return "sposta_oggetto", {"oggetto": e["sposta_oggetto"], "a": e.get("a")}
     if "scarta_oggetto" in e:
         return "scarta_oggetto", {"oggetto": e["scarta_oggetto"], "messaggio": e.get("stampa", "")}
+    if "apri_oggetto" in e:
+        return "apri_oggetto", {"oggetto": e["apri_oggetto"]}
+    if "chiudi_oggetto" in e:
+        return "chiudi_oggetto", {"oggetto": e["chiudi_oggetto"]}
     if "stampa" in e:
         return "stampa", {"testo": e["stampa"]}
     if "teleporta" in e:
@@ -231,6 +241,7 @@ def opzioni(mondo) -> dict:
     return {
         "flag": sorted(mondo.flags.keys()),
         "oggetto": list(mondo.oggetti.keys()),
+        "contenitore": contenitori,
         "stanza": list(mondo.stanze.keys()),
         "luogo": luoghi,
         "png": png or list(mondo.oggetti.keys()),
@@ -285,6 +296,10 @@ def riassunto_effetto(e: dict) -> str:
         return f"sposta «{e['sposta_oggetto']}» in «{e.get('a')}»"
     if "scarta_oggetto" in e:
         return f"scarta «{e['scarta_oggetto']}» (lo toglie dal gioco)"
+    if "apri_oggetto" in e:
+        return f"apre il contenitore «{e['apri_oggetto']}»"
+    if "chiudi_oggetto" in e:
+        return f"chiude il contenitore «{e['chiudi_oggetto']}»"
     if "stampa" in e:
         return f"stampa: {e['stampa'][:40]}…" if len(e["stampa"]) > 40 else f"stampa: {e['stampa']}"
     if "teleporta" in e:
