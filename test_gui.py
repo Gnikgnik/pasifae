@@ -246,6 +246,57 @@ def test_animazione_non_riscrive_tutta_la_cronologia(qtbot):
         "una risposta con diverse parole da animare piano piano"
 
 
+def test_animazione_voce_su_riga_propria(qtbot):
+    """Durante l'animazione la voce in corso di stampa non deve fondersi con
+    il blocco precedente: l'insertHtml() per-fotogramma attaccava la risposta
+    alla riga del comando ("› guardaBIBLIOTECA…")."""
+    p = Player(str(AVV / "faro.json"))
+    qtbot.addWidget(p)
+    p._anim_finisci()
+    p._mostra("› guarda", "comando")
+    p._mostra("Una risposta animata di parecchie parole", "risposta")
+    assert p._anim.isActive()
+    righe = p.vista.toPlainText().splitlines()
+    assert righe[-1].rstrip() == "Una", righe[-2:]
+    assert righe[-2] == "› guarda", righe[-2:]
+
+
+def test_vista_segue_il_fondo_quando_il_layout_arriva_dopo(qtbot):
+    """Dopo setHtml() la corsa della scrollbar è *stimata*: il layout vero
+    arriva dopo e, se la stima era corta, l'ultima riga stampata resta fuori
+    dallo schermo (visto giocando a "Il labirinto"). Se la vista era in
+    fondo, deve restarci quando la corsa cresce."""
+    p = Player(str(AVV / "faro.json"))
+    qtbot.addWidget(p)
+    p.resize(880, 500)
+    p.show()
+    for i in range(30):
+        p._voci.append(("risposta", f"voce {i} " + "con testo che scorre " * 4))
+    p._anim_finisci()            # _ridisegna() + scorrimento in fondo
+    barra = p.vista.verticalScrollBar()
+    assert barra.value() == barra.maximum() > 0
+    # il layout tardivo allunga la corsa: la vista deve seguire il fondo
+    barra.setRange(0, barra.maximum() + 200)
+    assert barra.value() == barra.maximum(), (barra.value(), barra.maximum())
+
+
+def test_vista_non_scatta_se_l_utente_sta_rileggendo(qtbot):
+    """Se l'utente ha scorso in su per rileggere, un semplice cambio di corsa
+    (per esempio dal ridimensionamento della finestra) non deve trascinarlo
+    in fondo: ci pensa il prossimo output, come sempre."""
+    p = Player(str(AVV / "faro.json"))
+    qtbot.addWidget(p)
+    p.resize(880, 500)
+    p.show()
+    for i in range(30):
+        p._voci.append(("risposta", f"voce {i} " + "con testo che scorre " * 4))
+    p._anim_finisci()
+    barra = p.vista.verticalScrollBar()
+    barra.setValue(barra.maximum() // 2)          # l'utente sta rileggendo
+    barra.setRange(0, barra.maximum() + 200)
+    assert barra.value() < barra.maximum()
+
+
 def test_compila_nome_sicuro():
     from gui import compila
     assert compila.nome_sicuro("La Caverna! #1") == "La_Caverna_1"

@@ -105,6 +105,10 @@ class Player(QMainWindow):
         self.vista = QTextEdit(); self.vista.setObjectName("vista")
         self.vista.setReadOnly(True); self.vista.setFrameStyle(QFrame.NoFrame)
         radice.addWidget(self.vista, 1)
+        self._in_fondo = True
+        barra = self.vista.verticalScrollBar()
+        barra.valueChanged.connect(self._registra_se_in_fondo)
+        barra.rangeChanged.connect(self._segui_fondo)
 
         riga = QFrame(); riga.setObjectName("barra_giu")
         hr = QHBoxLayout(riga)
@@ -313,6 +317,16 @@ class Player(QMainWindow):
         barra = self.vista.verticalScrollBar()
         barra.setValue(barra.maximum())
 
+    def _registra_se_in_fondo(self, valore: int):
+        self._in_fondo = valore >= self.vista.verticalScrollBar().maximum()
+
+    def _segui_fondo(self, _minimo: int, massimo: int):
+        """Dopo setHtml()/insertHtml() la corsa della scrollbar è una stima:
+        il layout vero arriva dopo e la allunga. Se la vista era in fondo ce
+        la riporta, altrimenti l'ultima riga resta fuori dallo schermo."""
+        if self._in_fondo:
+            self.vista.verticalScrollBar().setValue(massimo)
+
     def _ridisegna(self):
         """Ridisegna l'intera cronologia. Costa proporzionalmente alla sua
         lunghezza: usato solo per eventi rari (nuovo messaggio non animato,
@@ -351,6 +365,10 @@ class Player(QMainWindow):
         cursore.setPosition(self._anim_anchor)
         cursore.movePosition(cursore.MoveOperation.End, cursore.MoveMode.KeepAnchor)
         cursore.removeSelectedText()
+        if self._anim_anchor > 0:
+            # senza un nuovo blocco l'insertHtml() si fonde col precedente
+            # e la voce animata appare attaccata alla riga del comando
+            cursore.insertBlock()
         cursore.insertHtml(self._blocco_html(genere, testo, p))
         self._scorri_in_fondo()
 

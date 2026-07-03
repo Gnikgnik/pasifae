@@ -4,4 +4,4 @@
 Player ed editor sono viste sul motore: non contengono logica di gioco.
 """
 
-__version__ = "1.5.1"
+__version__ = "1.5.2"

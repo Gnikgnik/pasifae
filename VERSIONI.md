@@ -1,5 +1,13 @@
 # Pasifae — cronologia delle versioni
 
+## gui 1.5.2
+Due correzioni al player, regressioni del fix del farfallio (gui 1.5.1):
+durante l'animazione la risposta si fondeva con la riga del comando
+(«› guardaBIBLIOTECA…»), e a fine animazione la vista poteva fermarsi
+sopra il fondo, nascondendo l'ultima riga stampata (lo scorrimento usava
+la corsa *stimata* della scrollbar, prima che il layout vero arrivasse).
+
+
 ## advcore 1.11.0
 Condizioni più espressive: confronti numerici `<`, `≤`, `≥` (oltre a `=` e
 `>`) e operatori logici — `non` (negazione), `oppure` (almeno una vera, OR) e
