@@ -417,6 +417,75 @@ def test_player_cornice_input_segue_il_fuoco(qtbot):
     assert p.cornice_input.property("fuoco") is False
 
 
+def test_player_gerarchia_tipografica(qtbot):
+    """Nella trascrizione il nome della stanza spicca (più grande e in
+    grassetto), il titolo del gioco perde i «==» decorativi e la riga delle
+    uscite è in tono muto. La classificazione usa le convenzioni testuali
+    del motore e i nomi delle stanze del mondo caricato."""
+    p = Player(str(AVV / "caverna.json"))
+    qtbot.addWidget(p)
+    p._anim_finisci()
+    h = p.vista.toHtml()
+    assert "INGRESSO DELLA CAVERNA" in h
+    da_titolo = h.split("INGRESSO DELLA CAVERNA")[0].rsplit("<", 1)[-1]
+    assert "font-weight:700" in da_titolo, da_titolo
+    # il titolo del gioco appare senza i "==" attorno
+    assert "== La Caverna della Moneta ==" not in p.vista.toPlainText()
+    assert "La Caverna della Moneta" in p.vista.toPlainText()
+    # la riga delle uscite è nel colore muto del tema
+    from gui import tema as T
+    da_uscite = h.split("Uscite:")[0].rsplit("<", 1)[-1]
+    assert T.PALETTE["scuro"]["muto"] in da_uscite, da_uscite
+
+
+def test_player_accento_avventura(qtbot, tmp_path):
+    """Un'avventura può dichiarare un colore accento nei metadati
+    («colore»): il player lo usa per prompt e titolo. Un valore non valido
+    viene ignorato."""
+    m = carica_mondo(str(AVV / "caverna.json"))
+    m.meta["colore"] = "#c04030"
+    f = str(tmp_path / "tinta.json")
+    salva_mondo(m, f)
+    p = Player(f)
+    qtbot.addWidget(p)
+    assert "#c04030" in p.styleSheet()
+    m.meta["colore"] = "rosso; } * { color: red"      # non valido: ignorato
+    f2 = str(tmp_path / "brutta.json")
+    salva_mondo(m, f2)
+    p2 = Player(f2)
+    qtbot.addWidget(p2)
+    assert "rosso" not in p2.styleSheet()
+
+
+def test_player_carattere_con_grazie(qtbot, monkeypatch, tmp_path):
+    """Il corpo del racconto può usare un carattere con grazie (opzione in
+    Visualizza), ricordato tra le sessioni."""
+    from PySide6.QtCore import QSettings
+    import gui.player as gp
+    ini = str(tmp_path / "prova.ini")
+    monkeypatch.setattr(gp, "_impostazioni",
+                        lambda: QSettings(ini, QSettings.IniFormat))
+    p = Player(str(AVV / "caverna.json"))
+    qtbot.addWidget(p)
+    assert p.grazie is False
+    p._imposta_grazie(True)
+    assert "serif" in p.vista.toHtml()
+    p2 = Player(str(AVV / "caverna.json"))
+    qtbot.addWidget(p2)
+    assert p2.grazie is True
+
+
+def test_player_stanza_nella_barra_di_stato(qtbot):
+    """La barra di stato mostra anche la stanza corrente, per orientarsi
+    senza ridare «guarda»."""
+    p = Player(str(AVV / "caverna.json"))
+    qtbot.addWidget(p)
+    assert "Ingresso della caverna" in p.stato.text()
+    p._anim_finisci()
+    p.input.setText("nord"); p._invia()
+    assert "Ingresso della caverna" not in p.stato.text()
+
+
 def test_compila_nome_sicuro():
     from gui import compila
     assert compila.nome_sicuro("La Caverna! #1") == "La_Caverna_1"

@@ -46,6 +46,12 @@ def _impostazioni() -> QSettings:
     return QSettings("Pasifae", "Play")
 
 
+# colore accento dichiarabile dall'avventura (meta["colore"]): solo #rrggbb,
+# per non lasciar entrare stringhe arbitrarie nel foglio di stile
+_RE_COLORE = re.compile(r"^#[0-9a-fA-F]{6}$")
+_RE_TITOLO_GIOCO = re.compile(r"^== (.+) ==$")
+
+
 class InputComando(QLineEdit):
     """Riga di comando con storico navigabile (frecce su/giù)."""
 
@@ -123,11 +129,18 @@ class Player(QMainWindow):
         self.percorso = None
         self.tema = "scuro"
         self.animazione = True
+        self.accento = None            # colore accento dell'avventura (meta)
+        self._titoli_stanze: set[str] = set()
+        imp = _impostazioni()
         try:
-            self.dim_testo = int(_impostazioni().value("dim_testo", 16))
+            self.dim_testo = int(imp.value("dim_testo", 16))
         except (TypeError, ValueError):
             self.dim_testo = 16
         self.dim_testo = max(10, min(28, self.dim_testo))
+        try:
+            self.grazie = bool(int(imp.value("grazie", 0)))
+        except (TypeError, ValueError):
+            self.grazie = False
         self._voci: list[tuple[str, str]] = []
         # stato dell'animazione "telescrivente"
         self._anim = QTimer(self)
@@ -226,6 +239,10 @@ class Player(QMainWindow):
         a_anim.setChecked(self.animazione)
         a_anim.triggered.connect(lambda on: setattr(self, "animazione", on))
         v.addAction(a_anim)
+        a_grazie = QAction("Carattere con grazie", self, checkable=True)
+        a_grazie.setChecked(self.grazie)
+        a_grazie.triggered.connect(self._imposta_grazie)
+        v.addAction(a_grazie)
         v.addSeparator()
         a_piu = QAction("Testo più grande", self)
         a_piu.setShortcut(QKeySequence.ZoomIn)
@@ -263,6 +280,10 @@ class Player(QMainWindow):
         self.mondo = mondo
         self.motore = Motore(mondo)
         self.percorso = percorso
+        self._titoli_stanze = {s.nome.upper() for s in mondo.stanze.values()}
+        colore = str(mondo.meta.get("colore") or "")
+        self.accento = colore if _RE_COLORE.match(colore) else None
+        self._applica_tema()
         self._anim_finisci()
         self._voci.clear()
         titolo = mondo.meta.get("titolo") or "Avventura"
@@ -277,6 +298,9 @@ class Player(QMainWindow):
         self.mondo = None
         self.motore = None
         self.percorso = None
+        self._titoli_stanze = set()
+        self.accento = None
+        self._applica_tema()
         self._anim_finisci()
         self._voci = [("risposta",
                        "Nessuna avventura aperta.\n\n"
@@ -378,14 +402,36 @@ class Player(QMainWindow):
         self._ridisegna()
 
     def _blocco_html(self, genere: str, testo: str, p: dict) -> str:
-        corpo = html.escape(testo).replace("\n", "<br>")
-        stile = (f"font-family:{tema.FONT_TESTO}; "
-                 f"font-size:{self.dim_testo}px; line-height:165%; ")
+        dim = self.dim_testo
+        font = tema.FONT_TESTO_GRAZIE if self.grazie else tema.FONT_TESTO
+        stile = f"font-family:{font}; font-size:{dim}px; line-height:165%; "
         if genere == "comando":
+            corpo = html.escape(testo).replace("\n", "<br>")
             return (f'<div style="{stile}color:{p["muto"]}; '
                     f'margin:2px 0 14px 0;"><i>{corpo}</i></div>')
+        corpo = "<br>".join(self._riga_html(r, p) for r in testo.split("\n"))
         return (f'<div style="{stile}color:{p["testo"]}; '
                 f'margin:0 0 16px 0;">{corpo}</div>')
+
+    def _riga_html(self, riga: str, p: dict) -> str:
+        """Gerarchia tipografica della trascrizione, ricavata dalle
+        convenzioni testuali del motore: «== titolo ==» per il gioco, il
+        nome della stanza in maiuscolo come prima riga della descrizione,
+        il prefisso fisso «Uscite:» per le direzioni."""
+        accento = self.accento or p["accento"]
+        m = _RE_TITOLO_GIOCO.match(riga)
+        if m:
+            return (f'<span style="font-size:{self.dim_testo + 5}px; '
+                    f'font-weight:700; letter-spacing:1px; color:{accento};">'
+                    f'{html.escape(m.group(1))}</span>')
+        if riga in self._titoli_stanze:
+            return (f'<span style="font-size:{self.dim_testo + 2}px; '
+                    f'font-weight:700; letter-spacing:1px; color:{accento};">'
+                    f'{html.escape(riga)}</span>')
+        if riga.startswith("Uscite:"):
+            return (f'<span style="color:{p["muto"]};">'
+                    f'{html.escape(riga)}</span>')
+        return html.escape(riga)
 
     def _scorri_in_fondo(self):
         barra = self.vista.verticalScrollBar()
@@ -458,6 +504,11 @@ class Player(QMainWindow):
     def _dim_normale(self):
         self._cambia_dim(16 - self.dim_testo)
 
+    def _imposta_grazie(self, attivo: bool):
+        self.grazie = bool(attivo)
+        _impostazioni().setValue("grazie", int(self.grazie))
+        self._anim_finisci()        # ridisegna col nuovo carattere
+
     def _accendi_cornice(self, acceso: bool):
         self.cornice_input.setProperty("fuoco", acceso)
         stile = self.cornice_input.style()
@@ -468,8 +519,11 @@ class Player(QMainWindow):
         if self.mondo is None:
             self.titolo.setText("Pasifae"); self.stato.setText(""); return
         self.titolo.setText(self.mondo.meta.get("titolo", "Avventura"))
+        stanza = self.mondo.stanze.get(self.mondo.stanza_corrente)
+        luogo = f"{stanza.nome}    ·    " if stanza else ""
         self.stato.setText(
-            f"punteggio {self.mondo.punteggio}    ·    turni {self.mondo.mosse}")
+            f"{luogo}punteggio {self.mondo.punteggio}"
+            f"    ·    turni {self.mondo.mosse}")
 
     # ---------- tema ----------
 
@@ -479,7 +533,13 @@ class Player(QMainWindow):
         self._ridisegna()
 
     def _applica_tema(self):
-        self.setStyleSheet(tema.qss(self.tema))
+        qss = tema.qss(self.tema)
+        if self.accento:
+            qss += (f'\n#prompt {{ color: {self.accento}; }}'
+                    f'\n#titolo {{ color: {self.accento}; }}'
+                    f'\n#cornice_input[fuoco="true"] '
+                    f'{{ border: 1px solid {self.accento}; }}')
+        self.setStyleSheet(qss)
 
 
 def _avventura_inclusa() -> str | None:

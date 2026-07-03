@@ -958,7 +958,8 @@ class Editor(QMainWindow):
         campi = {}
         for chiave, etichetta in (("titolo", "titolo"), ("autore", "autore"),
                                   ("versione", "versione del gioco"),
-                                  ("stanza_iniziale", "stanza iniziale")):
+                                  ("stanza_iniziale", "stanza iniziale"),
+                                  ("colore", "colore accento (es. #7fa8d8)")):
             e = QLineEdit(str(meta.get(chiave, "")))
             campi[chiave] = e
             form.addRow(self._campetto(etichetta), e)

@@ -9,6 +9,8 @@ from __future__ import annotations
 # tipografia: una sans di sistema, comoda da leggere su tutti gli OS
 FONT_TESTO = "'Segoe UI', 'Helvetica Neue', 'Cantarell', system-ui, sans-serif"
 FONT_UI = FONT_TESTO
+# alternativa "da libro" per il corpo del racconto nel player
+FONT_TESTO_GRAZIE = "'Georgia', 'Liberation Serif', 'DejaVu Serif', serif"
 
 PALETTE = {
     "scuro": {

@@ -1,5 +1,17 @@
 # Pasifae — cronologia delle versioni
 
+## gui 1.8.0
+Rifinitura tipografica del player. **Gerarchia nella trascrizione**: il titolo
+del gioco appare grande e senza i «==» decorativi, il nome della stanza spicca
+in grassetto nel colore accento, la riga «Uscite: …» è in tono muto (la
+classificazione usa le convenzioni testuali del motore e i nomi delle stanze
+del mondo caricato — il motore non cambia). **Accento per avventura**: il
+campo opzionale «colore» nei metadati (es. `#c8a04a`, anche dall'editor) tinge
+titolo, prompt, cornice dell'input e intestazioni. **Carattere con grazie**:
+opzione in Visualizza per il corpo del racconto, ricordata tra le sessioni.
+La barra di stato mostra anche la **stanza corrente**.
+
+
 ## gui 1.7.0
 Lettura più comoda nel player. La trascrizione sta in una **colonna centrata**
 di larghezza fissa (~75 caratteri): su finestre larghe il testo non si stende
