@@ -1,5 +1,15 @@
 # Pasifae — cronologia delle versioni
 
+## gui 1.7.0
+Lettura più comoda nel player. La trascrizione sta in una **colonna centrata**
+di larghezza fissa (~75 caratteri): su finestre larghe il testo non si stende
+più da bordo a bordo. La **dimensione del testo si regola** da Visualizza
+(Testo più grande/più piccolo, Ctrl+«+»/Ctrl+«-», Ctrl+0 per tornare al
+normale, o Ctrl+rotella sulla trascrizione) e viene **ricordata tra le
+sessioni**. La riga di comando è ora in una **cornice** che si accende col
+colore accento quando ha il fuoco.
+
+
 ## gui 1.6.0
 «Prova da…» nell'editor: per le avventure lunghe la prova può partire da un
 punto scelto invece che dall'inizio. Un dialogo (Strumenti ▸ Prova da…,

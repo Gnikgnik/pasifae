@@ -47,6 +47,9 @@ def qss(nome: str = "scuro") -> str:
     #prompt {{ color: {p['accento']}; font-size: 16px; font-weight: 700; }}
     #input {{ background: transparent; border: none; color: {p['testo']};
               font-size: 15px; padding: 2px 0; }}
+    #cornice_input {{ background: {p['sup']}; border: 1px solid {p['bordo']};
+                      border-radius: 9px; }}
+    #cornice_input[fuoco="true"] {{ border: 1px solid {p['accento']}; }}
 
     /* menu */
     QMenuBar {{ background: {p['barra']}; color: {p['testo']};

@@ -33,16 +33,23 @@ def _dir_salvataggi() -> str:
 from advcore import carica_mondo, Motore, salva_partita, carica_partita  # noqa: E402
 from gui import tema  # noqa: E402
 
-from PySide6.QtCore import Qt, QTimer  # noqa: E402
-from PySide6.QtGui import QAction, QActionGroup, QFont  # noqa: E402
+from PySide6.QtCore import QSettings, Qt, QTimer, Signal  # noqa: E402
+from PySide6.QtGui import QAction, QActionGroup, QFont, QKeySequence  # noqa: E402
 from PySide6.QtWidgets import (  # noqa: E402
     QApplication, QFileDialog, QFrame, QHBoxLayout, QLabel, QLineEdit,
     QMainWindow, QMessageBox, QTextEdit, QVBoxLayout, QWidget,
 )
 
 
+def _impostazioni() -> QSettings:
+    """Preferenze del player, ricordate tra le sessioni."""
+    return QSettings("Pasifae", "Play")
+
+
 class InputComando(QLineEdit):
     """Riga di comando con storico navigabile (frecce su/giù)."""
+
+    fuoco = Signal(bool)     # entra/esce dal fuoco (per accendere la cornice)
 
     def __init__(self):
         super().__init__()
@@ -53,6 +60,14 @@ class InputComando(QLineEdit):
         if testo and (not self.storico or self.storico[-1] != testo):
             self.storico.append(testo)
         self._i = len(self.storico)
+
+    def focusInEvent(self, ev):
+        super().focusInEvent(ev)
+        self.fuoco.emit(True)
+
+    def focusOutEvent(self, ev):
+        super().focusOutEvent(ev)
+        self.fuoco.emit(False)
 
     def keyPressEvent(self, ev):
         if ev.key() == Qt.Key_Up and self.storico:
@@ -66,6 +81,38 @@ class InputComando(QLineEdit):
         super().keyPressEvent(ev)
 
 
+class VistaTrascrizione(QTextEdit):
+    """Trascrizione con colonna di lettura limitata: su finestre larghe il
+    testo non si stende da bordo a bordo ma resta in una colonna centrata di
+    larghezza comoda (~75 caratteri). Ctrl+rotella regola la dimensione."""
+
+    EM_COLONNA = 42          # larghezza massima della colonna, in em
+    zoom = Signal(int)       # +1/-1 da Ctrl+rotella
+
+    def __init__(self):
+        super().__init__()
+        self._em = 16
+
+    def imposta_em(self, em: int):
+        self._em = em
+        self._adatta_margini()
+
+    def resizeEvent(self, ev):
+        super().resizeEvent(ev)
+        self._adatta_margini()
+
+    def wheelEvent(self, ev):
+        if ev.modifiers() & Qt.ControlModifier:
+            self.zoom.emit(1 if ev.angleDelta().y() > 0 else -1)
+            ev.accept()
+            return
+        super().wheelEvent(ev)
+
+    def _adatta_margini(self):
+        margine = max(0, (self.width() - self._em * self.EM_COLONNA) // 2)
+        self.setViewportMargins(margine, 0, margine, 0)
+
+
 class Player(QMainWindow):
     def __init__(self, percorso: str | None = None):
         super().__init__()
@@ -76,6 +123,11 @@ class Player(QMainWindow):
         self.percorso = None
         self.tema = "scuro"
         self.animazione = True
+        try:
+            self.dim_testo = int(_impostazioni().value("dim_testo", 16))
+        except (TypeError, ValueError):
+            self.dim_testo = 16
+        self.dim_testo = max(10, min(28, self.dim_testo))
         self._voci: list[tuple[str, str]] = []
         # stato dell'animazione "telescrivente"
         self._anim = QTimer(self)
@@ -102,8 +154,10 @@ class Player(QMainWindow):
         h.addWidget(self.titolo); h.addStretch(1); h.addWidget(self.stato)
         radice.addWidget(testa)
 
-        self.vista = QTextEdit(); self.vista.setObjectName("vista")
+        self.vista = VistaTrascrizione(); self.vista.setObjectName("vista")
         self.vista.setReadOnly(True); self.vista.setFrameStyle(QFrame.NoFrame)
+        self.vista.imposta_em(self.dim_testo)
+        self.vista.zoom.connect(self._cambia_dim)
         radice.addWidget(self.vista, 1)
         self._in_fondo = True
         barra = self.vista.verticalScrollBar()
@@ -113,11 +167,18 @@ class Player(QMainWindow):
         riga = QFrame(); riga.setObjectName("barra_giu")
         hr = QHBoxLayout(riga)
         hr.setContentsMargins(24, 12, 24, 18); hr.setSpacing(12)
+        self.cornice_input = QFrame()
+        self.cornice_input.setObjectName("cornice_input")
+        self.cornice_input.setProperty("fuoco", False)
+        hc = QHBoxLayout(self.cornice_input)
+        hc.setContentsMargins(14, 7, 14, 7); hc.setSpacing(10)
         prompt = QLabel("›"); prompt.setObjectName("prompt")
         self.input = InputComando(); self.input.setObjectName("input")
         self.input.setPlaceholderText("scrivi un comando e premi Invio…  (aiuto)")
         self.input.returnPressed.connect(self._invia)
-        hr.addWidget(prompt); hr.addWidget(self.input, 1)
+        self.input.fuoco.connect(self._accendi_cornice)
+        hc.addWidget(prompt); hc.addWidget(self.input, 1)
+        hr.addWidget(self.cornice_input)
         radice.addWidget(riga)
 
         self.setCentralWidget(centrale)
@@ -165,6 +226,19 @@ class Player(QMainWindow):
         a_anim.setChecked(self.animazione)
         a_anim.triggered.connect(lambda on: setattr(self, "animazione", on))
         v.addAction(a_anim)
+        v.addSeparator()
+        a_piu = QAction("Testo più grande", self)
+        a_piu.setShortcut(QKeySequence.ZoomIn)
+        a_piu.triggered.connect(lambda: self._cambia_dim(+1))
+        v.addAction(a_piu)
+        a_meno = QAction("Testo più piccolo", self)
+        a_meno.setShortcut(QKeySequence.ZoomOut)
+        a_meno.triggered.connect(lambda: self._cambia_dim(-1))
+        v.addAction(a_meno)
+        a_norm = QAction("Dimensione normale", self)
+        a_norm.setShortcut("Ctrl+0")
+        a_norm.triggered.connect(self._dim_normale)
+        v.addAction(a_norm)
 
         a = barra.addMenu("Aiuto")
         a_info = QAction("Informazioni", self)
@@ -305,8 +379,8 @@ class Player(QMainWindow):
 
     def _blocco_html(self, genere: str, testo: str, p: dict) -> str:
         corpo = html.escape(testo).replace("\n", "<br>")
-        stile = (f"font-family:{tema.FONT_TESTO}; font-size:16px; "
-                 f"line-height:165%; ")
+        stile = (f"font-family:{tema.FONT_TESTO}; "
+                 f"font-size:{self.dim_testo}px; line-height:165%; ")
         if genere == "comando":
             return (f'<div style="{stile}color:{p["muto"]}; '
                     f'margin:2px 0 14px 0;"><i>{corpo}</i></div>')
@@ -371,6 +445,24 @@ class Player(QMainWindow):
             cursore.insertBlock()
         cursore.insertHtml(self._blocco_html(genere, testo, p))
         self._scorri_in_fondo()
+
+    def _cambia_dim(self, delta: int):
+        nuova = max(10, min(28, self.dim_testo + delta))
+        if nuova == self.dim_testo:
+            return
+        self.dim_testo = nuova
+        _impostazioni().setValue("dim_testo", nuova)
+        self.vista.imposta_em(nuova)
+        self._anim_finisci()        # ridisegna tutto alla nuova dimensione
+
+    def _dim_normale(self):
+        self._cambia_dim(16 - self.dim_testo)
+
+    def _accendi_cornice(self, acceso: bool):
+        self.cornice_input.setProperty("fuoco", acceso)
+        stile = self.cornice_input.style()
+        stile.unpolish(self.cornice_input)
+        stile.polish(self.cornice_input)
 
     def _aggiorna_stato(self):
         if self.mondo is None:

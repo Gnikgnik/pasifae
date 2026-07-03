@@ -21,7 +21,7 @@ AVV = RADICE / "avventure"
 import pytest  # noqa: E402
 from PySide6.QtCore import Qt  # noqa: E402
 from PySide6.QtWidgets import (  # noqa: E402
-    QComboBox, QInputDialog, QFileDialog, QMenu, QMessageBox,
+    QApplication, QComboBox, QInputDialog, QFileDialog, QMenu, QMessageBox,
 )
 
 from advcore import (  # noqa: E402
@@ -364,6 +364,57 @@ def test_editor_ha_prova_da(qtbot):
     azioni = [a.text() for m in e.menuBar().findChildren(QMenu)
               for a in m.actions()]
     assert any("Prova da" in t for t in azioni), azioni
+
+
+def test_player_colonna_di_lettura_limitata(qtbot):
+    """Su finestre larghe il testo non deve stendersi da bordo a bordo
+    (righe chilometriche, faticose da leggere): la colonna si ferma a una
+    larghezza comoda e resta centrata. Su finestre strette usa tutto."""
+    p = Player(str(AVV / "faro.json"))
+    qtbot.addWidget(p)
+    p.show()
+    p.resize(1600, 700)
+    QApplication.processEvents()
+    assert p.vista.viewport().width() <= 760, p.vista.viewport().width()
+    p.resize(640, 700)
+    QApplication.processEvents()
+    assert p.vista.viewport().width() >= 560, p.vista.viewport().width()
+
+
+def test_player_dimensione_testo(qtbot, monkeypatch, tmp_path):
+    """La dimensione del testo si regola (più grande / più piccola / normale)
+    e viene ricordata tra le sessioni."""
+    from PySide6.QtCore import QSettings
+    import gui.player as gp
+    ini = str(tmp_path / "prova.ini")
+    monkeypatch.setattr(gp, "_impostazioni",
+                        lambda: QSettings(ini, QSettings.IniFormat))
+    p = Player(str(AVV / "faro.json"))
+    qtbot.addWidget(p)
+    assert p.dim_testo == 16
+    p._cambia_dim(+2)
+    assert p.dim_testo == 18
+    assert "font-size:18px" in p.vista.toHtml()
+    # una nuova finestra ricorda la scelta
+    p2 = Player(str(AVV / "faro.json"))
+    qtbot.addWidget(p2)
+    assert p2.dim_testo == 18
+    p2._dim_normale()
+    assert p2.dim_testo == 16
+
+
+def test_player_cornice_input_segue_il_fuoco(qtbot):
+    """La riga di comando è in una cornice che si accende quando ha il fuoco,
+    per guidare l'occhio al punto d'interazione."""
+    p = Player(str(AVV / "faro.json"))
+    qtbot.addWidget(p)
+    p.show()
+    p.input.setFocus()
+    QApplication.processEvents()
+    assert p.cornice_input.property("fuoco") is True
+    p.vista.setFocus()
+    QApplication.processEvents()
+    assert p.cornice_input.property("fuoco") is False
 
 
 def test_compila_nome_sicuro():
