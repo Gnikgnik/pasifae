@@ -12,20 +12,27 @@ import copy
 import html
 
 from advcore import Motore
-from gui import tema
+from advcore.model import INVENTARIO
+from gui import analisi, regole, tema
 from gui.player import InputComando
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QDialog, QFrame, QHBoxLayout, QLabel, QPushButton, QTextEdit, QVBoxLayout,
+    QComboBox, QDialog, QDialogButtonBox, QFrame, QHBoxLayout, QLabel,
+    QListWidget, QListWidgetItem, QPushButton, QTextEdit, QTreeWidget,
+    QTreeWidgetItem, QVBoxLayout,
 )
 
 
 class FinestraGioco(QDialog):
-    def __init__(self, mondo, tema_nome="scuro", parent=None):
+    def __init__(self, mondo, tema_nome="scuro", parent=None, partenza=None):
         super().__init__(parent)
         self.tema = tema_nome
         self.mondo = copy.deepcopy(mondo)      # si gioca su una copia
+        self.partenza = dict(partenza or {})
+        self._applica_partenza()
+        # il motore fotografa QUESTO stato come iniziale: anche «Riavvia»
+        # torna al punto di prova scelto, non all'inizio dell'avventura
         self.motore = Motore(self.mondo)
         self._voci: list[tuple[str, str]] = []
 
@@ -47,7 +54,12 @@ class FinestraGioco(QDialog):
         h.addWidget(self.titolo); h.addStretch(1); h.addWidget(self.stato)
         radice.addWidget(testa)
 
-        avviso = QLabel("Anteprima — i progressi di questa prova non vengono salvati.")
+        testo_avviso = "Anteprima — i progressi di questa prova non vengono salvati."
+        if self.partenza.get("stanza"):
+            nome = self.mondo.stanze[self.mondo.stanza_corrente].nome
+            testo_avviso = (f"Anteprima dal punto scelto («{nome}») — "
+                            "i progressi non vengono salvati.")
+        avviso = QLabel(testo_avviso)
         avviso.setObjectName("campetto")
         avviso.setContentsMargins(22, 6, 0, 0)
         radice.addWidget(avviso)
@@ -77,6 +89,17 @@ class FinestraGioco(QDialog):
         self._mostra(self.motore.avvia(), "risposta")
         self._aggiorna_stato()
         self.input.setFocus()
+
+    def _applica_partenza(self):
+        """Prepara la copia del mondo al punto di prova scelto (stanza,
+        inventario, flag). Va fatto PRIMA di creare il motore."""
+        p = self.partenza
+        if p.get("stanza") in self.mondo.stanze:
+            self.mondo.stanza_corrente = p["stanza"]
+        for oid in p.get("inventario") or []:
+            if oid in self.mondo.oggetti:
+                self.mondo.oggetti[oid].posizione = INVENTARIO
+        self.mondo.flags.update(p.get("flags") or {})
 
     def _invia(self):
         testo = self.input.text().strip()
@@ -121,3 +144,76 @@ class FinestraGioco(QDialog):
         self.titolo.setText(self.mondo.meta.get("titolo") or "Anteprima")
         self.stato.setText(
             f"punteggio {self.mondo.punteggio}    ·    turni {self.mondo.mosse}")
+
+
+class DialogoProvaDa(QDialog):
+    """Scelta del punto di prova per le avventure lunghe: stanza di partenza,
+    oggetti già nell'inventario e flag preimpostati. Il risultato
+    (`partenza()`) si passa a FinestraGioco."""
+
+    def __init__(self, mondo, tema_nome="scuro", parent=None, stanza=None):
+        super().__init__(parent)
+        self.setWindowTitle("Prova da…")
+        self.setStyleSheet(tema.qss(tema_nome))
+        self.resize(500, 580)
+        v = QVBoxLayout(self)
+        v.setContentsMargins(18, 16, 18, 14)
+        v.setSpacing(8)
+
+        v.addWidget(self._etichetta("PARTI DALLA STANZA"))
+        self.cb_stanza = QComboBox()
+        for sid, s in mondo.stanze.items():
+            self.cb_stanza.addItem(f"{s.nome}  ({sid})", sid)
+        if stanza is not None:
+            i = self.cb_stanza.findData(stanza)
+            if i >= 0:
+                self.cb_stanza.setCurrentIndex(i)
+        v.addWidget(self.cb_stanza)
+
+        v.addWidget(self._etichetta("GIÀ NELL'INVENTARIO"))
+        self.lista_oggetti = QListWidget()
+        for oid, o in mondo.oggetti.items():
+            it = QListWidgetItem(f"{o.nome}  ({oid})")
+            it.setData(Qt.UserRole, oid)
+            it.setFlags(it.flags() | Qt.ItemIsUserCheckable)
+            it.setCheckState(Qt.Unchecked)
+            self.lista_oggetti.addItem(it)
+        v.addWidget(self.lista_oggetti, 1)
+
+        v.addWidget(self._etichetta("FLAG DA IMPOSTARE (spunta e scrivi il valore)"))
+        self.albero_flag = QTreeWidget()
+        self.albero_flag.setHeaderLabels(["flag", "valore"])
+        self.albero_flag.setRootIsDecorated(False)
+        for nome in analisi.flag_noti(mondo):
+            iniziale = mondo.flags.get(nome)
+            testo = (str(iniziale)
+                     if iniziale not in (None, True, False) else "vero")
+            it = QTreeWidgetItem([nome, testo])
+            it.setFlags(it.flags() | Qt.ItemIsUserCheckable | Qt.ItemIsEditable)
+            it.setCheckState(0, Qt.Unchecked)
+            self.albero_flag.addTopLevelItem(it)
+        self.albero_flag.setColumnWidth(0, 240)
+        v.addWidget(self.albero_flag, 1)
+
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb.accepted.connect(self.accept)
+        bb.rejected.connect(self.reject)
+        v.addWidget(bb)
+
+    def _etichetta(self, testo: str) -> QLabel:
+        e = QLabel(testo)
+        e.setObjectName("sezione")
+        return e
+
+    def partenza(self) -> dict:
+        """Il punto di prova scelto, nel formato atteso da FinestraGioco."""
+        inventario = [self.lista_oggetti.item(i).data(Qt.UserRole)
+                      for i in range(self.lista_oggetti.count())
+                      if self.lista_oggetti.item(i).checkState() == Qt.Checked]
+        flags = {}
+        for i in range(self.albero_flag.topLevelItemCount()):
+            it = self.albero_flag.topLevelItem(i)
+            if it.checkState(0) == Qt.Checked:
+                flags[it.text(0)] = regole.val_da_testo(it.text(1))
+        return {"stanza": self.cb_stanza.currentData(),
+                "inventario": inventario, "flags": flags}

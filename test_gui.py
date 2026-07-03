@@ -21,7 +21,7 @@ AVV = RADICE / "avventure"
 import pytest  # noqa: E402
 from PySide6.QtCore import Qt  # noqa: E402
 from PySide6.QtWidgets import (  # noqa: E402
-    QComboBox, QInputDialog, QFileDialog, QMessageBox,
+    QComboBox, QInputDialog, QFileDialog, QMenu, QMessageBox,
 )
 
 from advcore import (  # noqa: E402
@@ -31,7 +31,7 @@ from advcore.model import SCARTATO  # noqa: E402
 from gui.editor import Editor, DialogoVoce, combo_cerca, CATEGORIE  # noqa: E402
 from gui import regole as R  # noqa: E402
 from gui import analisi as A  # noqa: E402
-from gui.anteprima import FinestraGioco  # noqa: E402
+from gui.anteprima import FinestraGioco, DialogoProvaDa  # noqa: E402
 from gui.player import Player  # noqa: E402
 
 
@@ -295,6 +295,75 @@ def test_vista_non_scatta_se_l_utente_sta_rileggendo(qtbot):
     barra.setValue(barra.maximum() // 2)          # l'utente sta rileggendo
     barra.setRange(0, barra.maximum() + 200)
     assert barra.value() < barra.maximum()
+
+
+def test_anteprima_parte_dal_punto_scelto(qtbot):
+    """Per provare un'avventura lunga si deve poter partire da una stanza
+    scelta, con oggetti già in tasca e flag preimpostati; e «Riavvia» deve
+    tornare a QUEL punto, non all'inizio dell'avventura."""
+    m = carica_mondo(str(AVV / "caverna.json"))
+    f = FinestraGioco(m, "scuro", partenza={
+        "stanza": "tesoro",
+        "inventario": ["lampada", "chiave"],
+        "flags": {"lampada_accesa": True},
+    })
+    qtbot.addWidget(f)
+    assert f.mondo.stanza_corrente == "tesoro"
+    assert f.mondo.oggetti["lampada"].posizione == "inventario"
+    assert f.mondo.oggetti["chiave"].posizione == "inventario"
+    assert f.mondo.flags["lampada_accesa"] is True
+    # il mondo dell'editor non deve essere toccato
+    assert m.stanza_corrente == "ingresso"
+    assert m.oggetti["lampada"].posizione == "ingresso"
+    assert m.flags["lampada_accesa"] is False
+    # «Riavvia» torna al punto scelto, non a "ingresso"
+    f.motore.esegui("nord")
+    f._riavvia()
+    assert f.mondo.stanza_corrente == "tesoro"
+    assert f.mondo.oggetti["chiave"].posizione == "inventario"
+
+
+def test_dialogo_prova_da(qtbot):
+    """Il dialogo «Prova da…» raccoglie stanza di partenza, oggetti da mettere
+    nell'inventario e flag da impostare (col valore interpretato)."""
+    m = carica_mondo(str(AVV / "caverna.json"))
+    d = DialogoProvaDa(m, "scuro", stanza="cripta")
+    qtbot.addWidget(d)
+    # la stanza passata (clic destro sulla lista) è preselezionata
+    assert d.cb_stanza.currentData() == "cripta"
+    d.cb_stanza.setCurrentIndex(d.cb_stanza.findData("tesoro"))
+    # spunta un oggetto e un flag con valore
+    for i in range(d.lista_oggetti.count()):
+        it = d.lista_oggetti.item(i)
+        if it.data(Qt.UserRole) == "lampada":
+            it.setCheckState(Qt.Checked)
+    albero = d.albero_flag
+    for i in range(albero.topLevelItemCount()):
+        it = albero.topLevelItem(i)
+        if it.text(0) == "lampada_accesa":
+            it.setCheckState(0, Qt.Checked)
+            it.setText(1, "vero")
+    p = d.partenza()
+    assert p == {"stanza": "tesoro", "inventario": ["lampada"],
+                 "flags": {"lampada_accesa": True}}
+
+
+def test_flag_noti_include_quelli_delle_regole():
+    """La scelta dei flag nel «Prova da…» deve offrire anche i flag che
+    nascono solo durante il gioco (impostati dalle regole), non solo quelli
+    iniziali."""
+    m = carica_mondo(str(AVV / "caverna.json"))
+    noti = A.flag_noti(m)
+    assert set(m.flags) <= set(noti)
+
+
+def test_editor_ha_prova_da(qtbot):
+    """L'editor offre «Prova da…» accanto a «Prova l'avventura…»."""
+    e = Editor(str(AVV / "caverna.json"))
+    qtbot.addWidget(e)
+    azioni = [a.text() for m in e.menuBar().findChildren(QMenu)
+              for a in m.actions()]
+    assert any("Prova da" in t for t in azioni), azioni
 
 
 def test_compila_nome_sicuro():

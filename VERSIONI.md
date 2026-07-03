@@ -1,5 +1,15 @@
 # Pasifae — cronologia delle versioni
 
+## gui 1.6.0
+«Prova da…» nell'editor: per le avventure lunghe la prova può partire da un
+punto scelto invece che dall'inizio. Un dialogo (Strumenti ▸ Prova da…,
+Ctrl+Maiusc+P, o clic destro su una stanza ▸ «Prova da questa stanza…»)
+permette di scegliere stanza di partenza, oggetti già nell'inventario e flag
+da impostare (compresi quelli che nascono solo durante il gioco). «Riavvia»
+nell'anteprima torna al punto scelto, non all'inizio. Nuova funzione
+`analisi.flag_noti()` che elenca tutti i flag citati dall'avventura.
+
+
 ## gui 1.5.2
 Due correzioni al player, regressioni del fix del farfallio (gui 1.5.1):
 durante l'animazione la risposta si fondeva con la riga del comando

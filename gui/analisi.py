@@ -51,6 +51,16 @@ def _flag_riferiti(v: dict) -> set:
     return f
 
 
+def flag_noti(mondo) -> list[str]:
+    """Tutti i flag conosciuti dell'avventura: quelli iniziali più quelli
+    citati da regole, dialoghi ed esiti (che possono nascere solo durante
+    il gioco). Ordinati, per riempire i selettori."""
+    noti = set(mondo.flags)
+    for _, _, _, _, voce in _sorgenti(mondo):
+        noti |= _flag_riferiti(voce)
+    return sorted(noti)
+
+
 def _luoghi_validi(mondo):
     # una posizione è valida se è una stanza, l'inventario, lo "scarto", il
     # segnaposto "stanza" (= stanza corrente), oppure un QUALSIASI oggetto

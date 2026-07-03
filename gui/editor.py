@@ -39,7 +39,7 @@ from PySide6.QtGui import QAction, QActionGroup, QFont  # noqa: E402
 from PySide6.QtWidgets import (  # noqa: E402
     QApplication, QCheckBox, QComboBox, QCompleter, QDialog, QDialogButtonBox,
     QDockWidget, QFileDialog, QFormLayout, QHBoxLayout, QInputDialog, QLabel,
-    QLineEdit, QListWidget, QListWidgetItem, QMainWindow, QMessageBox,
+    QLineEdit, QListWidget, QListWidgetItem, QMainWindow, QMenu, QMessageBox,
     QPlainTextEdit, QProgressDialog, QPushButton, QScrollArea, QSpinBox,
     QSplitter, QVBoxLayout, QWidget,
 )
@@ -472,6 +472,8 @@ class Editor(QMainWindow):
 
         self.lista_el = QListWidget()
         self.lista_el.currentRowChanged.connect(self._scegli_elemento)
+        self.lista_el.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.lista_el.customContextMenuRequested.connect(self._menu_elementi)
         self.filtro_el = QLineEdit()
         self.filtro_el.setPlaceholderText("filtra per nome o id…")
         self.filtro_el.setClearButtonEnabled(True)
@@ -568,6 +570,10 @@ class Editor(QMainWindow):
         a_prova.setShortcut("Ctrl+P")
         a_prova.triggered.connect(self._prova)
         m_str.addAction(a_prova)
+        a_prova_da = QAction("Prova da…", self)
+        a_prova_da.setShortcut("Ctrl+Shift+P")
+        a_prova_da.triggered.connect(lambda: self._prova_da())
+        m_str.addAction(a_prova_da)
         a_mappa = QAction("Mappa dell'avventura…", self)
         a_mappa.setShortcut("Ctrl+M")
         a_mappa.triggered.connect(self._apri_mappa)
@@ -602,6 +608,34 @@ class Editor(QMainWindow):
             return
         from gui.anteprima import FinestraGioco
         FinestraGioco(self.mondo, self.tema, self).exec()
+
+    def _prova_da(self, stanza=None):
+        """Prova dell'avventura da un punto scelto (stanza, inventario, flag):
+        per le avventure lunghe non si può ricominciare sempre dall'inizio."""
+        if not self.mondo.stanze:
+            self.statusBar().showMessage(
+                "Crea almeno una stanza per provare l'avventura.", 4000)
+            return
+        if stanza is None and CATEGORIE[self.lista_cat.currentRow()] == "Stanze":
+            it = self.lista_el.currentItem()
+            if it is not None:
+                stanza = it.data(Qt.UserRole)
+        from gui.anteprima import FinestraGioco, DialogoProvaDa
+        d = DialogoProvaDa(self.mondo, self.tema, self, stanza=stanza)
+        if d.exec():
+            FinestraGioco(self.mondo, self.tema, self,
+                          partenza=d.partenza()).exec()
+
+    def _menu_elementi(self, pos):
+        """Menu contestuale sulla lista degli elementi: sulle stanze offre
+        la prova dell'avventura a partire da lì."""
+        it = self.lista_el.itemAt(pos)
+        if it is None or CATEGORIE[self.lista_cat.currentRow()] != "Stanze":
+            return
+        menu = QMenu(self)
+        a_prova = menu.addAction("Prova da questa stanza…")
+        if menu.exec(self.lista_el.mapToGlobal(pos)) == a_prova:
+            self._prova_da(stanza=it.data(Qt.UserRole))
 
     def _apri_mappa(self):
         from gui.mappa import FinestraMappa
