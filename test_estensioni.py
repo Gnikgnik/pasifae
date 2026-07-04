@@ -112,6 +112,29 @@ def test_riavvia_ripristina_stato():
     assert "CAVERNA" in testa.upper()
 
 
+def test_preposizioni_articolate():
+    # «nello zaino», «nell'astuccio»: tutte le forme articolate di «in» e «su»
+    # devono dividere il comando in oggetto diretto e indiretto.
+    m = Mondo(meta={"titolo": "Minimal", "stanza_iniziale": "qui"})
+    m.stanze["qui"] = Stanza(id="qui", nome="Qui", desc="Una stanza spoglia.")
+    m.oggetti["zaino"] = Oggetto(id="zaino", nome="zaino", nomi=["zaino"],
+                                 posizione="qui",
+                                 props={"contenitore": True, "aperto": True})
+    m.oggetti["astuccio"] = Oggetto(id="astuccio", nome="astuccio",
+                                    nomi=["astuccio"], posizione="qui",
+                                    props={"contenitore": True, "aperto": True})
+    m.oggetti["sasso"] = Oggetto(id="sasso", nome="sasso", nomi=["sasso"],
+                                 posizione="qui", props={"prendibile": True})
+    mot = Motore(m)
+    mot.avvia()
+    mot.esegui("prendi sasso")
+    assert "Metti" in mot.esegui("metti sasso nello zaino")
+    assert m.oggetti["sasso"].posizione == "zaino"
+    mot.esegui("prendi sasso")
+    assert "Metti" in mot.esegui("metti sasso nell'astuccio")
+    assert m.oggetti["sasso"].posizione == "astuccio"
+
+
 def test_aiuto():
     m = carica_mondo("avventure/caverna.json")
     mot = Motore(m)

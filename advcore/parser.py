@@ -46,8 +46,8 @@ VERBI_BUILTIN = {
 
 # Preposizioni sempre riconosciute (l'autore puo' estenderle).
 PREP_BUILTIN = {
-    "in": ["dentro", "nella", "nel", "in"],
-    "su": ["sopra", "sulla", "sul", "su"],
+    "in": ["dentro", "nella", "nel", "nello", "nell", "nelle", "negli", "in"],
+    "su": ["sopra", "sulla", "sul", "sullo", "sull", "sulle", "sugli", "su"],
     "con": ["con"],
 }
 
