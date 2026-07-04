@@ -9,14 +9,34 @@
   "flags": {
     "portale_aperto": false,
     "scritta_visibile": false,
-    "tappeto_esplorabile": false
+    "tappeto_esplorabile": false,
+    "nicchia_aperta": false,
+    "automa_inposizione": false,
+    "blu": false,
+    "rosso": false,
+    "giallo": false
   },
-  "verbi": {},
+  "verbi": {
+    "abbassa": {
+      "sinonimi": [
+        "tira"
+      ],
+      "tipo": "transitivo",
+      "preposizioni": []
+    },
+    "premi": {
+      "sinonimi": [
+        "schiaccia"
+      ],
+      "tipo": "transitivo",
+      "preposizioni": []
+    }
+  },
   "preposizioni": {},
   "stanze": {
     "biblioteca": {
       "nome": "Biblioteca sommersa di Astrath",
-      "desc": "Ti trovi in un grande salone, illuminato da torce a muro che producono ombre danzanti tutto intorno a te. Alti scaffali di legno antico corrono lungo le pareti. Migliaia di libri prendono posto sugli scaffali. Sul lato stretto a sud del salone c'è una grande libreria di un legno più chiaro, dove ci sono dei vuoti tra i libri. Sulla parete nord invece c'è un grande portale che sembra fatto di avorio. Al centro della stanza c'è una statua che rappresenta un astronomo cieco che tiene in mano un astrolabio di ottone. Di fianco alla statua c'è un grande tavolo di quercia, consumato dal tempo, sul quale sono sparpagliati libri, carte, un calamaio di ottone antico e una lampada ad olio accesa.\nLa scrivania giace su un grande e polveroso tappeto indiano, dalla fattura preziosa ma talmente consunto che i colori originiali si scorgono a malapena. \nIn un angolo della stanza c'è un piccolo automa di ferro battuto, immobile. Ha una fessura sulla schiena a forma di quadrifoglio e stringe tra le mani uno Specchio Concavo.\nSopra la statua c'è un lucernario schermato da tre vetrate colorate mobili (Rossa, Blu, Gialla) azionabili da tre leve sul muro.\n",
+      "desc": "Ti trovi in un grande salone, illuminato da torce a muro che producono ombre danzanti tutto intorno a te. Alti scaffali di legno antico corrono lungo le pareti. Migliaia di libri prendono posto sugli scaffali. Sul lato stretto a sud del salone c'è una grande libreria di un legno più chiaro, dove ci sono dei vuoti tra i libri. Sulla parete nord invece c'è un grande portale che sembra fatto di avorio. Al centro della stanza c'è una statua che rappresenta un astronomo cieco che tiene in mano un astrolabio di ottone. Di fianco alla statua c'è un grande tavolo di quercia, consumato dal tempo, sul quale sono sparpagliati libri, carte, un calamaio di ottone antico e una lampada ad olio accesa.\nLa scrivania giace su un grande e polveroso tappeto indiano, dalla fattura preziosa ma talmente consunto che i colori originiali si scorgono a malapena. \nIn un angolo della stanza c'è un piccolo automa di ferro battuto, immobile. Ha una fessura sulla schiena a forma di quadrifoglio e stringe tra le mani uno Specchio Concavo.\nSopra la statua c'è un lucernario schermato da tre vetrate colorate mobili (Rossa, Blu, Gialla) azionabili da tre leve sul muro. Sul muro ci sono tre leve colorate e un pulsante. Immagini che il pulsante serva a far funzionare le leve.\n",
       "uscite": {
         "giu": {
           "to": "catacombe",
@@ -40,9 +60,7 @@
       "nome": "Scaffali antichi",
       "nomi": [
         "scaffali",
-        "scaffale",
-        "libreria",
-        "librerie"
+        "scaffale"
       ],
       "aggettivi": [],
       "posizione": "biblioteca",
@@ -116,7 +134,8 @@
     "scrivania": {
       "nome": "Grande scrivania di quercia",
       "nomi": [
-        "scrivania"
+        "scrivania",
+        "tavolo"
       ],
       "aggettivi": [],
       "posizione": "biblioteca",
@@ -167,6 +186,327 @@
         "png": false,
         "combattente": false
       }
+    },
+    "tappeto": {
+      "nome": "Antico tappeto indiano",
+      "nomi": [
+        "tappeto"
+      ],
+      "aggettivi": [],
+      "posizione": "biblioteca",
+      "props": {
+        "desc": "E' un antico e polveroso tappeto indiano che copre una buona parte del pavimento",
+        "prendibile": false,
+        "scenario": true,
+        "contenitore": true,
+        "aperto": false,
+        "indossabile": false,
+        "png": false,
+        "combattente": false
+      }
+    },
+    "botola": {
+      "nome": "Botola nascosta",
+      "nomi": [
+        "botola"
+      ],
+      "aggettivi": [],
+      "posizione": "tappeto",
+      "props": {
+        "desc": "Sembra una botola di legno, con rinforzi di ferro.",
+        "prendibile": false,
+        "scenario": true,
+        "contenitore": true,
+        "aperto": false,
+        "indossabile": false,
+        "png": false,
+        "combattente": false
+      }
+    },
+    "libro_rosso": {
+      "nome": "Libro rosso \"L'alba dell'Impero\"",
+      "nomi": [
+        "libro"
+      ],
+      "aggettivi": [
+        "rosso"
+      ],
+      "posizione": "botola",
+      "props": {
+        "desc": "Un libro con rilegatura rossa. Il titolo è \"L'alba dell'impero\"",
+        "in_stanza": "Libro con rilegatura rossa",
+        "prendibile": true,
+        "scenario": false,
+        "contenitore": false,
+        "aperto": false,
+        "indossabile": false,
+        "png": false,
+        "combattente": false
+      }
+    },
+    "libro_nero": {
+      "nome": "Libro nero \"Il tramonto dei Re\"",
+      "nomi": [
+        "libro"
+      ],
+      "aggettivi": [
+        "nero"
+      ],
+      "posizione": "botola",
+      "props": {
+        "desc": "Un libro con rilegatura nera. Il titolo è \"Il tramonto dei Re\"",
+        "prendibile": true,
+        "scenario": false,
+        "contenitore": false,
+        "aperto": false,
+        "indossabile": false,
+        "png": false,
+        "combattente": false,
+        "in_stanza": "Libro con rilegatura nera"
+      }
+    },
+    "libro_viola": {
+      "nome": "Libro viola  \"Pomeriggi di fuoco\"",
+      "nomi": [
+        "libro"
+      ],
+      "aggettivi": [
+        "viola"
+      ],
+      "posizione": "botola",
+      "props": {
+        "desc": "Un libro con rilegatura viola. Il titolo è \"Pomeriggi di fuoco\"",
+        "prendibile": true,
+        "scenario": false,
+        "contenitore": false,
+        "aperto": false,
+        "indossabile": false,
+        "png": false,
+        "combattente": false,
+        "in_stanza": "Libro con rilegatura viola"
+      }
+    },
+    "primo_spazio": {
+      "nome": "Un primo spazio vuoto nella libreria a destra",
+      "nomi": [
+        "spazio"
+      ],
+      "aggettivi": [
+        "destra"
+      ],
+      "posizione": "libreria",
+      "props": {
+        "desc": "Un primo spazio vuoto a destra.",
+        "prendibile": false,
+        "scenario": false,
+        "contenitore": true,
+        "aperto": true,
+        "indossabile": false,
+        "png": false,
+        "combattente": false
+      }
+    },
+    "secondo_spazio": {
+      "nome": "Un secondo spazio vuoto nella libreria centrale",
+      "nomi": [
+        "spazio"
+      ],
+      "aggettivi": [
+        "centrale"
+      ],
+      "posizione": "libreria",
+      "props": {
+        "desc": "Un secondo spazio vuoto centrale.",
+        "prendibile": false,
+        "scenario": false,
+        "contenitore": true,
+        "aperto": true,
+        "indossabile": false,
+        "png": false,
+        "combattente": false
+      }
+    },
+    "terzo_spazio": {
+      "nome": "Un terzo spazio vuoto nella libreria a sinistra",
+      "nomi": [
+        "spazio"
+      ],
+      "aggettivi": [
+        "sinistra"
+      ],
+      "posizione": "libreria",
+      "props": {
+        "desc": "Un terzo spazio vuoto a sinistra.",
+        "prendibile": false,
+        "scenario": false,
+        "contenitore": true,
+        "aperto": true,
+        "indossabile": false,
+        "png": false,
+        "combattente": false
+      }
+    },
+    "nicchia": {
+      "nome": "Nicchia nella libreria",
+      "nomi": [
+        "nicchia"
+      ],
+      "aggettivi": [],
+      "posizione": "libreria",
+      "props": {
+        "desc": "Una piccola nicchia segreta ricavata nel legno chiaro della libreria, così ben nascosta che a porta chiusa non se ne indovina nemmeno il contorno.",
+        "prendibile": false,
+        "scenario": false,
+        "contenitore": true,
+        "aperto": false,
+        "indossabile": false,
+        "png": false,
+        "combattente": false
+      }
+    },
+    "chiave": {
+      "nome": "Chiave a quadrifoglio",
+      "nomi": [
+        "chiave"
+      ],
+      "aggettivi": [
+        "quadrifoglio"
+      ],
+      "posizione": "nicchia",
+      "props": {
+        "desc": "Una chiave di ottone dall'impugnatura insolita: quattro lobi disposti a quadrifoglio. Ti torna in mente la fessura sulla schiena dell'automa.",
+        "in_stanza": "Chiave di ottone a quadrifoglio",
+        "prendibile": true,
+        "scenario": false,
+        "contenitore": false,
+        "aperto": false,
+        "indossabile": false,
+        "png": false,
+        "combattente": false
+      }
+    },
+    "automa": {
+      "nome": "Automa di ferro",
+      "nomi": [
+        "automa",
+        "robot"
+      ],
+      "aggettivi": [
+        "ferro"
+      ],
+      "posizione": "biblioteca",
+      "props": {
+        "desc": "[automa_inposizione: Dopo aver percorso lo spazio fino a posizionarsi davanti alla statua, il piccolo automa si è fermato sollevando lo specchio verso il lucernario | Un piccolo automa di ferro, immobile e polveroso, con una serratura sulla schiena a forma di quadrifoglio. Tra le manine di ferro abbassate, tiene uno specchio]",
+        "prendibile": false,
+        "scenario": true,
+        "contenitore": false,
+        "aperto": false,
+        "indossabile": false,
+        "png": false,
+        "combattente": false
+      }
+    },
+    "levarossa": {
+      "nome": "Leva rossa",
+      "nomi": [
+        "leva"
+      ],
+      "aggettivi": [
+        "rossa"
+      ],
+      "posizione": "biblioteca",
+      "props": {
+        "desc": "Una leva rossa",
+        "prendibile": false,
+        "scenario": true,
+        "contenitore": false,
+        "aperto": false,
+        "indossabile": false,
+        "png": false,
+        "combattente": false
+      }
+    },
+    "levablu": {
+      "nome": "Leva blu",
+      "nomi": [
+        "leva"
+      ],
+      "aggettivi": [
+        "blu"
+      ],
+      "posizione": "biblioteca",
+      "props": {
+        "desc": "Una leva blu",
+        "prendibile": false,
+        "scenario": true,
+        "contenitore": false,
+        "aperto": false,
+        "indossabile": false,
+        "png": false,
+        "combattente": false
+      }
+    },
+    "levagialla": {
+      "nome": "Leva gialla",
+      "nomi": [
+        "leva"
+      ],
+      "aggettivi": [
+        "gialla"
+      ],
+      "posizione": "biblioteca",
+      "props": {
+        "desc": "Una leva gialla",
+        "prendibile": false,
+        "scenario": true,
+        "contenitore": false,
+        "aperto": false,
+        "indossabile": false,
+        "png": false,
+        "combattente": false
+      }
+    },
+    "portale": {
+      "nome": "Grande portale di avorio",
+      "nomi": [
+        "portale",
+        "porta",
+        "uscita",
+        "portone"
+      ],
+      "aggettivi": [],
+      "posizione": "biblioteca",
+      "props": {
+        "desc": "E un grande e solido portale di avorio. E' chiuso e sembra che nulla possa smuoverlo. Sull'architrave c'è scritto: \"L'ultimo raggio di luce prima della notte\"",
+        "prendibile": false,
+        "scenario": false,
+        "contenitore": false,
+        "aperto": false,
+        "indossabile": false,
+        "png": false,
+        "combattente": false
+      }
+    },
+    "pulsante": {
+      "nome": "Pulsante di ametista",
+      "nomi": [
+        "pulsante",
+        "bottone"
+      ],
+      "aggettivi": [
+        "ametista"
+      ],
+      "posizione": "biblioteca",
+      "props": {
+        "desc": "Un pulsante fatto con una pietra di ametista, proprio di fianco alle leve.",
+        "prendibile": false,
+        "scenario": true,
+        "contenitore": false,
+        "aperto": false,
+        "indossabile": false,
+        "png": false,
+        "combattente": false
+      }
     }
   },
   "regole": [
@@ -197,38 +537,274 @@
         },
         {
           "stampa": "Adesso la scritta è leggibile!"
+        },
+        {
+          "set_flag": "tappeto_esplorabile",
+          "valore": true
         }
       ],
       "altrimenti": []
     },
     {
-      "id": "esplorazione_tappeto",
+      "id": "esplora_tappeto",
       "quando": {
-        "verbo": "esamina",
-        "oggetto": "segno"
+        "verbo": "apri",
+        "oggetto": "tappeto"
       },
       "se": [
         {
-          "flag": "scritta_visibile",
+          "flag": "tappeto_esplorabile",
           "uguale": true
+        }
+      ],
+      "allora": [
+        {
+          "apri_oggetto": "tappeto"
         },
         {
-          "flag": "tappeto_esplorabile",
+          "stampa": "Sollevi un lembo del tappeto: sotto si nasconde una botola di legno!"
+        }
+      ],
+      "altrimenti": [
+        {
+          "stampa": "Adesso non credi sia utile... magari dopo cambierai idea"
+        }
+      ]
+    },
+    {
+      "id": "ottieni_chiave",
+      "quando": {
+        "evento": "turno"
+      },
+      "se": [
+        {
+          "oggetto_in": [
+            "libro_rosso",
+            "primo_spazio"
+          ]
+        },
+        {
+          "oggetto_in": [
+            "libro_viola",
+            "secondo_spazio"
+          ]
+        },
+        {
+          "oggetto_in": [
+            "libro_nero",
+            "terzo_spazio"
+          ]
+        },
+        {
+          "non": {
+            "flag": "nicchia_aperta",
+            "uguale": true
+          }
+        }
+      ],
+      "allora": [
+        {
+          "apri_oggetto": "nicchia"
+        },
+        {
+          "stampa": "Si ode un clic! Una nicchia nella libreria si apre."
+        },
+        {
+          "set_flag": "nicchia_aperta",
+          "valore": true
+        }
+      ],
+      "altrimenti": []
+    },
+    {
+      "id": "nicchia_bloccata",
+      "quando": {
+        "verbo": "apri",
+        "oggetto": "nicchia"
+      },
+      "se": [
+        {
+          "flag": "nicchia_aperta",
+          "uguale": true
+        }
+      ],
+      "allora": [
+        {
+          "apri_oggetto": "nicchia"
+        },
+        {
+          "stampa": "La nicchia è aperta."
+        }
+      ],
+      "altrimenti": [
+        {
+          "stampa": "Spingi e tiri, ma la nicchia non si smuove di un millimetro. Dev'esserci un meccanismo che la tiene chiusa."
+        }
+      ]
+    },
+    {
+      "id": "muovi_automa",
+      "quando": {
+        "verbo": "usa",
+        "oggetto": "chiave",
+        "prep": "con"
+      },
+      "se": [
+        {
+          "oggetto_in": [
+            "chiave",
+            "inventario"
+          ]
+        },
+        {
+          "flag": "automa_inposizione",
           "uguale": false
         }
       ],
       "allora": [
         {
-          "set_flag": "tappeto_esplorabile",
+          "set_flag": "automa_inposizione",
           "valore": true
         },
         {
-          "stampa": "[scritta_visibile: La conoscenza illumina il cammino, ma solo l'ordine rivela la verità. Cerca il sapere calpestato. | E' una scritta ma i caratteri sono così piccoli che è illeggibile.]"
+          "stampa": "Con un rumore di scatti e ticchettii, l'automa si mette in movimento, posizionandosi davanti alla statua dell'astronomo e sollevando le braccia meccaniche esponendo lo specchio verso il lucernario."
         }
       ],
       "altrimenti": [
         {
-          "stampa": "[scritta_visibile: La conoscenza illumina il cammino, ma solo l'ordine rivela la verità. Cerca il sapere calpestato. | E' una scritta ma i caratteri sono così piccoli che è illeggibile.]"
+          "stampa": "Non funziona..."
+        }
+      ]
+    },
+    {
+      "id": "status_leva_blu",
+      "quando": {
+        "verbo": "abbassa",
+        "oggetto": "levablu"
+      },
+      "se": [
+        {
+          "flag": "blu",
+          "uguale": false
+        }
+      ],
+      "allora": [
+        {
+          "set_flag": "blu",
+          "valore": true
+        },
+        {
+          "stampa": "Leva blu attivata"
+        }
+      ],
+      "altrimenti": [
+        {
+          "set_flag": "blu",
+          "valore": false
+        },
+        {
+          "stampa": "Leva blu disattivata"
+        }
+      ]
+    },
+    {
+      "id": "status_leva_gialla",
+      "quando": {
+        "verbo": "abbassa",
+        "oggetto": "levagialla"
+      },
+      "se": [
+        {
+          "flag": "giallo",
+          "uguale": false
+        }
+      ],
+      "allora": [
+        {
+          "set_flag": "giallo",
+          "valore": true
+        },
+        {
+          "stampa": "Leva gialla attivata"
+        }
+      ],
+      "altrimenti": [
+        {
+          "set_flag": "giallo",
+          "valore": false
+        },
+        {
+          "stampa": "Leva gialla disattivata"
+        }
+      ]
+    },
+    {
+      "id": "status_leva_rossa",
+      "quando": {
+        "verbo": "abbassa",
+        "oggetto": "levarossa"
+      },
+      "se": [
+        {
+          "flag": "rosso",
+          "uguale": false
+        }
+      ],
+      "allora": [
+        {
+          "set_flag": "rosso",
+          "valore": true
+        },
+        {
+          "stampa": "Leva rossa attivata"
+        }
+      ],
+      "altrimenti": [
+        {
+          "set_flag": "rosso",
+          "valore": false
+        },
+        {
+          "stampa": "Leva rossa disattivata"
+        }
+      ]
+    },
+    {
+      "id": "apertura_portale",
+      "quando": {
+        "verbo": "premi",
+        "oggetto": "pulsante"
+      },
+      "se": [
+        {
+          "flag": "blu",
+          "uguale": true
+        },
+        {
+          "flag": "giallo",
+          "uguale": true
+        },
+        {
+          "flag": "rosso",
+          "uguale": false
+        },
+        {
+          "flag": "automa_inposizione",
+          "uguale": true
+        }
+      ],
+      "allora": [
+        {
+          "stampa": "La vetrata gialla e quella blu si allineano creando un fascio di luce verde che viene proiettato sullo specchio portato dall'automa. Da qui la luce rimbalza sull'astrolabio e quindi sul portale di avorio. Con un rumore meccanico molto forte il portale lentamente si spalanca mostrando l'imboccatura di una scalinata che scende nelle tenebre."
+        },
+        {
+          "set_flag": "portale_aperto",
+          "valore": true
+        }
+      ],
+      "altrimenti": [
+        {
+          "stampa": "clic"
         }
       ]
     }
