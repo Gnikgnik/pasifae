@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from advcore import carica_mondo, Motore, Mondo, Stanza, Oggetto
+from advcore import carica_mondo, Motore, Mondo, Stanza, Oggetto, Verbo, Regola
 
 
 def _al_tesoro():
@@ -141,6 +141,33 @@ def test_aiuto():
     mot.avvia()
     r = mot.esegui("aiuto")
     assert "Comandi" in r and "salva" in r and "parla" in r
+    # la caverna dichiara verbi ad hoc e usa il punteggio: devono comparire
+    assert "accendi" in r and "spegni" in r
+    assert "punteggio" in r
+
+
+def test_aiuto_solo_verbi_usati():
+    # L'aiuto elenca solo i verbi che l'avventura usa davvero: qui niente
+    # contenitori, indumenti, personaggi o punteggio, ma un verbo ad hoc.
+    m = Mondo(meta={"titolo": "Minimal", "stanza_iniziale": "qui"})
+    m.stanze["qui"] = Stanza(id="qui", nome="Qui", desc="Una stanza spoglia.")
+    m.oggetti["campana"] = Oggetto(id="campana", nome="campana",
+                                   nomi=["campana"], posizione="qui",
+                                   props={"scenario": True})
+    m.oggetti["sasso"] = Oggetto(id="sasso", nome="sasso", nomi=["sasso"],
+                                 posizione="qui", props={"prendibile": True})
+    m.verbi["suona"] = Verbo(id="suona", sinonimi=["suonare"])
+    m.regole.append(Regola(id="r_suona",
+                           quando={"verbo": "suona", "oggetto": "campana"},
+                           allora=[{"stampa": "Din don."}]))
+    mot = Motore(m)
+    mot.avvia()
+    r = mot.esegui("aiuto")
+    assert "suona <oggetto>" in r          # verbo ad hoc dichiarato
+    assert "prendi" in r                   # c'è un oggetto prendibile
+    assert "guarda" in r and "salva" in r  # sempre presenti
+    for assente in ("apri", "indossa", "parla", "attacca", "punteggio"):
+        assert assente not in r, f"«{assente}» non dovrebbe comparire"
 
 
 def main() -> int:

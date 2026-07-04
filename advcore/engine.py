@@ -19,7 +19,7 @@ from __future__ import annotations
 from dataclasses import replace
 
 from .model import Mondo, INVENTARIO
-from .parser import Parser, ComandoParser
+from .parser import Parser, ComandoParser, VERBI_BUILTIN
 from .rules import valuta_condizioni, esegui_effetti
 from .salvataggio import stato_partita, applica_stato
 from .testo import rendi_testo
@@ -356,15 +356,67 @@ class Motore:
                 f"in {self.mondo.mosse} mosse.")
 
     def _h_aiuto(self, cmd: ComandoParser) -> str:
-        return (
-            "Comandi che puoi usare:\n"
-            "  muoverti:     nord/sud/est/ovest, su/giù (o «vai <direzione>»)\n"
-            "  osservare:    guarda, esamina <oggetto>\n"
-            "  oggetti:      prendi/lascia <oggetto>, inventario\n"
-            "  contenitori:  apri/chiudi <oggetto>, metti <oggetto> in <contenitore>\n"
-            "  indumenti:    indossa/togli <oggetto>\n"
-            "  interagire:   usa <oggetto> con <oggetto>, parla con <personaggio>\n"
-            "  partita:      punteggio, salva [nome], carica [nome], riavvia, fine")
+        """Elenca solo i comandi che questa avventura usa davvero: le sezioni
+        compaiono se il mondo contiene ciò che le rende utili (contenitori,
+        indumenti, personaggi, ...) o se una regola risponde a quel verbo."""
+        m = self.mondo
+        props = {k for o in m.oggetti.values()
+                 for k, v in o.props.items() if v}
+        verbi_regole = {r.quando.get("verbo") for r in m.regole
+                        if r.quando.get("verbo") and not r.quando.get("evento")}
+        righe = [
+            "  muoverti:     nord/sud/est/ovest, su/giù (o «vai <direzione>»)",
+            "  osservare:    guarda, esamina <oggetto>",
+        ]
+        if "prendibile" in props or {"prendi", "lascia"} & verbi_regole:
+            righe.append("  oggetti:      prendi/lascia <oggetto>, inventario")
+        if "contenitore" in props or {"apri", "chiudi", "metti"} & verbi_regole:
+            righe.append("  contenitori:  apri/chiudi <oggetto>, "
+                         "metti <oggetto> in <contenitore>")
+        if "indossabile" in props or {"indossa", "togli"} & verbi_regole:
+            righe.append("  indumenti:    indossa/togli <oggetto>")
+        interagire = []
+        if "usa" in verbi_regole:
+            interagire.append("usa <oggetto> con <oggetto>")
+        if "png" in props or "parla" in verbi_regole:
+            interagire.append("parla con <personaggio>")
+        if interagire:
+            righe.append("  interagire:   " + ", ".join(interagire))
+        if "combattente" in props or "attacca" in verbi_regole:
+            righe.append("  combattere:   attacca <personaggio> "
+                         "(poi: attacca, difendi, fuggi)")
+        speciali = [v for vid, v in m.verbi.items() if vid not in VERBI_BUILTIN]
+        if speciali:
+            righe.append("  speciali:     "
+                         + ", ".join(self._firma_verbo(v) for v in speciali))
+        partita = ["salva [nome]", "carica [nome]", "riavvia", "fine"]
+        if self._usa_punteggio():
+            partita.insert(0, "punteggio")
+        righe.append("  partita:      " + ", ".join(partita))
+        return "Comandi che puoi usare:\n" + "\n".join(righe)
+
+    @staticmethod
+    def _firma_verbo(v) -> str:
+        """Come mostrare un verbo ad hoc nell'aiuto, secondo il suo tipo."""
+        if v.tipo == "intransitivo":
+            return v.id
+        if v.tipo == "ditransitivo":
+            prep = v.preposizioni[0] if v.preposizioni else "con"
+            return f"{v.id} <oggetto> {prep} <oggetto>"
+        return f"{v.id} <oggetto>"
+
+    def _usa_punteggio(self) -> bool:
+        """Vero se da qualche parte (regole, dialoghi, esiti degli scontri)
+        c'e' un effetto che assegna punti."""
+        def cerca(x) -> bool:
+            if isinstance(x, dict):
+                return "punti" in x or any(cerca(v) for v in x.values())
+            if isinstance(x, list):
+                return any(cerca(v) for v in x)
+            return False
+        return (any(cerca(r.allora) or cerca(r.altrimenti)
+                    for r in self.mondo.regole)
+                or any(cerca(o.props) for o in self.mondo.oggetti.values()))
 
     def _h_usa(self, cmd: ComandoParser) -> str:
         # le combinazioni vere sono regole "usa ... con ..." (provate prima)
