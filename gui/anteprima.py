@@ -21,8 +21,8 @@ from gui.player import InputComando
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox, QDialog, QDialogButtonBox, QFrame, QHBoxLayout, QLabel,
-    QListWidget, QListWidgetItem, QPushButton, QTextEdit, QTreeWidget,
-    QTreeWidgetItem, QVBoxLayout,
+    QListWidget, QListWidgetItem, QPushButton, QSplitter, QTextEdit,
+    QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget,
 )
 
 
@@ -42,7 +42,7 @@ class FinestraGioco(QDialog):
 
         self.setWindowTitle("Prova dell'avventura")
         self.setStyleSheet(tema.qss(tema_nome))
-        self.resize(820, 620)
+        self.resize(1060, 640)
 
         radice = QVBoxLayout(self)
         radice.setContentsMargins(0, 0, 0, 0)
@@ -68,12 +68,11 @@ class FinestraGioco(QDialog):
         avviso.setContentsMargins(22, 6, 0, 0)
         radice.addWidget(avviso)
 
-        self.immagine = PannelloImmagine()
-        radice.addWidget(self.immagine)
+        # illustrazione a colonna, a fianco della trascrizione: come nel player
+        self.immagine = PannelloImmagine(riempi=True)
 
         self.vista = QTextEdit(); self.vista.setObjectName("vista")
         self.vista.setReadOnly(True); self.vista.setFrameStyle(QFrame.NoFrame)
-        radice.addWidget(self.vista, 1)
 
         riga = QFrame(); riga.setObjectName("barra_giu")
         hr = QHBoxLayout(riga)
@@ -91,7 +90,23 @@ class FinestraGioco(QDialog):
             b.setDefault(False)
         hr.addWidget(prompt); hr.addWidget(self.input, 1)
         hr.addWidget(b_riavvia); hr.addWidget(b_chiudi)
-        radice.addWidget(riga)
+
+        colonna = QWidget()
+        vdx = QVBoxLayout(colonna)
+        vdx.setContentsMargins(0, 0, 0, 0); vdx.setSpacing(0)
+        vdx.addWidget(self.vista, 1)
+        vdx.addWidget(riga)
+
+        self.spartizione = QSplitter(Qt.Horizontal)
+        self.spartizione.addWidget(self.immagine)
+        self.spartizione.addWidget(colonna)
+        self.spartizione.setCollapsible(1, False)   # il testo non sparisce mai
+        self.spartizione.setStretchFactor(0, 2)
+        self.spartizione.setStretchFactor(1, 3)
+        largo = self.width()
+        self.spartizione.setSizes([int(largo * 0.44),
+                                   largo - int(largo * 0.44)])
+        radice.addWidget(self.spartizione, 1)
 
         self._mostra(self.motore.avvia(), "risposta")
         self._aggiorna_stato()

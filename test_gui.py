@@ -868,6 +868,23 @@ def test_anteprima_mostra_illustrazione(qtbot, tmp_path):
     assert not f2.immagine.isVisible()
 
 
+def test_anteprima_illustrazione_a_fianco(qtbot, tmp_path):
+    """Come nel player, l'anteprima mostra l'illustrazione in una colonna
+    a tutta altezza a sinistra della trascrizione, in uno splitter
+    orizzontale regolabile."""
+    from PySide6.QtWidgets import QSplitter
+    percorso = _avventura_con_immagine(tmp_path)
+    m = carica_mondo(percorso)
+    f = FinestraGioco(m, "scuro", percorso=percorso)
+    qtbot.addWidget(f)
+    f.show()
+    QApplication.processEvents()
+    assert isinstance(f.spartizione, QSplitter)
+    assert f.spartizione.orientation() == Qt.Horizontal
+    assert f.spartizione.indexOf(f.immagine) == 0      # immagine a sinistra
+    assert f.immagine.height() > 300                   # niente tetto a 240 px
+
+
 # --------------------------- ricerca / filtri ---------------------------
 
 def test_combo_cerca_filtrabile(qtbot):
