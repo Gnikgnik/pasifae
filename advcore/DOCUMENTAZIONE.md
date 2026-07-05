@@ -163,7 +163,9 @@ Tutto il resto è privato (prefisso `_`). In sintesi:
   combaci; se le condizioni sono vere esegue `allora`, altrimenti `altrimenti`.
 - **Comportamento predefinito** (`_predefinito` e i tanti `_h_*`): gestisce i verbi
   noti — guarda, esamina, prendi, lascia, inventario, apri, chiudi, metti, indossa,
-  togli, usa, parla, attacca, aiuto, punteggio, e il movimento. L'aiuto è
+  togli, usa, parla, attacca, aiuto, punteggio, e il movimento. «prendi tutto»
+  (o «tutti») raccoglie gli oggetti prendibili della stanza: ogni presa passa
+  dalle regole dell'autore come un «prendi» singolo. L'aiuto è
   costruito sui dati: mostra solo i comandi che l'avventura usa davvero (le
   sezioni compaiono se il mondo contiene contenitori, indumenti, personaggi,
   combattenti, ... o se una regola risponde a quel verbo) e include i verbi

@@ -100,7 +100,7 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   e l'eseguibile vale solo per il sistema operativo su cui lo compili.
 
 ## Stato attuale
-- `advcore` **1.15.0** · interfaccia `gui` **1.11.0**.
+- `advcore` **1.16.0** · interfaccia `gui` **1.11.0**.
 - Suite: **61 test GUI + 10 script**, tutti verdi.
 - Documentazione: `README.md`, `advcore/DOCUMENTAZIONE.md`, `COSTRUIRE.md`,
   manuale d'uso (Word/PDF), e il progetto dell'avventura "SOTTO ARES".
@@ -111,9 +111,9 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
 - **Priorità e "ferma qui" nelle regole**: poter ordinare le regole e fermare la
   catena dopo che una è scattata (evita effetti a cascata indesiderati). Aggiungi
   prima i test che descrivono l'ordine atteso.
-- **Parser più ricco**: gestione di "tutto"/"tutti", oggetti multipli ("prendi
-  spada e scudo"), pronome "lo/la" riferito all'ultimo oggetto, abbreviazioni
-  delle direzioni (n/s/e/o).
+- **Parser più ricco**: oggetti multipli ("prendi spada e scudo") e pronome
+  "lo/la" riferito all'ultimo oggetto. (Fatti: "prendi tutto"/"tutti",
+  abbreviazioni delle direzioni, preposizioni multiple nelle regole.)
 - **Verbi personalizzati guidati da dati**: permettere all'autore di definire
   nuovi verbi con effetti, senza toccare il codice.
 - **Stati dei contenitori e dei liquidi**: versare, riempire, mescolare — utile
