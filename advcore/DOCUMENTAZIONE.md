@@ -107,6 +107,11 @@ Il meccanismo «**quando → se → allora / altrimenti**».
 | `allora` | list[dict] | effetti se le condizioni sono vere |
 | `altrimenti` | list[dict] | effetti se sono false |
 
+Nell'innesco a comando i campi assenti valgono da jolly. Ogni campo accetta
+anche una **lista** di valori («uno qualsiasi di questi»): l'uso tipico è
+`"prep": ["su", "con"]`, che fa scattare la stessa regola con «usa chiave
+**su** automa» e «usa chiave **con** automa».
+
 ### `Mondo`
 
 Contenitore di tutto: definizione + stato runtime.
