@@ -448,13 +448,17 @@ def test_player_dimensione_testo(qtbot, monkeypatch, tmp_path):
     assert p2.dim_testo == 16
 
 
+# un PNG 1×1 valido, per non dipendere da QPixmap (che esige QApplication)
+_PNG_MINIMO = __import__("base64").b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8"
+    "z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+
+
 def _avventura_con_immagine(tmp_path, con_file=True):
     """Avventura minima: l'atrio ha un'illustrazione, la cella no."""
     import json
-    from PySide6.QtGui import QPixmap
     if con_file:
-        pm = QPixmap(64, 48); pm.fill(Qt.darkCyan)
-        pm.save(str(tmp_path / "atrio.png"))
+        (tmp_path / "atrio.png").write_bytes(_PNG_MINIMO)
     dati = {
         "meta": {"titolo": "Figure", "stanza_iniziale": "atrio"},
         "stanze": {
@@ -685,6 +689,29 @@ def test_compila_prepara(tmp_path):
     ast.parse(src)                                  # lo spec è Python valido
     assert "avventura.json" in src and "pasifae.ico" in src
     assert f"name={nome!r}" in src
+
+
+def test_compila_prepara_con_immagini(tmp_path):
+    """Le illustrazioni riferite dalle stanze vengono copiate nel progetto di
+    build ed elencate nello spec (datas): il gioco compilato le porta con sé.
+    Un'immagine mancante non blocca la compilazione; senza illustrazioni lo
+    spec resta com'era."""
+    import ast
+    from gui import compila
+    origine = _avventura_con_immagine(tmp_path)
+    m = carica_mondo(origine)
+    m.stanze["cella"].immagine = "sparita.png"     # riferita ma senza file
+    build = tmp_path / "build"
+    spec, _ = compila.prepara(m, str(build), origine=origine)
+    assert (build / "atrio.png").exists()
+    src = open(spec, encoding="utf-8").read()
+    ast.parse(src)                                  # lo spec è Python valido
+    assert "atrio.png" in src
+    assert "sparita.png" not in src
+    # avventura senza illustrazioni: nessun file extra (retrocompatibile)
+    m2 = carica_mondo(str(AVV / "faro.json"))
+    spec2, _ = compila.prepara(m2, str(tmp_path / "build2"), origine=str(AVV / "faro.json"))
+    assert ".png" not in open(spec2, encoding="utf-8").read()
 
 
 def test_player_senza_avventura_inclusa():

@@ -451,16 +451,18 @@ class _CompilaWorker(QThread):
     errore = Signal(str)       # messaggio d'errore
     avanzamento = Signal(str)  # riga di log
 
-    def __init__(self, mondo, cartella):
+    def __init__(self, mondo, cartella, origine=None):
         super().__init__()
         self._mondo = mondo
         self._cartella = cartella
+        self._origine = origine        # JSON dell'avventura: base delle immagini
 
     def run(self):
         from gui import compila
         try:
             percorso = compila.compila(
-                self._mondo, self._cartella, log=self.avanzamento.emit)
+                self._mondo, self._cartella, log=self.avanzamento.emit,
+                origine=self._origine)
             self.fatto.emit(percorso)
         except Exception as e:                       # noqa: BLE001
             self.errore.emit(str(e))
@@ -780,7 +782,7 @@ class Editor(QMainWindow):
         self._dlg_compila.setMinimumWidth(440)
 
         self._worker_compila = _CompilaWorker(
-            copy.deepcopy(self.mondo), cartella)
+            copy.deepcopy(self.mondo), cartella, origine=self.percorso)
         self._worker_compila.avanzamento.connect(
             self._dlg_compila.setLabelText)
         self._worker_compila.fatto.connect(self._compila_finita)
