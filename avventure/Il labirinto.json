@@ -647,7 +647,10 @@
       "quando": {
         "verbo": "usa",
         "oggetto": "chiave",
-        "prep": "con"
+        "prep": [
+          "su",
+          "con"
+        ]
       },
       "se": [
         {
