@@ -30,6 +30,17 @@ def _dir_salvataggi() -> str:
     d.mkdir(parents=True, exist_ok=True)
     return str(d)
 
+
+# «*.sav» è l'estensione dei player da terminale; «Tutti i file» recupera i
+# salvataggi nati senza estensione con le versioni precedenti.
+FILTRO_SALVATAGGI = "Salvataggi (*.save *.sav *.json);;Tutti i file (*)"
+
+
+def _con_estensione(percorso: str) -> str:
+    """Aggiunge «.save» se l'utente non ha scelto un'estensione: senza, il
+    dialogo di caricamento (che filtra per estensione) non mostrerebbe il file."""
+    return percorso if Path(percorso).suffix else percorso + ".save"
+
 from advcore import carica_mondo, Motore, salva_partita, carica_partita  # noqa: E402
 from gui import tema  # noqa: E402
 
@@ -355,15 +366,16 @@ class Player(QMainWindow):
     def _salva(self):
         cartella = _dir_salvataggi()
         f, _ = QFileDialog.getSaveFileName(self, "Salva partita", cartella,
-                                           "Salvataggi (*.save *.json)")
+                                           FILTRO_SALVATAGGI)
         if f:
+            f = _con_estensione(f)
             salva_partita(self.mondo, f)
             self.statusBar().showMessage(f"Partita salvata in {f}", 4000)
 
     def _carica(self):
         cartella = _dir_salvataggi()
         f, _ = QFileDialog.getOpenFileName(self, "Carica partita", cartella,
-                                           "Salvataggi (*.save *.json)")
+                                           FILTRO_SALVATAGGI)
         if not f:
             return
         carica_partita(self.mondo, f)

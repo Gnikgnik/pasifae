@@ -25,7 +25,8 @@ from PySide6.QtWidgets import (  # noqa: E402
 )
 
 from advcore import (  # noqa: E402
-    carica_mondo, salva_mondo, Mondo, Motore, Stanza, Oggetto, Regola,
+    carica_mondo, salva_mondo, salva_partita, Mondo, Motore, Stanza, Oggetto,
+    Regola,
 )
 from advcore.model import SCARTATO  # noqa: E402
 from gui.editor import Editor, DialogoVoce, combo_cerca, CATEGORIE  # noqa: E402
@@ -218,6 +219,49 @@ def test_player_percorso_diretto(qtbot):
     p = Player(str(AVV / "faro.json"))
     qtbot.addWidget(p)
     assert p.motore is not None and p.input.isEnabled()
+
+
+def test_player_salva_aggiunge_estensione(qtbot, monkeypatch, tmp_path):
+    """Il dialogo "Salva partita" non impone un'estensione: se l'utente scrive
+    solo «lab1» il file nasce senza suffisso e il dialogo di caricamento, che
+    filtra per estensione, non lo mostra più. Il player deve aggiungere .save
+    (rispettando però un'estensione scelta dall'utente)."""
+    p = Player(str(AVV / "faro.json"))
+    qtbot.addWidget(p)
+    scelto = tmp_path / "lab1"                    # nome senza estensione
+    monkeypatch.setattr(QFileDialog, "getSaveFileName",
+                        lambda *a, **k: (str(scelto), ""))
+    p._salva()
+    assert not scelto.exists()
+    assert (tmp_path / "lab1.save").exists()
+    scelto = tmp_path / "lab2.json"               # estensione esplicita
+    p._salva()
+    assert scelto.exists()
+
+
+def test_player_carica_vede_sav_e_senza_estensione(qtbot, monkeypatch, tmp_path):
+    """Il filtro di "Carica partita" deve mostrare anche i «.sav» dei player
+    da terminale e offrire «Tutti i file» per i vecchi salvataggi nati senza
+    estensione; un file senza estensione deve comunque caricarsi."""
+    p = Player(str(AVV / "faro.json"))
+    qtbot.addWidget(p)
+    p.mondo.punteggio = 7
+    salvato = tmp_path / "vecchio"                # salvataggio senza estensione
+    salva_partita(p.mondo, salvato)
+
+    p2 = Player(str(AVV / "faro.json"))
+    qtbot.addWidget(p2)
+    catturato = {}
+
+    def finto_open(parent, titolo, cartella, filtro):
+        catturato["filtro"] = filtro
+        return str(salvato), ""
+
+    monkeypatch.setattr(QFileDialog, "getOpenFileName", finto_open)
+    p2._carica()
+    assert "(*.save *.sav *.json)" in catturato["filtro"], catturato
+    assert "Tutti i file" in catturato["filtro"], catturato
+    assert p2.mondo.punteggio == 7
 
 
 def test_animazione_non_riscrive_tutta_la_cronologia(qtbot):
