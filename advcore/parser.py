@@ -86,6 +86,7 @@ class ComandoParser:
     ogg_diretto: str | None = None      # id oggetto risolto
     prep: str | None = None             # preposizione canonica
     ogg_indiretto: str | None = None    # id oggetto risolto
+    tutto: bool = False                 # oggetto diretto = «tutto»/«tutti»
     errore: str | None = None           # messaggio se non si capisce / ambiguo
 
 
@@ -151,6 +152,12 @@ class Parser:
             cmd.prep = self._sinonimo_prep[resto[idx_prep]]
             frase_diretto = resto[:idx_prep]
             frase_indiretto = resto[idx_prep + 1:]
+
+        # «tutto»/«tutti» come oggetto diretto: non è un oggetto da risolvere,
+        # è un quantificatore che il motore espande (es. «prendi tutto»)
+        if frase_diretto and all(t in ("tutto", "tutti") for t in frase_diretto):
+            cmd.tutto = True
+            frase_diretto = []
 
         # risolvi i gruppi nominali contro gli oggetti in scope
         if frase_diretto:

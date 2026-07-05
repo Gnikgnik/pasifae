@@ -115,6 +115,9 @@ class Motore:
         # comandi meta gestiti direttamente
         if cmd.verbo == "vai":
             risposta = self._muovi(cmd.direzione)
+        elif cmd.tutto:
+            risposta = (self._prendi_tutto() if cmd.verbo == "prendi"
+                        else "Puoi usare \"tutto\" solo con \"prendi\".")
         else:
             rr = self._prova_regole(cmd)               # 1) regole dell'autore
             risposta = rr if rr is not None else self._predefinito(cmd)  # 2) builtin
@@ -276,6 +279,30 @@ class Motore:
         o.posizione = INVENTARIO
         return f"Prendi {o.nome}."
 
+    def _prendi_tutto(self) -> str:
+        """«prendi tutto»: prova a prendere, uno per uno, gli oggetti
+        prendibili posati nella stanza. Ogni presa passa dalle regole
+        dell'autore come un «prendi» singolo, così gli enigmi che
+        intercettano la presa restano validi. Scenario e oggetti non
+        prendibili vengono ignorati in silenzio."""
+        if not self.mondo.luce_disponibile():
+            return "E' troppo buio per vedere cosa c'e' da prendere."
+        candidati = [o for o in self.mondo.oggetti_in(self.mondo.stanza_corrente)
+                     if o.props.get("prendibile")]
+        if not candidati:
+            return "Non c'e' nulla da prendere qui."
+        righe = []
+        for o in candidati:
+            cmd = ComandoParser(raw=f"prendi {o.nome}", verbo="prendi",
+                                ogg_diretto=o.id)
+            rr = self._prova_regole(cmd)
+            r = rr if rr is not None else self._predefinito(cmd)
+            if r:
+                righe.append(r)
+            if self.mondo.finita:      # una regola può chiudere la partita
+                break
+        return "\n".join(righe)
+
     def _h_lascia(self, cmd: ComandoParser) -> str:
         if not cmd.ogg_diretto:
             return "Lascia cosa?"
@@ -377,7 +404,8 @@ class Motore:
             "  osservare:    guarda, esamina <oggetto>",
         ]
         if "prendibile" in props or {"prendi", "lascia"} & verbi_regole:
-            righe.append("  oggetti:      prendi/lascia <oggetto>, inventario")
+            righe.append("  oggetti:      prendi/lascia <oggetto>, "
+                         "prendi tutto, inventario")
         if "contenitore" in props or {"apri", "chiudi", "metti"} & verbi_regole:
             righe.append("  contenitori:  apri/chiudi <oggetto>, "
                          "metti <oggetto> in <contenitore>")

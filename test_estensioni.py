@@ -207,6 +207,58 @@ def test_prep_lista_nella_regola():
     assert "Clic." in mot.esegui("usa chiave su automa")
 
 
+def test_prendi_tutto():
+    """«prendi tutto» (o «tutti») raccoglie gli oggetti prendibili della
+    stanza, ignora scenario e non prendibili, e ogni presa passa dalle
+    regole dell'autore come un «prendi» singolo."""
+    def mondo():
+        m = Mondo(meta={"stanza_iniziale": "sala"})
+        m.stanze["sala"] = Stanza(id="sala", nome="Sala", desc="")
+        m.oggetti["chiave"] = Oggetto(id="chiave", nome="chiave",
+                                      nomi=["chiave"], posizione="sala",
+                                      props={"prendibile": True})
+        m.oggetti["moneta"] = Oggetto(id="moneta", nome="moneta",
+                                      nomi=["moneta"], posizione="sala",
+                                      props={"prendibile": True})
+        m.oggetti["statua"] = Oggetto(id="statua", nome="statua",
+                                      nomi=["statua"], posizione="sala",
+                                      props={"scenario": True,
+                                             "prendibile": False})
+        return m
+
+    mot = Motore(mondo())
+    mot.avvia()
+    r = mot.esegui("prendi tutto")
+    assert "Prendi chiave." in r and "Prendi moneta." in r
+    assert "statua" not in r                      # scenario: nemmeno nominata
+    assert mot.mondo.oggetti["chiave"].posizione == "inventario"
+    assert mot.mondo.oggetti["moneta"].posizione == "inventario"
+    assert mot.mondo.oggetti["statua"].posizione == "sala"
+    assert "nulla da prendere" in mot.esegui("prendi tutto")
+
+    # una regola dell'autore intercetta la presa singola anche dentro «tutto»
+    m = mondo()
+    m.regole.append(Regola(id="r_chiave",
+                           quando={"verbo": "prendi", "oggetto": "chiave"},
+                           allora=[{"stampa": "La chiave scotta!"}]))
+    mot = Motore(m)
+    mot.avvia()
+    r = mot.esegui("prendi tutto")
+    assert "La chiave scotta!" in r
+    assert m.oggetti["chiave"].posizione == "sala"   # la regola non la sposta
+    assert m.oggetti["moneta"].posizione == "inventario"
+
+    # al buio non si vede cosa raccogliere; «tutto» vale solo per «prendi»
+    m2 = mondo()
+    m2.stanze["sala"].buia = True
+    mot2 = Motore(m2)
+    mot2.avvia()
+    assert "buio" in mot2.esegui("prendi tutti").lower()
+    mot3 = Motore(mondo())
+    mot3.avvia()
+    assert "tutto" in mot3.esegui("esamina tutto")
+
+
 def test_immagine_stanza_opzionale():
     """Il campo `immagine` della stanza è opzionale e retrocompatibile:
     sopravvive al round-trip su file, non compare nel JSON quando è vuoto,
