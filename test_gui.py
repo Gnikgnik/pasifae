@@ -199,6 +199,32 @@ def test_regola_modalita_or(qtbot):
     assert e._reg["se"] == [{"flag": "porta"}, {"flag": "chiave"}]
 
 
+def test_editor_prep_multipla(qtbot):
+    """Nel form della regola si possono scrivere più preposizioni separate
+    da virgola («su, con»): l'innesco le salva come lista; una sola resta
+    stringa; «(nessuna)» la toglie. Una regola con lista si riapre
+    mostrando «su, con»."""
+    m = mondo_semplice()
+    m.regole.append(Regola(id="r_multi",
+                           quando={"verbo": "guarda", "oggetto": "lampada",
+                                   "prep": ["su", "con"]}))
+    e = Editor(None); e.mondo = m
+    qtbot.addWidget(e)
+    q = {"verbo": "usa"}
+    e._q_set_prep(q, "su, con")
+    assert q["prep"] == ["su", "con"]
+    e._q_set_prep(q, "su")
+    assert q["prep"] == "su"
+    e._q_set_prep(q, "(nessuna)")
+    assert "prep" not in q
+    # il form mostra la lista esistente come testo «su, con»
+    e.lista_cat.setCurrentRow(CATEGORIE.index("Regole"))
+    e._form_regola(len(m.regole) - 1)
+    testi = [cb.currentText()
+             for cb in e.dettaglio.widget().findChildren(QComboBox)]
+    assert "su, con" in testi, testi
+
+
 def test_player_blank_e_apertura(qtbot):
     """Senza avventura il player parte in blank; aprendone una si abilita."""
     p = Player()

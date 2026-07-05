@@ -332,5 +332,6 @@ def quando_breve(q: dict) -> str:
     pezzi = [q.get("verbo", "?")]
     for k in ("oggetto", "prep", "oggetto_indiretto"):
         if q.get(k):
-            pezzi.append(q[k])
+            v = q[k]
+            pezzi.append("/".join(v) if isinstance(v, list) else v)
     return "comando: " + " ".join(pezzi)

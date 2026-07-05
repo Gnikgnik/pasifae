@@ -1362,8 +1362,13 @@ class Editor(QMainWindow):
             cb_v.currentTextChanged.connect(lambda t: q.__setitem__("verbo", t))
             cb_o = self._combo_opz(["(nessuno)"] + opz["oggetto"], q.get("oggetto"))
             cb_o.currentTextChanged.connect(lambda t: self._q_set(q, "oggetto", t))
-            cb_p = self._combo_opz(["(nessuna)", "con", "in", "su"], q.get("prep"))
-            cb_p.currentTextChanged.connect(lambda t: self._q_set(q, "prep", t))
+            val_p = q.get("prep")
+            if isinstance(val_p, list):        # più preposizioni ammesse
+                val_p = ", ".join(val_p)
+            cb_p = self._combo_opz(["(nessuna)", "con", "in", "su"], val_p)
+            cb_p.setToolTip("Più preposizioni separate da virgola "
+                            "(es. «su, con») valgono tutte.")
+            cb_p.currentTextChanged.connect(lambda t: self._q_set_prep(q, t))
             cb_oi = self._combo_opz(["(nessuno)"] + opz["oggetto"],
                                     q.get("oggetto_indiretto"))
             cb_oi.currentTextChanged.connect(
@@ -1414,6 +1419,16 @@ class Editor(QMainWindow):
             q.pop(chiave, None)
         else:
             q[chiave] = testo
+
+    def _q_set_prep(self, q, testo):
+        """La preposizione dell'innesco: più voci separate da virgola
+        diventano una lista («su, con» → ["su", "con"], valgono tutte)."""
+        parti = [s.strip() for s in testo.split(",")
+                 if s.strip() and not s.strip().startswith("(")]
+        if not parti:
+            q.pop("prep", None)
+        else:
+            q["prep"] = parti if len(parti) > 1 else parti[0]
 
     def _cambia_innesco(self, nuovo):
         self._reg["quando"].clear()

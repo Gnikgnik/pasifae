@@ -16,7 +16,8 @@ def _quando(q: dict) -> str:
     if q.get("oggetto"):
         pezzi.append(q["oggetto"])
     if q.get("prep"):
-        pezzi.append(q["prep"])
+        p = q["prep"]
+        pezzi.append("/".join(p) if isinstance(p, list) else p)
     if q.get("oggetto_indiretto"):
         pezzi.append(q["oggetto_indiretto"])
     return "comando: " + " ".join(pezzi)

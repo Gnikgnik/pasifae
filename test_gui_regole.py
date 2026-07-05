@@ -49,6 +49,13 @@ def test_riassunti_e_innesco():
     assert R.riassunto_effetto({"avvia_timer": "b", "turni": 3}).startswith("avvia timer")
 
 
+def test_quando_breve_prep_lista():
+    """Il riassunto della regola mostra le preposizioni multiple come «su/con»."""
+    q = {"verbo": "usa", "oggetto": "chiave", "prep": ["su", "con"],
+         "oggetto_indiretto": "automa"}
+    assert R.quando_breve(q) == "comando: usa chiave su/con automa"
+
+
 def test_cataloghi_coerenti():
     # ogni tipo del catalogo ha i campi e l'assemblatore
     for _, key in R.TIPI_CONDIZIONE + R.TIPI_EFFETTO:
