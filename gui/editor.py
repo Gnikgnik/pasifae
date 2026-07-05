@@ -705,7 +705,7 @@ class Editor(QMainWindow):
             return
         from gui.analisi import analizza_problemi
         self.lista_problemi.clear()
-        probs = analizza_problemi(self.mondo)
+        probs = analizza_problemi(self.mondo, percorso=self.percorso)
         if not probs:
             self.lista_problemi.addItem(QListWidgetItem("Nessun problema rilevato ✓"))
             return

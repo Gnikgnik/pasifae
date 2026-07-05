@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Analisi statica dell'avventura (pura, senza Qt).
 
-- analizza_problemi(mondo): elenco di problemi navigabili (riferimenti rotti,
-  stanze irraggiungibili, posizioni non valide, ...).
+- analizza_problemi(mondo, percorso=None): elenco di problemi navigabili
+  (riferimenti rotti, stanze irraggiungibili, posizioni non valide, ...).
+  Con il percorso del JSON controlla anche i file delle illustrazioni
+  (advcore/validazione.py resta senza filesystem: quel controllo vive qui).
 - usi_di(mondo, genere, chiave): «dove è usato» un flag, un oggetto o una stanza.
 
 Ogni voce restituita ha la forma:
@@ -10,6 +12,8 @@ Ogni voce restituita ha la forma:
 dove (categoria, chiave) permettono all'editor di navigare all'elemento.
 """
 from __future__ import annotations
+
+from pathlib import Path
 
 from advcore.model import SCARTATO
 
@@ -72,7 +76,7 @@ def _luoghi_validi(mondo):
 #  PROBLEMI
 # --------------------------------------------------------------------------- #
 
-def analizza_problemi(mondo) -> list:
+def analizza_problemi(mondo, percorso: str | None = None) -> list:
     P = []
 
     def agg(testo, cat, chiave, grave=True):
@@ -133,6 +137,15 @@ def analizza_problemi(mondo) -> list:
         if q.get("oggetto_indiretto") and q["oggetto_indiretto"] not in oggetti:
             agg(f"Regola «{r.id or i}»: oggetto indiretto «{q['oggetto_indiretto']}» inesistente.",
                 "Regole", i)
+
+    # illustrazioni: file mancanti (solo se si sa dove sta il JSON)
+    if percorso:
+        base = Path(percorso).resolve().parent
+        for sid, s in mondo.stanze.items():
+            img = getattr(s, "immagine", "")
+            if img and not (base / img).is_file():
+                agg(f"Stanza «{sid}»: illustrazione «{img}» non trovata "
+                    "accanto al JSON.", "Stanze", sid, grave=False)
 
     # stanze irraggiungibili (via uscite o teleport) dalla iniziale
     if init in stanze:

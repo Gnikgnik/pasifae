@@ -885,6 +885,20 @@ def test_problemi_rilevati():
     assert "boh" in testi
 
 
+def test_problema_immagine_mancante(tmp_path):
+    """Con il percorso del JSON, l'analisi segnala (non grave) le stanze la
+    cui illustrazione punta a un file inesistente; senza percorso il
+    controllo si salta (non c'è una base per risolvere i nomi)."""
+    percorso = _avventura_con_immagine(tmp_path)
+    m = carica_mondo(percorso)
+    assert A.analizza_problemi(m, percorso=percorso) == []
+    m.stanze["cella"].immagine = "sparita.png"
+    probs = A.analizza_problemi(m, percorso=percorso)
+    assert any("sparita.png" in p["testo"] and p["chiave"] == "cella"
+               and not p["grave"] for p in probs), probs
+    assert A.analizza_problemi(m) == []            # senza percorso: nessun avviso
+
+
 def test_dove_usato():
     m = carica_mondo(str(AVV / "caverna.json"))
     usi = A.usi_di(m, "flag", "lampada_accesa")
