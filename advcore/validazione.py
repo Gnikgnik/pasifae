@@ -191,10 +191,11 @@ def valida(mondo: Mondo) -> list[Problema]:
                                       f"l'innesco riferisce l'oggetto «{val}» inesistente",
                                       "regola", i))
             prep = q.get("prep")
-            if prep and prep not in mondo.preposizioni and prep not in PREP_BUILTIN:
-                p.append(Problema("avviso", dove,
-                                  f"usa la preposizione «{prep}» non dichiarata",
-                                  "regola", i))
+            for pr in (prep if isinstance(prep, list) else [prep]):
+                if pr and pr not in mondo.preposizioni and pr not in PREP_BUILTIN:
+                    p.append(Problema("avviso", dove,
+                                      f"usa la preposizione «{pr}» non dichiarata",
+                                      "regola", i))
 
         _valida_condizioni(r.se, dove, "regola", i, mondo, noti, p)
         _valida_effetti(list(r.allora) + list(r.altrimenti),

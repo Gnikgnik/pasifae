@@ -43,6 +43,21 @@ def test_avventura_esempio_pulita():
     assert errori == [], [p.messaggio for p in errori]
 
 
+def test_prep_lista_validata():
+    """Anche con una lista di preposizioni la validazione controlla ogni voce:
+    quelle note passano, una sconosciuta produce l'avviso."""
+    m = carica_mondo("avventure/caverna.json")
+    ogg = next(iter(m.oggetti))
+    m.regole.append(Regola(id="r_lista",
+                           quando={"verbo": "guarda", "oggetto": ogg,
+                                   "prep": ["su", "con"]},
+                           allora=[{"stampa": "ok"}]))
+    assert not any("preposizione" in p.messaggio for p in valida(m))
+    m.regole[-1].quando["prep"] = ["su", "boh"]
+    assert any("preposizione" in p.messaggio and "boh" in p.messaggio
+               for p in valida(m))
+
+
 def test_uscita_rotta():
     m = carica_mondo("avventure/caverna.json")
     m.stanze["ingresso"].uscite["nord"] = "stanza_fantasma"

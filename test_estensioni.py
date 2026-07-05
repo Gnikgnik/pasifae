@@ -170,6 +170,43 @@ def test_aiuto_solo_verbi_usati():
         assert assente not in r, f"«{assente}» non dovrebbe comparire"
 
 
+def test_prep_lista_nella_regola():
+    """`quando.prep` accetta anche una lista di preposizioni: una sola regola
+    scatta con «usa chiave su automa» E «usa chiave con automa» (comprese le
+    forme articolate). Le preposizioni fuori lista restano escluse."""
+    def mondo():
+        m = Mondo(meta={"stanza_iniziale": "qui"})
+        m.stanze["qui"] = Stanza(id="qui", nome="Qui", desc="")
+        m.oggetti["chiave"] = Oggetto(id="chiave", nome="chiave",
+                                      nomi=["chiave"], posizione="inventario",
+                                      props={"prendibile": True})
+        m.oggetti["automa"] = Oggetto(id="automa", nome="automa",
+                                      nomi=["automa"], posizione="qui",
+                                      props={"scenario": True})
+        m.verbi["usa"] = Verbo(id="usa", sinonimi=["usare"])
+        m.regole.append(Regola(id="r_usa",
+                               quando={"verbo": "usa", "oggetto": "chiave",
+                                       "prep": ["su", "con"],
+                                       "oggetto_indiretto": "automa"},
+                               allora=[{"stampa": "Clic."}]))
+        return m
+
+    for frase in ("usa chiave su automa", "usa chiave con automa",
+                  "usa chiave sull'automa"):
+        mot = Motore(mondo())
+        mot.avvia()
+        assert "Clic." in mot.esegui(frase), frase
+    mot = Motore(mondo())
+    mot.avvia()
+    assert "Clic." not in mot.esegui("usa chiave nell'automa")
+    # retrocompatibilità: la stringa singola continua a funzionare
+    m = mondo()
+    m.regole[0].quando["prep"] = "su"
+    mot = Motore(m)
+    mot.avvia()
+    assert "Clic." in mot.esegui("usa chiave su automa")
+
+
 def test_immagine_stanza_opzionale():
     """Il campo `immagine` della stanza è opzionale e retrocompatibile:
     sopravvive al round-trip su file, non compare nel JSON quando è vuoto,

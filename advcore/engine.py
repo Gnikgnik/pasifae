@@ -205,7 +205,15 @@ class Motore:
         for campo, attr in (("oggetto", "ogg_diretto"),
                             ("prep", "prep"),
                             ("oggetto_indiretto", "ogg_indiretto")):
-            if campo in quando and quando[campo] != getattr(cmd, attr):
+            if campo not in quando:
+                continue                    # campo assente = jolly
+            atteso = quando[campo]
+            valore = getattr(cmd, attr)
+            # una lista vale "una qualsiasi di queste" (es. prep: [su, con])
+            if isinstance(atteso, (list, tuple)):
+                if valore not in atteso:
+                    return False
+            elif atteso != valore:
                 return False
         return True
 
