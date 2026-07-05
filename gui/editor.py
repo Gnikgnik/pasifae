@@ -10,6 +10,7 @@ Uso:
 """
 from __future__ import annotations
 
+import shutil
 import sys
 from pathlib import Path
 import copy
@@ -27,6 +28,22 @@ def _dir_default() -> str:
         return str(Path(sys.executable).parent)
     return str(RADICE / "avventure")
 
+
+def copia_immagine_accanto(sorgente: str, percorso_json: str | None) -> str:
+    """Copia l'illustrazione scelta accanto al JSON dell'avventura e
+    restituisce il nome file da scrivere nel campo `immagine` della stanza.
+    Tenere le immagini accanto al JSON le rende portabili: l'avventura si
+    sposta copiando la sua cartella, e la compilazione le impacchetta.
+    Se il file è già nella cartella giusta non copia nulla."""
+    if not percorso_json:
+        raise ValueError("Salva prima l'avventura: l'immagine va copiata "
+                         "accanto al suo file JSON.")
+    src = Path(sorgente)
+    dest = Path(percorso_json).resolve().parent / src.name
+    if src.resolve() != dest:
+        shutil.copy2(src, dest)
+    return src.name
+
 from advcore import carica_mondo, salva_mondo, Oggetto, Verbo, Stanza, Regola  # noqa: E402
 from advcore.model import Mondo  # noqa: E402
 from advcore.validazione import valida  # noqa: E402
@@ -35,7 +52,7 @@ from gui import regole as R  # noqa: E402
 from gui.editor_riassunti import riassunto  # noqa: E402
 
 from PySide6.QtCore import Qt, QTimer, QThread, Signal  # noqa: E402
-from PySide6.QtGui import QAction, QActionGroup, QFont  # noqa: E402
+from PySide6.QtGui import QAction, QActionGroup, QFont, QPixmap  # noqa: E402
 from PySide6.QtWidgets import (  # noqa: E402
     QApplication, QCheckBox, QComboBox, QCompleter, QDialog, QDialogButtonBox,
     QDockWidget, QFileDialog, QFormLayout, QHBoxLayout, QInputDialog, QLabel,
@@ -867,6 +884,8 @@ class Editor(QMainWindow):
         form.addRow(self._campetto("nome (mostrato)"), e_nome)
         form.addRow(self._campetto("descrizione"), e_desc)
         form.addRow("", c_buia)
+        e_img, box_img = self._immagine_widget(getattr(s, "immagine", ""))
+        form.addRow(self._campetto("illustrazione"), box_img)
         uscite_lav = copy.deepcopy(s.uscite)
         form.addRow(self._uscite_widget(uscite_lav))
 
@@ -874,12 +893,69 @@ class Editor(QMainWindow):
             s.nome = e_nome.text().strip()
             s.desc = e_desc.toPlainText()
             s.buia = c_buia.isChecked()
+            s.immagine = e_img.text().strip()
             s.uscite = uscite_lav
             self._segna_modifica()
             self._aggiorna_voce_corrente(f"{s.nome}   ·   {sid}")
             self.statusBar().showMessage(f"Stanza «{sid}» aggiornata.", 3000)
         self._aggiungi_applica(cont, applica)
         self._mostra_dettaglio(cont)
+
+    def _immagine_widget(self, nome_attuale: str):
+        """Campo illustrazione della stanza: nome file (relativo al JSON),
+        Sfoglia… che copia l'immagine accanto al JSON, Togli, e miniatura."""
+        box = QWidget()
+        v = QVBoxLayout(box)
+        v.setContentsMargins(0, 0, 0, 0)
+        v.setSpacing(8)
+        riga = QHBoxLayout()
+        e_img = QLineEdit(nome_attuale)
+        e_img.setObjectName("campo_immagine")
+        e_img.setReadOnly(True)
+        e_img.setPlaceholderText("(nessuna illustrazione)")
+        b_sfoglia = QPushButton("Sfoglia…")
+        b_sfoglia.setObjectName("sfoglia_immagine")
+        b_togli = QPushButton("Togli")
+        b_togli.setObjectName("togli_immagine")
+        riga.addWidget(e_img, 1); riga.addWidget(b_sfoglia); riga.addWidget(b_togli)
+        v.addLayout(riga)
+        miniatura = QLabel()
+        miniatura.setObjectName("miniatura_immagine")
+        v.addWidget(miniatura)
+
+        def aggiorna_miniatura():
+            pm = QPixmap()
+            nome = e_img.text().strip()
+            if nome and self.percorso:
+                pm = QPixmap(str(Path(self.percorso).parent / nome))
+            if pm.isNull():
+                miniatura.clear(); miniatura.hide()
+            else:
+                miniatura.setPixmap(pm.scaledToHeight(
+                    90, Qt.SmoothTransformation))
+                miniatura.show()
+
+        def sfoglia():
+            f, _ = QFileDialog.getOpenFileName(
+                self, "Scegli illustrazione", _dir_default(),
+                "Immagini (*.png *.jpg *.jpeg *.gif *.bmp *.webp)")
+            if not f:
+                return
+            try:
+                e_img.setText(copia_immagine_accanto(f, self.percorso))
+            except (ValueError, OSError) as err:
+                QMessageBox.warning(self, "Illustrazione", str(err))
+                return
+            aggiorna_miniatura()
+
+        def togli():
+            e_img.clear()               # il file accanto al JSON non si tocca
+            aggiorna_miniatura()
+
+        b_sfoglia.clicked.connect(sfoglia)
+        b_togli.clicked.connect(togli)
+        aggiorna_miniatura()
+        return e_img, box
 
     def _uscite_widget(self, uscite):
         box = QWidget()
@@ -1475,7 +1551,8 @@ class Editor(QMainWindow):
             s = self.mondo.stanze[chiave]
             self.mondo.stanze[nid] = Stanza(id=nid, nome=s.nome + " (copia)", desc=s.desc,
                                             uscite=copy.deepcopy(s.uscite),
-                                            buia=getattr(s, "buia", False))
+                                            buia=getattr(s, "buia", False),
+                                            immagine=getattr(s, "immagine", ""))
             nuovo_sel = nid
         elif cat == "Oggetti":
             sugg = self._id_unico(self.mondo.oggetti, chiave)

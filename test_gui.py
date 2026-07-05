@@ -21,7 +21,8 @@ AVV = RADICE / "avventure"
 import pytest  # noqa: E402
 from PySide6.QtCore import Qt  # noqa: E402
 from PySide6.QtWidgets import (  # noqa: E402
-    QApplication, QComboBox, QInputDialog, QFileDialog, QMenu, QMessageBox,
+    QApplication, QComboBox, QInputDialog, QFileDialog, QLabel, QLineEdit,
+    QMenu, QMessageBox, QPushButton,
 )
 
 from advcore import (  # noqa: E402
@@ -527,6 +528,59 @@ def test_player_illustrazioni_disattivabili(qtbot, monkeypatch, tmp_path):
     p2._imposta_illustrazioni(True)
     QApplication.processEvents()
     assert p2.immagine.isVisible()
+
+
+def test_copia_immagine_accanto(tmp_path):
+    """La scelta di un'illustrazione copia il file accanto al JSON
+    dell'avventura (portabilità) e restituisce il nome relativo da scrivere
+    nel campo `immagine`."""
+    from gui.editor import copia_immagine_accanto
+    src_dir = tmp_path / "altrove"; src_dir.mkdir()
+    src = src_dir / "torre.png"; src.write_bytes(b"png finto")
+    avv_dir = tmp_path / "gioco"; avv_dir.mkdir()
+    json_path = avv_dir / "avv.json"
+    nome = copia_immagine_accanto(str(src), str(json_path))
+    assert nome == "torre.png"
+    assert (avv_dir / "torre.png").read_bytes() == b"png finto"
+    # file già accanto al JSON: nessuna copia, solo il nome relativo
+    nome2 = copia_immagine_accanto(str(avv_dir / "torre.png"), str(json_path))
+    assert nome2 == "torre.png"
+    # avventura mai salvata: non esiste una cartella dove copiare
+    with pytest.raises(ValueError):
+        copia_immagine_accanto(str(src), None)
+
+
+def test_editor_immagine_stanza(qtbot, monkeypatch, tmp_path):
+    """Nel form della stanza si sceglie un'illustrazione (copiata accanto al
+    JSON), appare la miniatura, e Applica scrive il campo; «Togli» la
+    rimuove dalla stanza senza cancellare il file."""
+    from PySide6.QtGui import QPixmap
+    src_dir = tmp_path / "scelta"; src_dir.mkdir()
+    img = src_dir / "sala.png"
+    pm = QPixmap(32, 32); pm.fill(Qt.darkGreen); pm.save(str(img))
+
+    e = Editor(None)
+    qtbot.addWidget(e)
+    e.mondo = mondo_semplice()
+    e.percorso = str(tmp_path / "avv.json")
+    e._carica_in_ui()                     # categoria Stanze → form di «sala»
+    dett = e.dettaglio.widget()
+    campo = dett.findChild(QLineEdit, "campo_immagine")
+    assert campo is not None and campo.text() == ""
+    monkeypatch.setattr(QFileDialog, "getOpenFileName",
+                        lambda *a, **k: (str(img), ""))
+    dett.findChild(QPushButton, "sfoglia_immagine").click()
+    assert campo.text() == "sala.png"
+    assert (tmp_path / "sala.png").exists()        # copiata accanto al JSON
+    miniatura = dett.findChild(QLabel, "miniatura_immagine")
+    assert miniatura.pixmap() and not miniatura.pixmap().isNull()
+    dett.findChild(QPushButton, "primario").click()          # Applica
+    assert e.mondo.stanze["sala"].immagine == "sala.png"
+    dett.findChild(QPushButton, "togli_immagine").click()
+    assert campo.text() == ""
+    dett.findChild(QPushButton, "primario").click()
+    assert e.mondo.stanze["sala"].immagine == ""
+    assert (tmp_path / "sala.png").exists()        # il file resta
 
 
 def test_player_cornice_input_segue_il_fuoco(qtbot):
