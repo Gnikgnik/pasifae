@@ -211,6 +211,137 @@ def _raggiungibili(mondo, init) -> set:
 
 
 # --------------------------------------------------------------------------- #
+#  CONCATENAZIONE DEI PUZZLE
+# --------------------------------------------------------------------------- #
+
+def _requisiti(c: dict) -> list:
+    """Risorse richieste da una condizione: (genere, id). Le negazioni non
+    concatenano (chiedono l'ASSENZA di un progresso) e si saltano."""
+    if "non" in c:
+        return []
+    if "oppure" in c or "tutte" in c:
+        out = []
+        for s in c.get("oppure") or c.get("tutte") or []:
+            out += _requisiti(s)
+        return out
+    out = []
+    if c.get("flag"):
+        # «uguale a un valore falso» chiede l'assenza del progresso: non
+        # concatena, esattamente come una negazione
+        if not ("uguale" in c and not c["uguale"]):
+            out.append(("flag", c["flag"]))
+    if "oggetto_in" in c:
+        out.append(("oggetto", c["oggetto_in"][0]))
+    if "stanza_corrente" in c:
+        out.append(("stanza", c["stanza_corrente"]))
+    return out
+
+
+def _produzioni(effetti) -> list:
+    """Risorse prodotte da una lista di effetti: (genere, id)."""
+    out = []
+    for e in effetti or []:
+        if "set_flag" in e and e.get("valore", True):
+            out.append(("flag", e["set_flag"]))
+        elif "incrementa" in e:
+            out.append(("flag", e["incrementa"]))
+        elif "sposta_oggetto" in e:
+            out.append(("oggetto", e["sposta_oggetto"]))
+        elif "apri_oggetto" in e:
+            out.append(("oggetto", e["apri_oggetto"]))
+        elif "teleporta" in e:
+            out.append(("stanza", e["teleporta"]))
+        elif "vittoria" in e:
+            out.append(("fine", "vittoria"))
+        elif "sconfitta" in e:
+            out.append(("fine", "sconfitta"))
+        elif "avvia_timer" in e:
+            out.append(("timer", e["avvia_timer"]))
+    return out
+
+
+def _uniq(coppie):
+    return list(dict.fromkeys(coppie))
+
+
+def catena_puzzle(mondo) -> list:
+    """I «passi» di avanzamento dell'avventura — regole, dialoghi, esiti di
+    scontro, uscite condizionate — ciascuno con le risorse che richiede e
+    quelle che produce. Sono i mattoni con cui la finestra della
+    concatenazione ricostruisce l'albero dei puzzle a ritroso dai finali.
+
+    Ogni passo: {"titolo", "categoria", "chiave", "richiede", "produce"}
+    con richiede/produce liste di (genere, id); generi:
+    flag | oggetto | stanza | timer | fine. I passi senza produzioni
+    (ad es. regole di solo testo) non fanno parte della catena.
+    """
+    passi = []
+
+    def passo(titolo, cat, chiave, richiede, produce):
+        if produce:
+            passi.append({"titolo": titolo, "categoria": cat, "chiave": chiave,
+                          "richiede": _uniq(richiede),
+                          "produce": _uniq(produce)})
+
+    for i, r in enumerate(mondo.regole):
+        q = r.quando or {}
+        richiede = []
+        if q.get("oggetto"):
+            richiede.append(("oggetto", q["oggetto"]))
+        if q.get("oggetto_indiretto"):
+            richiede.append(("oggetto", q["oggetto_indiretto"]))
+        if q.get("evento") == "entra" and q.get("stanza"):
+            richiede.append(("stanza", q["stanza"]))
+        if q.get("evento") == "timer" and q.get("timer"):
+            richiede.append(("timer", q["timer"]))
+        for c in r.se or []:
+            richiede += _requisiti(c)
+        passo(f"regola «{r.id or i}»", "Regole", i, richiede,
+              _produzioni(r.allora) + _produzioni(r.altrimenti))
+
+    for oid, o in mondo.oggetti.items():
+        for b in o.props.get("dialogo", []) or []:
+            richiede = [("oggetto", oid)]      # per parlargli va raggiunto
+            for c in b.get("se", []) or []:
+                richiede += _requisiti(c)
+            passo(f"dialogo di «{oid}»", "Oggetti", oid,
+                  richiede, _produzioni(b.get("allora")))
+        if o.props.get("sconfitto"):
+            passo(f"sconfitta di «{oid}»", "Oggetti", oid,
+                  [("oggetto", oid)], _produzioni(o.props["sconfitto"]))
+
+    for sid, s in mondo.stanze.items():
+        for direz, u in s.uscite.items():
+            if isinstance(u, dict) and u.get("se") and u.get("to") in mondo.stanze:
+                passo(f"uscita «{direz}» di «{sid}»", "Stanze", sid,
+                      [("flag", u["se"]), ("stanza", sid)],
+                      [("stanza", u["to"])])
+
+    return passi
+
+
+def stanze_libere(mondo) -> set:
+    """Stanze raggiungibili dalla iniziale percorrendo solo uscite SENZA
+    condizioni: nella catena dei puzzle non richiedono alcun passo."""
+    init = mondo.meta.get("stanza_iniziale")
+    visti = set()
+    pila = [init] if init in mondo.stanze else []
+    while pila:
+        sid = pila.pop()
+        if sid in visti:
+            continue
+        visti.add(sid)
+        for u in mondo.stanze[sid].uscite.values():
+            if isinstance(u, dict):
+                dest = None if u.get("se") else u.get("to")
+            else:
+                dest = u
+            if dest in mondo.stanze and dest not in visti:
+                pila.append(dest)
+    return visti
+
+
+# --------------------------------------------------------------------------- #
 #  RICERCA TRASVERSALE: «dove è usato?»
 # --------------------------------------------------------------------------- #
 

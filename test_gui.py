@@ -970,6 +970,106 @@ def test_dove_usato():
     assert any(u["categoria"] == "Regole" for u in usi)
 
 
+# --------------------------- concatenazione dei puzzle ---------------------------
+
+def _mondo_con_catena():
+    """Sala --(nord, se porta_aperta)--> tesoro. La chiave apre la porta,
+    entrare nel tesoro dà la vittoria: tre passi concatenati."""
+    from advcore.model import Regola
+    m = Mondo()
+    m.stanze["sala"] = Stanza(id="sala", nome="Sala", desc="Una sala.",
+                              uscite={"nord": {"to": "tesoro",
+                                               "se": "porta_aperta"}})
+    m.stanze["tesoro"] = Stanza(id="tesoro", nome="Tesoro", desc="Oro!",
+                                uscite={"sud": "sala"})
+    m.meta["stanza_iniziale"] = "sala"
+    m.oggetti["chiave"] = Oggetto(id="chiave", nome="chiave", nomi=["chiave"],
+                                  aggettivi=[], posizione="sala",
+                                  props={"prendibile": True})
+    m.regole.append(Regola(
+        id="apri_porta",
+        quando={"verbo": "usa", "oggetto": "chiave"},
+        se=[{"oggetto_in": ["chiave", "inventario"]}],
+        allora=[{"set_flag": "porta_aperta"},
+                {"stampa": "La porta si apre."}]))
+    m.regole.append(Regola(
+        id="trionfo",
+        quando={"evento": "entra", "stanza": "tesoro"},
+        allora=[{"vittoria": "Ce l'hai fatta!"}]))
+    return m
+
+
+def test_catena_puzzle():
+    """Ogni passo di avanzamento (regola, uscita condizionata, ...) dichiara
+    cosa richiede e cosa produce: da qui si ricostruisce la concatenazione
+    dei puzzle a ritroso dai finali."""
+    passi = A.catena_puzzle(_mondo_con_catena())
+    apri = next(p for p in passi if "apri_porta" in p["titolo"])
+    assert ("oggetto", "chiave") in apri["richiede"]
+    assert ("flag", "porta_aperta") in apri["produce"]
+    assert apri["categoria"] == "Regole" and apri["chiave"] == 0
+    uscita = next(p for p in passi if "nord" in p["titolo"])
+    assert ("flag", "porta_aperta") in uscita["richiede"]
+    assert ("stanza", "tesoro") in uscita["produce"]
+    fine = next(p for p in passi if "trionfo" in p["titolo"])
+    assert ("stanza", "tesoro") in fine["richiede"]
+    assert ("fine", "vittoria") in fine["produce"]
+    # le regole senza produzioni (solo testo) non sono passi della catena
+    assert not any("stampa" in str(p) and not p["produce"] for p in passi)
+
+
+def test_catena_puzzle_uguale_falso_non_concatena():
+    """«flag uguale a falso» chiede l'ASSENZA del progresso (come «non»):
+    non va tra i requisiti. Un confronto con un valore vero invece sì."""
+    from advcore.model import Regola
+    m = Mondo()
+    m.stanze["sala"] = Stanza(id="sala", nome="Sala", desc="Una sala.")
+    m.meta["stanza_iniziale"] = "sala"
+    m.regole.append(Regola(
+        id="meccanismo",
+        quando={"verbo": "usa", "oggetto": "leva"},
+        se=[{"flag": "porta_aperta", "uguale": False},
+            {"flag": "ingranaggi", "uguale": 3}],
+        allora=[{"set_flag": "porta_aperta"}]))
+    m.oggetti["leva"] = Oggetto(id="leva", nome="leva", nomi=["leva"],
+                                aggettivi=[], posizione="sala", props={})
+    (passo,) = A.catena_puzzle(m)
+    assert ("flag", "porta_aperta") not in passo["richiede"]
+    assert ("flag", "ingranaggi") in passo["richiede"]
+
+
+def test_finestra_catena_puzzle(qtbot):
+    """La finestra «Concatenazione dei puzzle» mostra l'albero a ritroso dal
+    finale: vittoria ← regola d'ingresso ← raggiungere la stanza ← uscita
+    condizionata ← flag ← regola della chiave ← oggetto."""
+    from gui.catena import FinestraCatena
+    f = FinestraCatena(_mondo_con_catena(), "scuro")
+    qtbot.addWidget(f)
+
+    def testi(item):
+        out = [item.text(0)]
+        for i in range(item.childCount()):
+            out += testi(item.child(i))
+        return out
+
+    tutti = []
+    for i in range(f.albero.topLevelItemCount()):
+        tutti += testi(f.albero.topLevelItem(i))
+    assert any("vittoria" in t.lower() for t in tutti)
+    assert any("apri_porta" in t for t in tutti)
+    assert any("chiave" in t for t in tutti)
+    assert any("porta_aperta" in t for t in tutti)
+
+
+def test_menu_concatenazione_puzzle(qtbot):
+    """La voce sta nel menu Strumenti dell'editor."""
+    e = Editor(None)
+    qtbot.addWidget(e)
+    voci = [a.text() for top in e.menuBar().actions() if top.menu()
+            for a in top.menu().actions()]
+    assert any("Concatenazione dei puzzle" in v for v in voci)
+
+
 # --------------------------- regressione motore: ordine di scarta ---------------------------
 
 def test_scarta_oggetto_rimuove_anche_con_messaggio():

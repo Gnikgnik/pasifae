@@ -598,6 +598,9 @@ class Editor(QMainWindow):
         a_mappa.setShortcut("Ctrl+M")
         a_mappa.triggered.connect(self._apri_mappa)
         m_str.addAction(a_mappa)
+        a_catena = QAction("Concatenazione dei puzzle…", self)
+        a_catena.triggered.connect(self._apri_catena)
+        m_str.addAction(a_catena)
         m_str.addSeparator()
         a_timer = QAction("Gestione timer…", self)
         a_timer.triggered.connect(self._gestione_timer)
@@ -661,6 +664,10 @@ class Editor(QMainWindow):
     def _apri_mappa(self):
         from gui.mappa import FinestraMappa
         FinestraMappa(self.mondo, self.tema, self).exec()
+
+    def _apri_catena(self):
+        from gui.catena import FinestraCatena
+        FinestraCatena(self.mondo, self.tema, self, vai_a=self._vai_a).exec()
 
     def _gestione_timer(self):
         dlg = DialogoTimer(self, self.mondo, self.tema)

@@ -66,7 +66,9 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
 - `editor.py` — Pasifae Editor (file grande, ~1650 righe; vedi insidie).
 - `player.py` — Pasifae Play.
 - `regole.py` — costruzione/serializzazione regole nell'editor.
-- `analisi.py` — riferimenti incrociati, "Dove è usato", problemi.
+- `analisi.py` — riferimenti incrociati, "Dove è usato", problemi,
+  catena dei puzzle (`catena_puzzle`).
+- `catena.py` — finestra "Concatenazione dei puzzle" (albero dai finali).
 - `anteprima.py` — finestra "Prova l'avventura" dentro l'editor.
 - `mappa.py` — mappa visuale.
 - `tema.py` — temi chiaro/scuro.
@@ -100,8 +102,8 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   e l'eseguibile vale solo per il sistema operativo su cui lo compili.
 
 ## Stato attuale
-- `advcore` **1.16.0** · interfaccia `gui` **1.12.0**.
-- Suite: **62 test GUI + 10 script**, tutti verdi.
+- `advcore` **1.16.0** · interfaccia `gui` **1.13.0**.
+- Suite: **67 test GUI + 10 script**, tutti verdi.
 - Documentazione: `README.md`, `advcore/DOCUMENTAZIONE.md`, `COSTRUIRE.md`,
   manuale d'uso (Word/PDF), e il progetto dell'avventura "SOTTO ARES".
 
