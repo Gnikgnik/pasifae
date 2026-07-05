@@ -447,6 +447,88 @@ def test_player_dimensione_testo(qtbot, monkeypatch, tmp_path):
     assert p2.dim_testo == 16
 
 
+def _avventura_con_immagine(tmp_path, con_file=True):
+    """Avventura minima: l'atrio ha un'illustrazione, la cella no."""
+    import json
+    from PySide6.QtGui import QPixmap
+    if con_file:
+        pm = QPixmap(64, 48); pm.fill(Qt.darkCyan)
+        pm.save(str(tmp_path / "atrio.png"))
+    dati = {
+        "meta": {"titolo": "Figure", "stanza_iniziale": "atrio"},
+        "stanze": {
+            "atrio": {"nome": "Atrio", "desc": "Un atrio.",
+                      "uscite": {"nord": "cella"}, "immagine": "atrio.png"},
+            "cella": {"nome": "Cella", "desc": "Una cella.",
+                      "uscite": {"sud": "atrio"}},
+        },
+    }
+    f = tmp_path / "figure.json"
+    f.write_text(json.dumps(dati), encoding="utf-8")
+    return str(f)
+
+
+def test_player_illustrazione_stanza(qtbot, tmp_path):
+    """La stanza con illustrazione la mostra in un pannello dedicato sopra la
+    trascrizione (mai inline nel QTextEdit); nelle stanze senza immagine il
+    pannello collassa. Il percorso è relativo al JSON dell'avventura."""
+    p = Player(_avventura_con_immagine(tmp_path))
+    qtbot.addWidget(p)
+    p.show()
+    QApplication.processEvents()
+    assert p.immagine.isVisible()
+    assert p.immagine.pixmap() and not p.immagine.pixmap().isNull()
+    p.input.setText("nord"); p._invia()            # la cella non ha immagine
+    QApplication.processEvents()
+    assert not p.immagine.isVisible()
+    p.input.setText("sud"); p._invia()             # di ritorno nell'atrio
+    QApplication.processEvents()
+    assert p.immagine.isVisible()
+
+
+def test_player_illustrazione_mancante_o_assente(qtbot, tmp_path):
+    """File dell'immagine sparito: il player non deve rompersi, solo
+    collassare il pannello. Un'avventura senza immagini (retrocompatibile)
+    non mostra mai il pannello."""
+    p = Player(_avventura_con_immagine(tmp_path, con_file=False))
+    qtbot.addWidget(p)
+    p.show()
+    QApplication.processEvents()
+    assert not p.immagine.isVisible()
+    p2 = Player(str(AVV / "faro.json"))
+    qtbot.addWidget(p2)
+    p2.show()
+    QApplication.processEvents()
+    assert not p2.immagine.isVisible()
+
+
+def test_player_illustrazioni_disattivabili(qtbot, monkeypatch, tmp_path):
+    """Visualizza ▸ Illustrazioni spegne il pannello e la scelta viene
+    ricordata tra le sessioni."""
+    from PySide6.QtCore import QSettings
+    import gui.player as gp
+    ini = str(tmp_path / "prova.ini")
+    monkeypatch.setattr(gp, "_impostazioni",
+                        lambda: QSettings(ini, QSettings.IniFormat))
+    avventura = _avventura_con_immagine(tmp_path)
+    p = Player(avventura)
+    qtbot.addWidget(p)
+    p.show()
+    QApplication.processEvents()
+    assert p.immagine.isVisible()
+    p._imposta_illustrazioni(False)
+    QApplication.processEvents()
+    assert not p.immagine.isVisible()
+    p2 = Player(avventura)                         # nuova sessione: ricorda
+    qtbot.addWidget(p2)
+    p2.show()
+    QApplication.processEvents()
+    assert not p2.immagine.isVisible()
+    p2._imposta_illustrazioni(True)
+    QApplication.processEvents()
+    assert p2.immagine.isVisible()
+
+
 def test_player_cornice_input_segue_il_fuoco(qtbot):
     """La riga di comando è in una cornice che si accende quando ha il fuoco,
     per guidare l'occhio al punto d'interazione."""

@@ -43,6 +43,7 @@ def _con_estensione(percorso: str) -> str:
 
 from advcore import carica_mondo, Motore, salva_partita, carica_partita  # noqa: E402
 from gui import tema  # noqa: E402
+from gui.immagine import PannelloImmagine  # noqa: E402
 
 from PySide6.QtCore import QSettings, Qt, QTimer, Signal  # noqa: E402
 from PySide6.QtGui import QAction, QActionGroup, QFont, QKeySequence  # noqa: E402
@@ -152,6 +153,10 @@ class Player(QMainWindow):
             self.grazie = bool(int(imp.value("grazie", 0)))
         except (TypeError, ValueError):
             self.grazie = False
+        try:
+            self.illustrazioni = bool(int(imp.value("illustrazioni", 1)))
+        except (TypeError, ValueError):
+            self.illustrazioni = True
         self._voci: list[tuple[str, str]] = []
         # stato dell'animazione "telescrivente"
         self._anim = QTimer(self)
@@ -177,6 +182,10 @@ class Player(QMainWindow):
         h.setContentsMargins(24, 14, 24, 14)
         h.addWidget(self.titolo); h.addStretch(1); h.addWidget(self.stato)
         radice.addWidget(testa)
+
+        self.immagine = PannelloImmagine()
+        self.immagine.imposta_attiva(self.illustrazioni)
+        radice.addWidget(self.immagine)
 
         self.vista = VistaTrascrizione(); self.vista.setObjectName("vista")
         self.vista.setReadOnly(True); self.vista.setFrameStyle(QFrame.NoFrame)
@@ -254,6 +263,10 @@ class Player(QMainWindow):
         a_grazie.setChecked(self.grazie)
         a_grazie.triggered.connect(self._imposta_grazie)
         v.addAction(a_grazie)
+        a_illu = QAction("Illustrazioni", self, checkable=True)
+        a_illu.setChecked(self.illustrazioni)
+        a_illu.triggered.connect(self._imposta_illustrazioni)
+        v.addAction(a_illu)
         v.addSeparator()
         a_piu = QAction("Testo più grande", self)
         a_piu.setShortcut(QKeySequence.ZoomIn)
@@ -320,6 +333,7 @@ class Player(QMainWindow):
         self.setWindowTitle("Pasifae Play")
         self.titolo.setText("Pasifae")
         self.stato.setText("")
+        self.immagine.mostra_file(None)
         self._abilita_gioco(False)
         self._ridisegna()
 
@@ -521,6 +535,11 @@ class Player(QMainWindow):
         _impostazioni().setValue("grazie", int(self.grazie))
         self._anim_finisci()        # ridisegna col nuovo carattere
 
+    def _imposta_illustrazioni(self, attive: bool):
+        self.illustrazioni = bool(attive)
+        _impostazioni().setValue("illustrazioni", int(self.illustrazioni))
+        self.immagine.imposta_attiva(self.illustrazioni)
+
     def _accendi_cornice(self, acceso: bool):
         self.cornice_input.setProperty("fuoco", acceso)
         stile = self.cornice_input.style()
@@ -529,13 +548,26 @@ class Player(QMainWindow):
 
     def _aggiorna_stato(self):
         if self.mondo is None:
-            self.titolo.setText("Pasifae"); self.stato.setText(""); return
+            self.titolo.setText("Pasifae"); self.stato.setText("")
+            self.immagine.mostra_file(None)
+            return
         self.titolo.setText(self.mondo.meta.get("titolo", "Avventura"))
         stanza = self.mondo.stanze.get(self.mondo.stanza_corrente)
         luogo = f"{stanza.nome}    ·    " if stanza else ""
         self.stato.setText(
             f"{luogo}punteggio {self.mondo.punteggio}"
             f"    ·    turni {self.mondo.mosse}")
+        self._aggiorna_immagine(stanza)
+
+    def _aggiorna_immagine(self, stanza):
+        """Illustrazione della stanza corrente: il nome file nel campo
+        `immagine` è relativo al JSON dell'avventura (e quindi, nei giochi
+        compilati, alla cartella delle risorse impacchettate)."""
+        if stanza is None or not stanza.immagine or not self.percorso:
+            self.immagine.mostra_file(None)
+            return
+        self.immagine.mostra_file(
+            str(Path(self.percorso).parent / stanza.immagine))
 
     # ---------- tema ----------
 
