@@ -500,9 +500,9 @@ def _avventura_con_immagine(tmp_path, con_file=True):
 
 
 def test_player_illustrazione_stanza(qtbot, tmp_path):
-    """La stanza con illustrazione la mostra in un pannello dedicato sopra la
-    trascrizione (mai inline nel QTextEdit); nelle stanze senza immagine il
-    pannello collassa. Il percorso è relativo al JSON dell'avventura."""
+    """La stanza con illustrazione la mostra in un pannello dedicato a fianco
+    della trascrizione (mai inline nel QTextEdit); nelle stanze senza immagine
+    il pannello collassa. Il percorso è relativo al JSON dell'avventura."""
     p = Player(_avventura_con_immagine(tmp_path))
     qtbot.addWidget(p)
     p.show()
@@ -515,6 +515,27 @@ def test_player_illustrazione_stanza(qtbot, tmp_path):
     p.input.setText("sud"); p._invia()             # di ritorno nell'atrio
     QApplication.processEvents()
     assert p.immagine.isVisible()
+
+
+def test_player_illustrazione_a_fianco(qtbot, tmp_path):
+    """L'illustrazione occupa una colonna a tutta altezza a sinistra della
+    trascrizione, in uno splitter orizzontale regolabile: molto più grande
+    della vecchia striscia da 240 px. Senza immagine la colonna collassa e
+    il testo riprende tutta la larghezza."""
+    from PySide6.QtWidgets import QSplitter
+    p = Player(_avventura_con_immagine(tmp_path))
+    qtbot.addWidget(p)
+    p.show()
+    QApplication.processEvents()
+    assert isinstance(p.spartizione, QSplitter)
+    assert p.spartizione.orientation() == Qt.Horizontal
+    assert p.spartizione.indexOf(p.immagine) == 0      # immagine a sinistra
+    assert p.immagine.height() > 300                   # niente tetto a 240 px
+    larghezza_vista = p.vista.width()
+    p.input.setText("nord"); p._invia()                # la cella: senza immagine
+    QApplication.processEvents()
+    assert not p.immagine.isVisible()
+    assert p.vista.width() > larghezza_vista           # il testo si riallarga
 
 
 def test_player_illustrazione_mancante_o_assente(qtbot, tmp_path):

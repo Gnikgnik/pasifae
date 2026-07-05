@@ -49,7 +49,7 @@ from PySide6.QtCore import QSettings, Qt, QTimer, Signal  # noqa: E402
 from PySide6.QtGui import QAction, QActionGroup, QFont, QKeySequence  # noqa: E402
 from PySide6.QtWidgets import (  # noqa: E402
     QApplication, QFileDialog, QFrame, QHBoxLayout, QLabel, QLineEdit,
-    QMainWindow, QMessageBox, QTextEdit, QVBoxLayout, QWidget,
+    QMainWindow, QMessageBox, QSplitter, QTextEdit, QVBoxLayout, QWidget,
 )
 
 
@@ -166,7 +166,7 @@ class Player(QMainWindow):
         self._anim_step = 0
 
         self.setWindowTitle("Pasifae Play")
-        self.resize(880, 660)
+        self.resize(1120, 700)
         self._costruisci_menu()
 
         centrale = QWidget()
@@ -183,15 +183,15 @@ class Player(QMainWindow):
         h.addWidget(self.titolo); h.addStretch(1); h.addWidget(self.stato)
         radice.addWidget(testa)
 
-        self.immagine = PannelloImmagine()
+        # illustrazione a colonna, a fianco della trascrizione: molto più
+        # grande della vecchia striscia, con larghezza regolabile e ricordata
+        self.immagine = PannelloImmagine(riempi=True)
         self.immagine.imposta_attiva(self.illustrazioni)
-        radice.addWidget(self.immagine)
 
         self.vista = VistaTrascrizione(); self.vista.setObjectName("vista")
         self.vista.setReadOnly(True); self.vista.setFrameStyle(QFrame.NoFrame)
         self.vista.imposta_em(self.dim_testo)
         self.vista.zoom.connect(self._cambia_dim)
-        radice.addWidget(self.vista, 1)
         self._in_fondo = True
         barra = self.vista.verticalScrollBar()
         barra.valueChanged.connect(self._registra_se_in_fondo)
@@ -212,7 +212,28 @@ class Player(QMainWindow):
         self.input.fuoco.connect(self._accendi_cornice)
         hc.addWidget(prompt); hc.addWidget(self.input, 1)
         hr.addWidget(self.cornice_input)
-        radice.addWidget(riga)
+
+        colonna = QWidget()
+        vdx = QVBoxLayout(colonna)
+        vdx.setContentsMargins(0, 0, 0, 0); vdx.setSpacing(0)
+        vdx.addWidget(self.vista, 1)
+        vdx.addWidget(riga)
+
+        self.spartizione = QSplitter(Qt.Horizontal)
+        self.spartizione.addWidget(self.immagine)
+        self.spartizione.addWidget(colonna)
+        self.spartizione.setCollapsible(1, False)   # il testo non sparisce mai
+        self.spartizione.setStretchFactor(0, 2)
+        self.spartizione.setStretchFactor(1, 3)
+        try:
+            col = int(imp.value("colonna_immagine", 0))
+        except (TypeError, ValueError):
+            col = 0
+        largo = self.width()
+        col = col if 0 < col < largo else int(largo * 0.44)
+        self.spartizione.setSizes([col, largo - col])
+        self.spartizione.splitterMoved.connect(self._ricorda_colonna)
+        radice.addWidget(self.spartizione, 1)
 
         self.setCentralWidget(centrale)
         self._applica_tema()
@@ -539,6 +560,12 @@ class Player(QMainWindow):
         self.illustrazioni = bool(attive)
         _impostazioni().setValue("illustrazioni", int(self.illustrazioni))
         self.immagine.imposta_attiva(self.illustrazioni)
+
+    def _ricorda_colonna(self, *_):
+        """La larghezza scelta per la colonna dell'illustrazione si conserva
+        tra le sessioni."""
+        _impostazioni().setValue("colonna_immagine",
+                                 self.spartizione.sizes()[0])
 
     def _accendi_cornice(self, acceso: bool):
         self.cornice_input.setProperty("fuoco", acceso)

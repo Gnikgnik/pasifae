@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Pannello dell'illustrazione di stanza, condiviso da player e anteprima.
 
-Un'etichetta sopra la trascrizione che mostra l'immagine della stanza
-corrente (stile Magnetic Scrolls) e collassa quando la stanza non ne ha una.
+Un'etichetta che mostra l'immagine della stanza corrente (stile Magnetic
+Scrolls) e collassa quando la stanza non ne ha una. Due modalità: striscia
+sopra la trascrizione (tetto in altezza) oppure colonna a fianco, dove
+l'immagine riempie tutta l'altezza disponibile.
 Volutamente NON inline nel QTextEdit: le immagini nel documento si
 intreccerebbero con l'animazione telescrivente e con lo scorrimento pigro
 del layout, zone già delicate.
@@ -14,20 +16,31 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QLabel
+from PySide6.QtWidgets import QLabel, QSizePolicy
 
 
 class PannelloImmagine(QLabel):
-    """Mostra un'immagine adattata alla larghezza, con un tetto in altezza.
+    """Mostra un'immagine adattata allo spazio del pannello: in modalità
+    striscia si adatta alla larghezza con un tetto in altezza; in modalità
+    colonna (`riempi=True`) sfrutta tutta l'area che il layout le concede.
     Nascosto quando non c'è nulla da mostrare o l'utente lo ha spento."""
 
     ALTEZZA_MAX = 240
 
-    def __init__(self):
+    def __init__(self, riempi: bool = False):
         super().__init__()
         self.setObjectName("illustrazione")
-        self.setAlignment(Qt.AlignCenter)
-        self.setContentsMargins(26, 14, 26, 0)   # come il padding della vista
+        self._riempi = bool(riempi)
+        if self._riempi:
+            # in uno splitter la dimensione la decide il contenitore: la
+            # pixmap non deve gonfiare il sizeHint e allargare la colonna
+            self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+            self.setMinimumSize(1, 1)
+            self.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
+            self.setContentsMargins(26, 14, 12, 18)
+        else:
+            self.setAlignment(Qt.AlignCenter)
+            self.setContentsMargins(26, 14, 26, 0)   # come il padding della vista
         self._sorgente: QPixmap | None = None
         self._percorso: str | None = None
         self._attiva = True
@@ -63,6 +76,8 @@ class PannelloImmagine(QLabel):
         if self._sorgente is None:
             self.clear()
             return
+        r = self.contentsRect()
+        tetto = r.height() if self._riempi else self.ALTEZZA_MAX
         self.setPixmap(self._sorgente.scaled(
-            max(1, self.contentsRect().width()), self.ALTEZZA_MAX,
+            max(1, r.width()), max(1, tetto),
             Qt.KeepAspectRatio, Qt.SmoothTransformation))
