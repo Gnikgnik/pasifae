@@ -773,6 +773,27 @@ def test_anteprima_non_altera_originale(qtbot):
     assert m.stanza_corrente in ("", "sala")
 
 
+def test_anteprima_mostra_illustrazione(qtbot, tmp_path):
+    """La finestra «Prova l'avventura» mostra l'illustrazione della stanza
+    corrente, risolta rispetto al JSON dell'avventura in modifica; senza
+    percorso (avventura mai salvata) il pannello resta collassato."""
+    percorso = _avventura_con_immagine(tmp_path)
+    m = carica_mondo(percorso)
+    f = FinestraGioco(m, "scuro", percorso=percorso)
+    qtbot.addWidget(f)
+    f.show()
+    QApplication.processEvents()
+    assert f.immagine.isVisible()
+    f.input.setText("nord"); f._invia()            # la cella non ha immagine
+    QApplication.processEvents()
+    assert not f.immagine.isVisible()
+    f2 = FinestraGioco(m, "scuro")                 # nessun percorso noto
+    qtbot.addWidget(f2)
+    f2.show()
+    QApplication.processEvents()
+    assert not f2.immagine.isVisible()
+
+
 # --------------------------- ricerca / filtri ---------------------------
 
 def test_combo_cerca_filtrabile(qtbot):

@@ -10,10 +10,12 @@ from __future__ import annotations
 
 import copy
 import html
+from pathlib import Path
 
 from advcore import Motore
 from advcore.model import INVENTARIO
 from gui import analisi, regole, tema
+from gui.immagine import PannelloImmagine
 from gui.player import InputComando
 
 from PySide6.QtCore import Qt
@@ -25,10 +27,12 @@ from PySide6.QtWidgets import (
 
 
 class FinestraGioco(QDialog):
-    def __init__(self, mondo, tema_nome="scuro", parent=None, partenza=None):
+    def __init__(self, mondo, tema_nome="scuro", parent=None, partenza=None,
+                 percorso=None):
         super().__init__(parent)
         self.tema = tema_nome
         self.mondo = copy.deepcopy(mondo)      # si gioca su una copia
+        self.percorso = percorso               # JSON: base delle illustrazioni
         self.partenza = dict(partenza or {})
         self._applica_partenza()
         # il motore fotografa QUESTO stato come iniziale: anche «Riavvia»
@@ -63,6 +67,9 @@ class FinestraGioco(QDialog):
         avviso.setObjectName("campetto")
         avviso.setContentsMargins(22, 6, 0, 0)
         radice.addWidget(avviso)
+
+        self.immagine = PannelloImmagine()
+        radice.addWidget(self.immagine)
 
         self.vista = QTextEdit(); self.vista.setObjectName("vista")
         self.vista.setReadOnly(True); self.vista.setFrameStyle(QFrame.NoFrame)
@@ -144,6 +151,12 @@ class FinestraGioco(QDialog):
         self.titolo.setText(self.mondo.meta.get("titolo") or "Anteprima")
         self.stato.setText(
             f"punteggio {self.mondo.punteggio}    ·    turni {self.mondo.mosse}")
+        stanza = self.mondo.stanze.get(self.mondo.stanza_corrente)
+        if stanza is None or not getattr(stanza, "immagine", "") or not self.percorso:
+            self.immagine.mostra_file(None)
+        else:
+            self.immagine.mostra_file(
+                str(Path(self.percorso).parent / stanza.immagine))
 
 
 class DialogoProvaDa(QDialog):

@@ -625,7 +625,8 @@ class Editor(QMainWindow):
                 "Crea almeno una stanza per provare l'avventura.", 4000)
             return
         from gui.anteprima import FinestraGioco
-        FinestraGioco(self.mondo, self.tema, self).exec()
+        FinestraGioco(self.mondo, self.tema, self,
+                      percorso=self.percorso).exec()
 
     def _prova_da(self, stanza=None):
         """Prova dell'avventura da un punto scelto (stanza, inventario, flag):
@@ -642,7 +643,7 @@ class Editor(QMainWindow):
         d = DialogoProvaDa(self.mondo, self.tema, self, stanza=stanza)
         if d.exec():
             FinestraGioco(self.mondo, self.tema, self,
-                          partenza=d.partenza()).exec()
+                          partenza=d.partenza(), percorso=self.percorso).exec()
 
     def _menu_elementi(self, pos):
         """Menu contestuale sulla lista degli elementi: sulle stanze offre
