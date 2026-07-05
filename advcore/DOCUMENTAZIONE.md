@@ -66,6 +66,7 @@ Un luogo dell'avventura.
 | `uscite` | dict | `direzione → id_stanza`, oppure `{"to": id, "se": flag, "bloccata": msg}` |
 | `buia` | bool | richiede una luce per vedere |
 | `visitata` | bool | impostata a runtime alla prima visita |
+| `immagine` | str | *(opzionale)* illustrazione: nome file relativo al JSON dell'avventura; il motore la ignora, la mostrano le interfacce (player, anteprima) |
 
 ### `Oggetto`
 

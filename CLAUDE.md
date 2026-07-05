@@ -100,8 +100,8 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   e l'eseguibile vale solo per il sistema operativo su cui lo compili.
 
 ## Stato attuale
-- `advcore` **1.13.0** · interfaccia `gui` **1.9.1**.
-- Suite: **52 test GUI + 10 script**, tutti verdi.
+- `advcore` **1.14.0** · interfaccia `gui` **1.10.0**.
+- Suite: **60 test GUI + 10 script**, tutti verdi.
 - Documentazione: `README.md`, `advcore/DOCUMENTAZIONE.md`, `COSTRUIRE.md`,
   manuale d'uso (Word/PDF), e il progetto dell'avventura "SOTTO ARES".
 
