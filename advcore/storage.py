@@ -41,7 +41,8 @@ def _da_dict(d: dict) -> Mondo:
                     nome=s["nome"],
                     desc=s.get("desc", ""),
                     uscite=s.get("uscite", {}),
-                    buia=s.get("buia", False))
+                    buia=s.get("buia", False),
+                    immagine=s.get("immagine", ""))
         for sid, s in d.get("stanze", {}).items()
     }
     oggetti = {
@@ -89,7 +90,8 @@ def _a_dict(m: Mondo) -> dict:
         "preposizioni": m.preposizioni,
         "stanze": {
             sid: {"nome": s.nome, "desc": s.desc,
-                  "uscite": s.uscite, "buia": s.buia}
+                  "uscite": s.uscite, "buia": s.buia,
+                  **({"immagine": s.immagine} if s.immagine else {})}
             for sid, s in m.stanze.items()
         },
         "oggetti": {

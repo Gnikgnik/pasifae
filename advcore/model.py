@@ -27,6 +27,9 @@ class Stanza:
     uscite: dict[str, Any] = field(default_factory=dict)
     buia: bool = False          # richiede una sorgente di luce per vedere
     visitata: bool = False
+    # illustrazione opzionale: nome file relativo al JSON dell'avventura.
+    # Il motore la ignora; la mostrano le interfacce che sanno farlo.
+    immagine: str = ""
 
 
 @dataclass

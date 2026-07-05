@@ -170,6 +170,34 @@ def test_aiuto_solo_verbi_usati():
         assert assente not in r, f"«{assente}» non dovrebbe comparire"
 
 
+def test_immagine_stanza_opzionale():
+    """Il campo `immagine` della stanza è opzionale e retrocompatibile:
+    sopravvive al round-trip su file, non compare nel JSON quando è vuoto,
+    e le avventure esistenti (senza campo) continuano a caricarsi."""
+    import json
+    import tempfile
+    from advcore import salva_mondo
+
+    m = Mondo(meta={"titolo": "Con figure", "stanza_iniziale": "atrio"})
+    m.stanze["atrio"] = Stanza(id="atrio", nome="Atrio", desc="",
+                               immagine="atrio.png")
+    m.stanze["cella"] = Stanza(id="cella", nome="Cella", desc="")
+
+    with tempfile.TemporaryDirectory() as d:
+        f = Path(d) / "figure.json"
+        salva_mondo(m, f)
+        dati = json.loads(f.read_text(encoding="utf-8"))
+        assert dati["stanze"]["atrio"]["immagine"] == "atrio.png"
+        assert "immagine" not in dati["stanze"]["cella"]     # niente rumore
+        m2 = carica_mondo(f)
+        assert m2.stanze["atrio"].immagine == "atrio.png"
+        assert m2.stanze["cella"].immagine == ""
+
+    # un'avventura esistente, senza campo, carica con immagine vuota
+    m3 = carica_mondo("avventure/caverna.json")
+    assert all(s.immagine == "" for s in m3.stanze.values())
+
+
 def main() -> int:
     for nome, fn in sorted(globals().items()):
         if nome.startswith("test_") and callable(fn):
