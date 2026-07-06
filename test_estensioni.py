@@ -259,6 +259,62 @@ def test_prendi_tutto():
     assert "tutto" in mot3.esegui("esamina tutto")
 
 
+def test_prendi_tutto_contenitori_aperti():
+    """«prendi tutto» raccoglie anche il contenuto dei contenitori aperti
+    visibili nella stanza (pure annidati); ignora i contenitori chiusi e
+    non svuota quelli portati nell'inventario."""
+    def mondo():
+        m = Mondo(meta={"stanza_iniziale": "sala"})
+        m.stanze["sala"] = Stanza(id="sala", nome="Sala", desc="")
+        m.oggetti["botola"] = Oggetto(id="botola", nome="botola",
+                                      nomi=["botola"], posizione="sala",
+                                      props={"scenario": True,
+                                             "contenitore": True,
+                                             "aperto": True})
+        m.oggetti["libro"] = Oggetto(id="libro", nome="libro",
+                                     nomi=["libro"], posizione="botola",
+                                     props={"prendibile": True})
+        m.oggetti["scatola"] = Oggetto(id="scatola", nome="scatola",
+                                       nomi=["scatola"], posizione="botola",
+                                       props={"prendibile": True,
+                                              "contenitore": True,
+                                              "aperto": True})
+        m.oggetti["moneta"] = Oggetto(id="moneta", nome="moneta",
+                                      nomi=["moneta"], posizione="scatola",
+                                      props={"prendibile": True})
+        m.oggetti["baule"] = Oggetto(id="baule", nome="baule",
+                                     nomi=["baule"], posizione="sala",
+                                     props={"scenario": True,
+                                            "contenitore": True,
+                                            "aperto": False})
+        m.oggetti["gemma"] = Oggetto(id="gemma", nome="gemma",
+                                     nomi=["gemma"], posizione="baule",
+                                     props={"prendibile": True})
+        m.oggetti["borsa"] = Oggetto(id="borsa", nome="borsa",
+                                     nomi=["borsa"], posizione="inventario",
+                                     props={"prendibile": True,
+                                            "contenitore": True,
+                                            "aperto": True})
+        m.oggetti["mela"] = Oggetto(id="mela", nome="mela",
+                                    nomi=["mela"], posizione="borsa",
+                                    props={"prendibile": True})
+        return m
+
+    mot = Motore(mondo())
+    mot.avvia()
+    r = mot.esegui("prendi tutto")
+    # dal contenitore aperto (e da quello annidato dentro di esso)
+    assert "Prendi libro." in r and "Prendi moneta." in r
+    assert mot.mondo.oggetti["libro"].posizione == "inventario"
+    assert mot.mondo.oggetti["moneta"].posizione == "inventario"
+    # il contenitore chiuso resta sigillato
+    assert "gemma" not in r
+    assert mot.mondo.oggetti["gemma"].posizione == "baule"
+    # la borsa che porti con te non viene svuotata
+    assert "mela" not in r
+    assert mot.mondo.oggetti["mela"].posizione == "borsa"
+
+
 def test_immagine_stanza_opzionale():
     """Il campo `immagine` della stanza è opzionale e retrocompatibile:
     sopravvive al round-trip su file, non compare nel JSON quando è vuoto,

@@ -281,14 +281,23 @@ class Motore:
 
     def _prendi_tutto(self) -> str:
         """«prendi tutto»: prova a prendere, uno per uno, gli oggetti
-        prendibili posati nella stanza. Ogni presa passa dalle regole
+        prendibili visibili nella stanza, compreso il contenuto dei
+        contenitori aperti (anche annidati). L'inventario e ciò che
+        contiene restano fuori. Ogni presa passa dalle regole
         dell'autore come un «prendi» singolo, così gli enigmi che
         intercettano la presa restano validi. Scenario e oggetti non
         prendibili vengono ignorati in silenzio."""
         if not self.mondo.luce_disponibile():
             return "E' troppo buio per vedere cosa c'e' da prendere."
-        candidati = [o for o in self.mondo.oggetti_in(self.mondo.stanza_corrente)
-                     if o.props.get("prendibile")]
+        visibili = list(self.mondo.oggetti_in(self.mondo.stanza_corrente))
+        da_espandere = list(visibili)
+        while da_espandere:
+            o = da_espandere.pop()
+            if o.props.get("contenitore") and o.props.get("aperto"):
+                contenuto = self.mondo.oggetti_in(o.id)
+                visibili += contenuto
+                da_espandere.extend(contenuto)
+        candidati = [o for o in visibili if o.props.get("prendibile")]
         if not candidati:
             return "Non c'e' nulla da prendere qui."
         righe = []
