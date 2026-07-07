@@ -55,11 +55,21 @@ class VistaMappa(QGraphicsView):
         menu delle uscite al rilascio."""
         if self._finestra is None:
             return
-        it = self.itemAt(ev.pos())
-        while it is not None and not isinstance(it, NodoStanza):
-            it = it.parentItem()
-        if it is not None:
+        # su Linux questo evento scatta alla PRESSIONE del destro, subito
+        # dopo il press che può aver avviato un collegamento: in quel caso
+        # niente menu (e c'è la linea provvisoria sotto il cursore, che
+        # farebbe sembrare vuoto il punto)
+        if self._finestra._collegamento_da:
+            ev.accept()
             return
+        # un nodo può stare sotto item non-nodo (linee, etichette):
+        # cerca un NodoStanza fra TUTTI gli item nel punto
+        for it in self.items(ev.pos()):
+            while it is not None and not isinstance(it, NodoStanza):
+                it = it.parentItem()
+            if it is not None:
+                ev.accept()
+                return
         self._finestra._menu_canvas(ev.globalPos(), self.mapToScene(ev.pos()))
 
 

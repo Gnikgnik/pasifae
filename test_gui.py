@@ -1249,5 +1249,54 @@ def test_mappa_nuova_stanza_dal_canvas(qtbot, monkeypatch):
     assert m.stanze["sala"].nome == "Sala"                  # intatta
 
 
+def test_mappa_menu_contestuale_non_scavalca_i_nodi(qtbot, monkeypatch):
+    """Su Linux il menu contestuale scatta alla PRESSIONE del destro, subito
+    dopo il press che ha avviato il collegamento: con la linea provvisoria
+    sotto il cursore non deve aprirsi il menu del canvas (regressione: si
+    apriva sempre «Nuova stanza», mai il menu delle uscite né il drag)."""
+    from PySide6.QtCore import QPointF
+    from PySide6.QtGui import QContextMenuEvent
+    from gui.mappa import FinestraMappa, BOX_W, BOX_H
+    m = mondo_semplice()
+    f = FinestraMappa(m, "scuro")
+    qtbot.addWidget(f)
+    f.show()
+    canvas, stanza = [], []
+    monkeypatch.setattr(FinestraMappa, "_menu_canvas",
+                        lambda self, g, s: canvas.append(s))
+    monkeypatch.setattr(FinestraMappa, "_menu_stanza",
+                        lambda self, sid, p: stanza.append(sid))
+
+    def vp(sid):
+        n = f.nodi[sid]
+        return f.vista.mapFromScene(n.pos() + QPointF(BOX_W / 2, BOX_H / 2))
+
+    # contesto sul nodo, a riposo: niente menu del canvas
+    f.vista.contextMenuEvent(
+        QContextMenuEvent(QContextMenuEvent.Mouse, vp("sala"),
+                          f.vista.viewport().mapToGlobal(vp("sala"))))
+    assert not canvas
+
+    # press destro sul nodo: parte il collegamento; il menu contestuale
+    # che arriva subito dopo non deve aprire «Nuova stanza»
+    qtbot.mousePress(f.vista.viewport(), Qt.RightButton, pos=vp("sala"))
+    assert f._collegamento_da == "sala"
+    f.vista.contextMenuEvent(
+        QContextMenuEvent(QContextMenuEvent.Mouse, vp("sala"),
+                          f.vista.viewport().mapToGlobal(vp("sala"))))
+    assert not canvas
+
+    # rilascio fermo: menu delle uscite della stanza (differito)
+    qtbot.mouseRelease(f.vista.viewport(), Qt.RightButton, pos=vp("sala"))
+    qtbot.waitUntil(lambda: stanza == ["sala"], timeout=1000)
+
+    # sul vuoto, a riposo: il menu del canvas sì
+    lontano = f.vista.mapFromScene(QPointF(-400, -400))
+    f.vista.contextMenuEvent(
+        QContextMenuEvent(QContextMenuEvent.Mouse, lontano,
+                          f.vista.viewport().mapToGlobal(lontano)))
+    assert len(canvas) == 1
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
