@@ -1089,5 +1089,70 @@ def test_timer_dichiarati_nelle_opzioni():
     assert R.opzioni(m)["timer"] == ["allarme", "bomba"]
 
 
+# --------------------------- mappa trascinabile ---------------------------
+
+def test_mappa_stanze_trascinabili(qtbot):
+    """I riquadri delle stanze si trascinano: la posizione finisce in
+    meta["editor"]["mappa"] (il motore la ignora), i collegamenti seguono
+    il nodo e il rilascio segnala la modifica all'editor."""
+    from gui.mappa import FinestraMappa, BOX_W, BOX_H
+    m = mondo_semplice()
+    chiamate = []
+    f = FinestraMappa(m, "scuro", su_modifica=lambda: chiamate.append(1))
+    qtbot.addWidget(f)
+
+    nodo = f.nodi["corridoio"]
+    prima = nodo.pos()
+    nodo.setPos(prima.x() + 300, prima.y() + 120)
+
+    # posizione registrata nei metadati dell'editor
+    assert m.meta["editor"]["mappa"]["corridoio"] == [
+        round(prima.x() + 300), round(prima.y() + 120)]
+
+    # il collegamento segue: un estremo raggiunge il bordo del nodo spostato
+    cx = nodo.pos().x() + BOX_W / 2
+    cy = nodo.pos().y() + BOX_H / 2
+    estremi = []
+    for it in f._item_collegamenti:
+        if hasattr(it, "line"):
+            estremi += [it.line().p1(), it.line().p2()]
+    assert any(abs(p.x() - cx) <= BOX_W and abs(p.y() - cy) <= BOX_H
+               for p in estremi)
+
+    # la modifica è segnalata una volta sola, al rilascio del mouse
+    assert not chiamate
+    f._fine_trascinamento("corridoio")
+    assert chiamate == [1]
+    f._fine_trascinamento("corridoio")      # senza nuovo spostamento: silenzio
+    assert chiamate == [1]
+
+
+def test_mappa_posizioni_salvate_e_riordino(qtbot):
+    """All'apertura la mappa rispetta le posizioni salvate in meta, il
+    round-trip su file le conserva e «Riordina» torna al layout automatico."""
+    import tempfile
+    from gui.mappa import FinestraMappa
+    m = mondo_semplice()
+    m.meta["editor"] = {"mappa": {"sala": [40, 60], "corridoio": [420, 200]}}
+    f = FinestraMappa(m, "scuro")
+    qtbot.addWidget(f)
+    assert (f.nodi["sala"].pos().x(), f.nodi["sala"].pos().y()) == (40, 60)
+    assert f.nodi["corridoio"].pos().x() == 420
+
+    # le posizioni vivono in meta: sopravvivono a salva/carica senza
+    # che il motore ne sappia nulla
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as tmp:
+        percorso = tmp.name
+    salva_mondo(m, percorso)
+    m2 = carica_mondo(percorso)
+    os.unlink(percorso)
+    assert m2.meta["editor"]["mappa"]["corridoio"] == [420, 200]
+
+    # «Riordina» dimentica le posizioni manuali e rifà il layout automatico
+    f._riordina()
+    assert not m.meta.get("editor", {}).get("mappa")
+    assert (f.nodi["sala"].pos().x(), f.nodi["sala"].pos().y()) != (40, 60)
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))

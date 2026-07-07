@@ -1,9 +1,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Mappa grafica dell'avventura per l'editor Qt.
 
-Riusa la disposizione su griglia di advcore.mappa (_layout) e disegna stanze,
-collegamenti (con senso e condizioni), personaggi e oggetti con QGraphicsView:
-vettoriale, con zoom, scorrimento ed esportazione in PNG.
+Le stanze sono riquadri trascinabili: la disposizione scelta dall'autore vive
+in meta["editor"]["mappa"] (il motore la ignora; storage la conserva com'è).
+In mancanza di posizioni salvate si usa la griglia di advcore.mappa (_layout).
+I collegamenti (con senso e condizioni) seguono i nodi in tempo reale.
+Vettoriale, con zoom, scorrimento ed esportazione in PNG.
 """
 from __future__ import annotations
 
@@ -12,13 +14,14 @@ import math
 from advcore.mappa import _layout, _destinazione, _oggetti_in
 from gui import tema
 
-from PySide6.QtCore import Qt, QPointF, QRectF
+from PySide6.QtCore import Qt, QLineF, QPointF, QRectF
 from PySide6.QtGui import (
     QBrush, QColor, QFont, QImage, QPainter, QPainterPath, QPen, QPolygonF,
 )
 from PySide6.QtWidgets import (
-    QDialog, QFileDialog, QGraphicsScene, QGraphicsView, QHBoxLayout, QLabel,
-    QPushButton, QVBoxLayout,
+    QDialog, QFileDialog, QGraphicsItem, QGraphicsRectItem, QGraphicsScene,
+    QGraphicsSimpleTextItem, QGraphicsView, QHBoxLayout, QLabel, QPushButton,
+    QVBoxLayout,
 )
 
 CELL_W, CELL_H = 220, 168
@@ -41,28 +44,60 @@ class VistaMappa(QGraphicsView):
         self.scale(f, f)
 
 
+class NodoStanza(QGraphicsRectItem):
+    """Riquadro di stanza trascinabile. Mentre si muove avvisa la finestra,
+    che aggiorna i collegamenti e registra la posizione nei metadati."""
+
+    def __init__(self, sid, finestra):
+        super().__init__(0, 0, BOX_W, BOX_H)
+        self.sid = sid
+        self._finestra = finestra
+        self.setFlag(QGraphicsItem.ItemIsMovable)
+        self.setFlag(QGraphicsItem.ItemIsSelectable)
+        self.setFlag(QGraphicsItem.ItemSendsScenePositionChanges)
+        self.setCursor(Qt.OpenHandCursor)
+        self.setZValue(1)
+
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemScenePositionHasChanged:
+            self._finestra._nodo_spostato(self.sid)
+        return super().itemChange(change, value)
+
+    def mouseReleaseEvent(self, ev):
+        super().mouseReleaseEvent(ev)
+        self._finestra._fine_trascinamento(self.sid)
+
+
 class FinestraMappa(QDialog):
-    def __init__(self, mondo, tema_nome="scuro", parent=None):
+    def __init__(self, mondo, tema_nome="scuro", parent=None, su_modifica=None):
         super().__init__(parent)
         self.mondo = mondo
+        self.su_modifica = su_modifica
         self.pal = tema.PALETTE.get(tema_nome, tema.PALETTE["scuro"])
         self.setWindowTitle("Mappa dell'avventura")
         self.setStyleSheet(tema.qss(tema_nome))
         self.resize(960, 720)
+
+        self.nodi: dict[str, NodoStanza] = {}
+        self._item_collegamenti = []
+        self._spostati = set()
+        self._pronta = False
 
         self.scena = QGraphicsScene(self)
         self.scena.setBackgroundBrush(QColor(self.pal["bg"]))
         self.vista = VistaMappa(self.scena)
 
         legenda = QLabel(
-            "→ senso unico    —  doppio senso    ┄ condizionata (flag)    "
-            "◆ personaggio    • oggetto")
+            "trascina i riquadri per disporre la mappa    → senso unico    "
+            "—  doppio senso    ┄ condizionata (flag)    ◆ personaggio    "
+            "• oggetto")
         legenda.setObjectName("stato")
 
         barra = QHBoxLayout()
         barra.addWidget(legenda)
         barra.addStretch(1)
-        for testo, slot in (("Adatta", self._adatta), ("+", lambda: self._zoom(1.2)),
+        for testo, slot in (("Riordina", self._riordina),
+                            ("Adatta", self._adatta), ("+", lambda: self._zoom(1.2)),
                             ("−", lambda: self._zoom(1 / 1.2)),
                             ("Esporta PNG…", self._esporta), ("Chiudi", self.accept)):
             b = QPushButton(testo)
@@ -77,11 +112,12 @@ class FinestraMappa(QDialog):
         radice.addWidget(self.vista, 1)
 
         self._costruisci()
+        self._pronta = True
         self._adatta()
 
     # ---------- costruzione della scena ----------
 
-    def _posizioni(self):
+    def _posizioni_griglia(self):
         coord, isolate = _layout(self.mondo)
         if not coord and not isolate:
             return {}
@@ -94,28 +130,105 @@ class FinestraMappa(QDialog):
         miny = min(y for _, y in coord.values())
         return {sid: (x - minx, y - miny) for sid, (x, y) in coord.items()}
 
-    def _centro(self, pos):
-        gx, gy = pos
-        return (gx * CELL_W + CELL_W / 2, gy * CELL_H + CELL_H / 2)
+    def _posizioni_pixel(self):
+        """Angolo alto-sinistro di ogni riquadro: prima le posizioni salvate
+        dall'autore (meta["editor"]["mappa"]), per le altre stanze la griglia
+        automatica."""
+        griglia = self._posizioni_griglia()
+        salvate = self.mondo.meta.get("editor", {}).get("mappa", {})
+        pos = {}
+        for sid, (gx, gy) in griglia.items():
+            p = salvate.get(sid)
+            if (isinstance(p, (list, tuple)) and len(p) == 2
+                    and all(isinstance(v, (int, float)) for v in p)):
+                pos[sid] = (float(p[0]), float(p[1]))
+            else:
+                pos[sid] = (gx * CELL_W + (CELL_W - BOX_W) / 2,
+                            gy * CELL_H + (CELL_H - BOX_H) / 2)
+        return pos
 
     def _costruisci(self):
-        pos = self._posizioni()
+        pos = self._posizioni_pixel()
         if not pos:
             self.scena.addText("(nessuna stanza: crea almeno una stanza)",
                                QFont(tema.FONT_TESTO.split(",")[0], 12))
             return
-        self._disegna_collegamenti(pos)
-        for sid, p in pos.items():
-            self._disegna_stanza(sid, p)
+        for sid, (px, py) in pos.items():
+            nodo = self._crea_nodo(sid)
+            self.scena.addItem(nodo)
+            nodo.setPos(px, py)
+            self.nodi[sid] = nodo
+        self._ridisegna_collegamenti()
 
-    def _disegna_collegamenti(self, pos):
-        # raccoglie tutte le uscite tra stanze posizionate
+    def _crea_nodo(self, sid):
+        """Il riquadro della stanza con titolo, sottotitolo e contenuto come
+        figli: si muove tutto insieme."""
+        stanza = self.mondo.stanze[sid]
+        iniziale = (self.mondo.meta.get("stanza_iniziale") == sid)
+        buia = bool(getattr(stanza, "buia", False))
+
+        nodo = NodoStanza(sid, self)
+        fondo = QColor(self.pal["barra"] if not buia else self.pal["ombra"])
+        bordo = QColor(self.pal["accento"] if iniziale else self.pal["bordo"])
+        nodo.setPen(QPen(bordo, 2 if iniziale else 1))
+        nodo.setBrush(QBrush(fondo))
+
+        f_tit = QFont(tema.FONT_TESTO.split(",")[0], 10)
+        f_tit.setBold(True)
+        titolo = QGraphicsSimpleTextItem(_taglia(stanza.nome or sid, 22), nodo)
+        titolo.setFont(f_tit)
+        titolo.setBrush(QBrush(QColor(self.pal["testo"])))
+        titolo.setPos(10, 8)
+
+        f_id = QFont(tema.FONT_TESTO.split(",")[0], 7)
+        sub = QGraphicsSimpleTextItem(
+            sid + ("  ·  iniziale" if iniziale else "") + ("  ·  buia" if buia else ""),
+            nodo)
+        sub.setFont(f_id)
+        sub.setBrush(QBrush(QColor(self.pal["muto"])))
+        sub.setPos(10, 26)
+
+        # oggetti e personaggi nella stanza
+        oggetti = _oggetti_in(self.mondo, sid)
+        png = [o for o in oggetti if o.props.get("png")]
+        altri = [o for o in oggetti if not o.props.get("png")]
+        righe = ([("◆", o, True) for o in png] + [("•", o, False) for o in altri])
+        f_o = QFont(tema.FONT_TESTO.split(",")[0], 8)
+        y = 44
+        for marca, o, e_png in righe[:4]:
+            scen = o.props.get("scenario")
+            col = (self.pal["accento"] if e_png
+                   else self.pal["muto"] if scen else self.pal["testo"])
+            it = QGraphicsSimpleTextItem(f"{marca} {_taglia(o.nome or o.id, 24)}",
+                                         nodo)
+            it.setFont(f_o)
+            it.setBrush(QBrush(QColor(col)))
+            it.setPos(12, y)
+            y += 15
+        if len(righe) > 4:
+            piu = QGraphicsSimpleTextItem(f"  +{len(righe) - 4} altri", nodo)
+            piu.setFont(f_o)
+            piu.setBrush(QBrush(QColor(self.pal["muto"])))
+            piu.setPos(12, y)
+        return nodo
+
+    # ---------- collegamenti ----------
+
+    def _centro(self, sid):
+        p = self.nodi[sid].pos()
+        return (p.x() + BOX_W / 2, p.y() + BOX_H / 2)
+
+    def _ridisegna_collegamenti(self):
+        for it in self._item_collegamenti:
+            self.scena.removeItem(it)
+        self._item_collegamenti = []
         conns = []
-        for sid in pos:
+        for sid in self.nodi:
             for direz, u in self.mondo.stanze[sid].uscite.items():
                 dst = _destinazione(u)
-                if dst in pos and dst != sid:
-                    conns.append((sid, direz, dst, isinstance(u, dict) and bool(u.get("se"))))
+                if dst in self.nodi and dst != sid:
+                    conns.append((sid, direz, dst,
+                                  isinstance(u, dict) and bool(u.get("se"))))
         coppie = {(a, b) for a, _, b, _ in conns}
         fatti = set()
         for src, direz, dst, cond in conns:
@@ -125,21 +238,22 @@ class FinestraMappa(QDialog):
                 if chiave in fatti:
                     continue
                 fatti.add(chiave)
-            self._linea(pos[src], pos[dst], direz, cond, freccia=not doppio)
+            self._linea(src, dst, direz, cond, freccia=not doppio)
 
-    def _linea(self, pa, pb, direz, cond, freccia):
-        cx, cy = self._centro(pa)
-        tx, ty = self._centro(pb)
+    def _linea(self, src, dst, direz, cond, freccia):
+        cx, cy = self._centro(src)
+        tx, ty = self._centro(dst)
         x1, y1 = _bordo(cx, cy, BOX_W / 2, BOX_H / 2, tx, ty)
         x2, y2 = _bordo(tx, ty, BOX_W / 2, BOX_H / 2, cx, cy)
         colore = QColor(self.pal["accento"]) if not cond else QColor(self.pal["muto"])
         pen = QPen(colore, 2)
         if cond:
             pen.setStyle(Qt.DashLine)
-        adiacente = (abs(pa[0] - pb[0]) + abs(pa[1] - pb[1]) == 1) and direz in CARD
 
-        if adiacente:
-            self.scena.addLine(x1, y1, x2, y2, pen)
+        if not self._attraversa_nodi(x1, y1, x2, y2, {src, dst}):
+            it = self.scena.addLine(x1, y1, x2, y2, pen)
+            it.setZValue(0)
+            self._item_collegamenti.append(it)
             ax, ay = x1, y1                         # origine per l'orientamento freccia
             lx, ly = (x1 + x2) / 2, (y1 + y2) / 2   # punto dell'etichetta
         else:
@@ -152,8 +266,9 @@ class FinestraMappa(QDialog):
             ctrlx, ctrly = mx + nx * off, my + ny * off
             path = QPainterPath(QPointF(x1, y1))
             path.quadTo(QPointF(ctrlx, ctrly), QPointF(x2, y2))
-            item = self.scena.addPath(path, pen)
-            item.setZValue(0)
+            it = self.scena.addPath(path, pen)
+            it.setZValue(0)
+            self._item_collegamenti.append(it)
             ax, ay = ctrlx, ctrly
             lx, ly = ctrlx, ctrly
         if freccia:
@@ -165,6 +280,19 @@ class FinestraMappa(QDialog):
             txt.setBrush(QBrush(QColor(self.pal["muto"])))
             txt.setPos(lx - txt.boundingRect().width() / 2, ly - 8)
             txt.setZValue(3)
+            self._item_collegamenti.append(txt)
+
+    def _attraversa_nodi(self, x1, y1, x2, y2, esclusi):
+        """Vero se il segmento passa sopra il riquadro di un'altra stanza."""
+        linea = QLineF(x1, y1, x2, y2)
+        for sid, nodo in self.nodi.items():
+            if sid in esclusi:
+                continue
+            p = nodo.pos()
+            r = QRectF(p.x(), p.y(), BOX_W, BOX_H).adjusted(-6, -6, 6, 6)
+            if _interseca(linea, r):
+                return True
+        return False
 
     def _freccia(self, x1, y1, x2, y2, colore):
         ang = math.atan2(y2 - y1, x2 - x1)
@@ -172,60 +300,47 @@ class FinestraMappa(QDialog):
         p1 = QPointF(x2, y2)
         p2 = QPointF(x2 - s * math.cos(ang - 0.4), y2 - s * math.sin(ang - 0.4))
         p3 = QPointF(x2 - s * math.cos(ang + 0.4), y2 - s * math.sin(ang + 0.4))
-        self.scena.addPolygon(QPolygonF([p1, p2, p3]),
-                              QPen(colore, 1), QBrush(colore))
+        it = self.scena.addPolygon(QPolygonF([p1, p2, p3]),
+                                   QPen(colore, 1), QBrush(colore))
+        self._item_collegamenti.append(it)
 
-    def _disegna_stanza(self, sid, pos):
-        gx, gy = pos
-        bx = gx * CELL_W + (CELL_W - BOX_W) / 2
-        by = gy * CELL_H + (CELL_H - BOX_H) / 2
-        stanza = self.mondo.stanze[sid]
-        iniziale = (self.mondo.meta.get("stanza_iniziale") == sid)
-        buia = bool(getattr(stanza, "buia", False))
+    # ---------- trascinamento ----------
 
-        fondo = QColor(self.pal["barra"] if not buia else self.pal["ombra"])
-        bordo = QColor(self.pal["accento"] if iniziale else self.pal["bordo"])
-        rett = self.scena.addRect(bx, by, BOX_W, BOX_H, QPen(bordo, 2 if iniziale else 1),
-                                  QBrush(fondo))
-        rett.setZValue(1)
+    def _nodo_spostato(self, sid):
+        """Chiamato dal nodo a ogni variazione di posizione: registra la
+        posizione nei metadati dell'editor e fa seguire i collegamenti."""
+        if not self._pronta:
+            return
+        p = self.nodi[sid].pos()
+        (self.mondo.meta.setdefault("editor", {})
+             .setdefault("mappa", {}))[sid] = [round(p.x()), round(p.y())]
+        self._spostati.add(sid)
+        self._ridisegna_collegamenti()
 
-        f_tit = QFont(tema.FONT_TESTO.split(",")[0], 10)
-        f_tit.setBold(True)
-        titolo = self.scena.addSimpleText(_taglia(stanza.nome or sid, 22), f_tit)
-        titolo.setBrush(QBrush(QColor(self.pal["testo"])))
-        titolo.setPos(bx + 10, by + 8)
-        titolo.setZValue(2)
+    def _fine_trascinamento(self, sid):
+        """Al rilascio del mouse: se il nodo si è davvero mosso, una sola
+        segnalazione di modifica all'editor."""
+        if sid not in self._spostati:
+            return
+        self._spostati.discard(sid)
+        if self.su_modifica:
+            self.su_modifica()
 
-        f_id = QFont(tema.FONT_TESTO.split(",")[0], 7)
-        sub = self.scena.addSimpleText(
-            sid + ("  ·  iniziale" if iniziale else "") + ("  ·  buia" if buia else ""),
-            f_id)
-        sub.setBrush(QBrush(QColor(self.pal["muto"])))
-        sub.setPos(bx + 10, by + 26)
-        sub.setZValue(2)
-
-        # oggetti e personaggi nella stanza
-        oggetti = _oggetti_in(self.mondo, sid)
-        png = [o for o in oggetti if o.props.get("png")]
-        altri = [o for o in oggetti if not o.props.get("png")]
-        righe = ([("◆", o, True) for o in png] + [("•", o, False) for o in altri])
-        f_o = QFont(tema.FONT_TESTO.split(",")[0], 8)
-        y = by + 44
-        mostrati = righe[:4]
-        for marca, o, e_png in mostrati:
-            scen = o.props.get("scenario")
-            col = (self.pal["accento"] if e_png
-                   else self.pal["muto"] if scen else self.pal["testo"])
-            it = self.scena.addSimpleText(f"{marca} {_taglia(o.nome or o.id, 24)}", f_o)
-            it.setBrush(QBrush(QColor(col)))
-            it.setPos(bx + 12, y)
-            it.setZValue(2)
-            y += 15
-        if len(righe) > 4:
-            piu = self.scena.addSimpleText(f"  +{len(righe) - 4} altri", f_o)
-            piu.setBrush(QBrush(QColor(self.pal["muto"])))
-            piu.setPos(bx + 12, y)
-            piu.setZValue(2)
+    def _riordina(self):
+        """Dimentica le posizioni manuali e torna al layout automatico."""
+        salvate = self.mondo.meta.get("editor", {}).get("mappa")
+        if salvate:
+            self.mondo.meta["editor"].pop("mappa", None)
+            if self.su_modifica:
+                self.su_modifica()
+        self._pronta = False
+        self.scena.clear()
+        self.nodi = {}
+        self._item_collegamenti = []
+        self._spostati = set()
+        self._costruisci()
+        self._pronta = True
+        self._adatta()
 
     # ---------- comandi ----------
 
@@ -267,6 +382,21 @@ def _bordo(cx, cy, hw, hh, tx, ty):
     sy = hh / abs(dy) if dy else float("inf")
     s = min(sx, sy)
     return cx + dx * s, cy + dy * s
+
+
+def _interseca(linea: QLineF, r: QRectF) -> bool:
+    """Vero se il segmento tocca il rettangolo."""
+    if r.contains(linea.p1()) or r.contains(linea.p2()):
+        return True
+    lati = (QLineF(r.topLeft(), r.topRight()),
+            QLineF(r.topRight(), r.bottomRight()),
+            QLineF(r.bottomRight(), r.bottomLeft()),
+            QLineF(r.bottomLeft(), r.topLeft()))
+    for lato in lati:
+        tipo, _ = linea.intersects(lato)
+        if tipo == QLineF.IntersectionType.BoundedIntersection:
+            return True
+    return False
 
 
 def _taglia(testo, n):

@@ -70,7 +70,8 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   catena dei puzzle (`catena_puzzle`).
 - `catena.py` — finestra "Concatenazione dei puzzle" (albero dai finali).
 - `anteprima.py` — finestra "Prova l'avventura" dentro l'editor.
-- `mappa.py` — mappa visuale.
+- `mappa.py` — mappa visuale; stanze trascinabili, posizioni salvate in
+  `meta["editor"]["mappa"]` (il motore le ignora).
 - `tema.py` — temi chiaro/scuro.
 - `risorse.py` — icona, loghi, dialogo "Informazioni" condiviso.
 - `compila.py` — logica pura per "Compila gioco autonomo" (PyInstaller).
@@ -102,8 +103,8 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   e l'eseguibile vale solo per il sistema operativo su cui lo compili.
 
 ## Stato attuale
-- `advcore` **1.16.1** · interfaccia `gui` **1.13.0**.
-- Suite: **67 test GUI + 10 script**, tutti verdi.
+- `advcore` **1.16.1** · interfaccia `gui` **1.14.0**.
+- Suite: **69 test GUI + 10 script**, tutti verdi.
 - Documentazione: `README.md`, `advcore/DOCUMENTAZIONE.md`, `COSTRUIRE.md`,
   manuale d'uso (Word/PDF), e il progetto dell'avventura "SOTTO ARES".
 
@@ -122,6 +123,10 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   per enigmi più ricchi (anche per SOTTO ARES: bombole, reattore).
 
 ### Editor / Player
+- **Mappa come piano di lavoro** (direzione GUI 2.0, a passi): fatte le stanze
+  trascinabili (gui 1.14.0); poi click sul nodo → selezione nell'editor, poi
+  creare/modificare uscite trascinando tra stanze e nuova stanza dal canvas,
+  infine mappa come widget centrale con i form a pannello di dettaglio.
 - **Validazione più profonda**: avvisi su timer mai avviati, dialoghi senza
   uscita, oggetti irraggiungibili, finali non collegati.
 - **Anteprima con "stato di gioco" ispezionabile**: pannello che mostra flag,
