@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Mappa grafica dell'avventura per l'editor Qt.
+"""Mappa grafica dell'avventura: il piano di lavoro al centro dell'editor.
 
-La logica vive in PannelloMappa, un widget riusabile: le stanze sono riquadri
-trascinabili, la disposizione scelta dall'autore vive in meta["editor"]["mappa"]
-(il motore la ignora; storage la conserva com'è). In mancanza di posizioni
-salvate si usa la griglia di advcore.mappa (_layout). I collegamenti (con senso
-e condizioni) seguono i nodi in tempo reale. Vettoriale, con zoom, scorrimento
-ed esportazione in PNG. FinestraMappa incornicia il pannello in un dialogo.
+PannelloMappa è un widget riusabile: le stanze sono riquadri trascinabili, la
+disposizione scelta dall'autore vive in meta["editor"]["mappa"] (il motore la
+ignora; storage la conserva com'è). In mancanza di posizioni salvate si usa la
+griglia di advcore.mappa (_layout). I collegamenti (con senso e condizioni)
+seguono i nodi in tempo reale. Vettoriale, con zoom, scorrimento ed
+esportazione in PNG.
 """
 from __future__ import annotations
 
@@ -708,42 +708,6 @@ class PannelloMappa(QWidget):
         self.scena.render(p, QRectF(img.rect()), r)
         p.end()
         img.save(percorso)
-
-
-class FinestraMappa(QDialog):
-    """La mappa in un dialogo modale (Strumenti → Mappa dell'avventura):
-    un involucro sottile attorno a PannelloMappa. Il doppio clic su una
-    stanza salta all'elemento nell'editor e chiude la finestra."""
-
-    def __init__(self, mondo, tema_nome="scuro", parent=None, su_modifica=None,
-                 vai_a=None):
-        super().__init__(parent)
-        self.setWindowTitle("Mappa dell'avventura")
-        self.setStyleSheet(tema.qss(tema_nome))
-        self.resize(960, 720)
-        self._vai_a_editor = vai_a
-        self.pannello = PannelloMappa(
-            mondo, tema_nome, self, su_modifica=su_modifica,
-            vai_a=(self._vai_e_chiudi if vai_a else None))
-        chiudi = QPushButton("Chiudi")
-        chiudi.clicked.connect(self.accept)
-        riga = QHBoxLayout()
-        riga.addStretch(1)
-        riga.addWidget(chiudi)
-        radice = QVBoxLayout(self)
-        radice.setContentsMargins(12, 12, 12, 12)
-        radice.addWidget(self.pannello, 1)
-        radice.addLayout(riga)
-
-    def _vai_e_chiudi(self, categoria, chiave):
-        self._vai_a_editor(categoria, chiave)
-        self.accept()
-
-    def done(self, esito):
-        # alla chiusura la scena verrà distrutta da Qt: prima si spezzano
-        # i cicli di riferimento con gli item (vedi PannelloMappa.scollega)
-        self.pannello.scollega()
-        super().done(esito)
 
 
 def _punta(x1, y1, x2, y2):

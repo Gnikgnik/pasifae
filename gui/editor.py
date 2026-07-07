@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Editor grafico (PySide6/Qt) per le avventure testuali — primo incremento.
+"""Editor grafico (PySide6/Qt) per le avventure testuali.
 
-Naviga l'avventura per categorie e ne modifica stanze e metadati, salvando sul
-file .json. Le altre categorie sono per ora in sola lettura (modifica in arrivo).
-Condivide il tema con il player.
+La mappa è il piano di lavoro al centro della finestra: attorno, le liste di
+categorie ed elementi e il pannello di dettaglio con i form. Le modifiche si
+salvano sul file .json. Condivide il tema con il player.
 
 Uso:
     python gui/editor.py [avventure/faro.json]
@@ -50,6 +50,7 @@ from advcore.validazione import valida  # noqa: E402
 from gui import tema  # noqa: E402
 from gui import regole as R  # noqa: E402
 from gui.editor_riassunti import riassunto  # noqa: E402
+from gui.mappa import PannelloMappa  # noqa: E402
 
 from PySide6.QtCore import Qt, QTimer, QThread, Signal  # noqa: E402
 from PySide6.QtGui import QAction, QActionGroup, QFont, QPixmap  # noqa: E402
@@ -482,10 +483,11 @@ class Editor(QMainWindow):
             self.percorso = None
             self.mondo = Mondo()        # ambiente vuoto: nessuna avventura caricata
 
-        self.resize(1040, 680)
+        self.resize(1400, 800)
+        self._mappa_sporca = False      # aggiornamento della mappa in coda
         self._costruisci_menu()
 
-        # tre pannelli: categorie | elementi | dettaglio
+        # quattro pannelli: categorie | elementi | mappa | dettaglio
         self.lista_cat = QListWidget()
         self.lista_cat.addItems(CATEGORIE)
         self.lista_cat.currentRowChanged.connect(self._scegli_categoria)
@@ -509,18 +511,29 @@ class Editor(QMainWindow):
         self.dettaglio.setWidgetResizable(True)
         self.dettaglio.setFrameShape(QScrollArea.NoFrame)
 
+        # la mappa è il piano di lavoro al centro dell'editor: il clic su un
+        # nodo seleziona la stanza, i form la modificano nel dettaglio
+        self.mappa = PannelloMappa(
+            self.mondo, self.tema,
+            su_modifica=self._segna_modifica,
+            vai_a=self._vai_a,
+            su_selezione=lambda sid: self._vai_a("Stanze", sid))
+
         sx = self._colonna("CATEGORIE", self.lista_cat)
         cx = self._colonna("ELEMENTI", self.lista_el,
                             [self.btn_nuovo, self.btn_duplica, self.btn_elimina],
                             filtro=self.filtro_el)
+        mp = self._colonna("MAPPA", self.mappa)
         split = QSplitter()
         split.addWidget(sx)
         split.addWidget(cx)
+        split.addWidget(mp)
         split.addWidget(self.dettaglio)
         split.setStretchFactor(0, 0)
         split.setStretchFactor(1, 0)
         split.setStretchFactor(2, 1)
-        split.setSizes([200, 260, 580])
+        split.setStretchFactor(3, 0)
+        split.setSizes([180, 240, 560, 420])
         self.setCentralWidget(split)
 
         self.lista_problemi = QListWidget()
@@ -594,10 +607,13 @@ class Editor(QMainWindow):
         a_prova_da.setShortcut("Ctrl+Shift+P")
         a_prova_da.triggered.connect(lambda: self._prova_da())
         m_str.addAction(a_prova_da)
-        a_mappa = QAction("Mappa dell'avventura…", self)
+        a_mappa = QAction("Adatta la mappa", self)
         a_mappa.setShortcut("Ctrl+M")
-        a_mappa.triggered.connect(self._apri_mappa)
+        a_mappa.triggered.connect(lambda: self.mappa.adatta())
         m_str.addAction(a_mappa)
+        a_png = QAction("Esporta la mappa come PNG…", self)
+        a_png.triggered.connect(lambda: self.mappa.esporta_png())
+        m_str.addAction(a_png)
         a_catena = QAction("Concatenazione dei puzzle…", self)
         a_catena.triggered.connect(self._apri_catena)
         m_str.addAction(a_catena)
@@ -660,15 +676,6 @@ class Editor(QMainWindow):
         a_prova = menu.addAction("Prova da questa stanza…")
         if menu.exec(self.lista_el.mapToGlobal(pos)) == a_prova:
             self._prova_da(stanza=it.data(Qt.UserRole))
-
-    def _apri_mappa(self):
-        from gui.mappa import FinestraMappa
-        FinestraMappa(self.mondo, self.tema, self,
-                      su_modifica=self._segna_modifica,
-                      vai_a=self._vai_a).exec()
-        # dalla mappa si possono creare stanze e uscite: riallinea la lista
-        if self.lista_cat.currentRow() >= 0:
-            self._scegli_categoria(self.lista_cat.currentRow())
 
     def _apri_catena(self):
         from gui.catena import FinestraCatena
@@ -869,6 +876,7 @@ class Editor(QMainWindow):
         chiave = self.lista_el.item(riga).data(Qt.UserRole)
         if cat == "Stanze":
             self._form_stanza(chiave)
+            self.mappa.evidenzia(chiave)
         elif cat == "Oggetti":
             self._form_oggetto(chiave)
         elif cat == "Verbi":
@@ -1671,6 +1679,7 @@ class Editor(QMainWindow):
 
     def _carica_in_ui(self):
         self._aggiorna_titolo()
+        self.mappa.imposta_mondo(self.mondo)
         self.lista_cat.setCurrentRow(0)
         self._scegli_categoria(0)
 
@@ -1745,6 +1754,9 @@ class Editor(QMainWindow):
 
     def closeEvent(self, ev):
         if self._conferma_abbandono():
+            # la scena della mappa sta per essere distrutta da Qt: prima
+            # si lasciano andare i wrapper Python degli item (GC sicuro)
+            self.mappa.scollega()
             ev.accept()
         else:
             ev.ignore()
@@ -1766,6 +1778,38 @@ class Editor(QMainWindow):
         self._aggiorna_titolo()
         if getattr(self, "dock_problemi", None) and self.dock_problemi.isVisible():
             self._aggiorna_problemi()
+        # la mappa si riallinea a ogni modifica, ma differita e una sola
+        # volta per giro di event loop: la scena non va mai ricostruita
+        # dentro un gestore di eventi della scena stessa (vedi CLAUDE.md)
+        if not self._mappa_sporca:
+            self._mappa_sporca = True
+            QTimer.singleShot(0, self._aggiorna_mappa)
+
+    def _aggiorna_mappa(self):
+        self._mappa_sporca = False
+        self.mappa.aggiorna()
+        self._riallinea_lista()
+
+    def _riallinea_lista(self):
+        """Dalla mappa possono nascere stanze che la lista degli elementi
+        non conosce: se la categoria corrente è «Stanze» e l'insieme è
+        cambiato, ricostruisce la lista. Una stanza appena nata viene
+        selezionata (il form si apre pronto da compilare)."""
+        riga = self.lista_cat.currentRow()
+        if riga < 0 or CATEGORIE[riga] != "Stanze":
+            return
+        ids = {self.lista_el.item(i).data(Qt.UserRole)
+               for i in range(self.lista_el.count())}
+        if ids == set(self.mondo.stanze):
+            return
+        nuove = set(self.mondo.stanze) - ids
+        corrente = self.lista_el.currentItem()
+        chiave = corrente.data(Qt.UserRole) if corrente else None
+        if len(nuove) == 1:
+            chiave = next(iter(nuove))
+        self._scegli_categoria(riga)
+        if chiave in self.mondo.stanze:
+            self._vai_a("Stanze", chiave)
 
     def _aggiorna_titolo(self):
         nome = self.mondo.meta.get("titolo") or "(senza nome)"
@@ -1775,6 +1819,7 @@ class Editor(QMainWindow):
     def _cambia_tema(self, nome):
         self.tema = nome
         self._applica_tema()
+        self.mappa.imposta_tema(nome)
 
     def _applica_tema(self):
         self.setStyleSheet(tema.qss(self.tema))

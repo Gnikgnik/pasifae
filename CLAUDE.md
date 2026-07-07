@@ -63,16 +63,22 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
 - `mappa.py` — mappa testuale (ASCII).
 
 **`gui/` — la suite grafica (PySide6/Qt), solo viste:**
-- `editor.py` — Pasifae Editor (file grande, ~1650 righe; vedi insidie).
+- `editor.py` — Pasifae Editor (file grande, ~1850 righe; vedi insidie).
+  Layout 2.0: categorie | elementi | **mappa al centro** | dettaglio; le
+  modifiche riallineano la mappa in modo differito (`_segna_modifica` →
+  `QTimer.singleShot(0, _aggiorna_mappa)`).
 - `player.py` — Pasifae Play.
 - `regole.py` — costruzione/serializzazione regole nell'editor.
 - `analisi.py` — riferimenti incrociati, "Dove è usato", problemi,
   catena dei puzzle (`catena_puzzle`).
 - `catena.py` — finestra "Concatenazione dei puzzle" (albero dai finali).
 - `anteprima.py` — finestra "Prova l'avventura" dentro l'editor.
-- `mappa.py` — mappa visuale e modificabile: stanze trascinabili (posizioni in
-  `meta["editor"]["mappa"]`, il motore le ignora), doppio clic → editor,
-  uscite col trascinamento destro, nuova stanza dal canvas.
+- `mappa.py` — `PannelloMappa`, il piano di lavoro al centro dell'editor:
+  stanze trascinabili (posizioni in `meta["editor"]["mappa"]`, il motore le
+  ignora), clic → selezione nel dettaglio, uscite col trascinamento destro,
+  nuova stanza dal canvas; API per l'editor: `aggiorna()`, `imposta_mondo()`,
+  `imposta_tema()`, `evidenzia()`, `scollega()` (da chiamare prima della
+  distruzione della finestra: GC sicuro).
 - `tema.py` — temi chiaro/scuro.
 - `risorse.py` — icona, loghi, dialogo "Informazioni" condiviso.
 - `compila.py` — logica pura per "Compila gioco autonomo" (PyInstaller).
@@ -112,8 +118,9 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   scena vanno aperti con `QTimer.singleShot(0, ...)`.
 
 ## Stato attuale
-- `advcore` **1.16.1** · interfaccia `gui` **1.16.3**.
-- Suite: **74 test GUI + 10 script**, tutti verdi.
+- `advcore` **1.16.1** · interfaccia `gui` **2.0.0** (mappa come widget
+  centrale dell'editor).
+- Suite: **76 test GUI + 10 script**, tutti verdi.
 - Documentazione: `README.md`, `advcore/DOCUMENTAZIONE.md`, `COSTRUIRE.md`,
   manuale d'uso (Word/PDF), e il progetto dell'avventura "SOTTO ARES".
 
@@ -132,11 +139,11 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   per enigmi più ricchi (anche per SOTTO ARES: bombole, reattore).
 
 ### Editor / Player
-- **Mappa come piano di lavoro** (direzione GUI 2.0, a passi): fatte le stanze
-  trascinabili (1.14.0), il doppio clic sul nodo → selezione nell'editor
-  (1.15.0), uscite col trascinamento destro + nuova stanza dal canvas
-  (1.16.0); resta il ribaltone finale: mappa come widget centrale con i form
-  a pannello di dettaglio.
+- **Mappa come piano di lavoro — FATTO (2.0.0)**: stanze trascinabili
+  (1.14.0), doppio clic → editor (1.15.0), uscite col trascinamento destro +
+  nuova stanza dal canvas (1.16.0), mappa come widget centrale con i form a
+  pannello di dettaglio (2.0.0). Possibili rifiniture: evidenziare sulla
+  mappa le uscite della stanza selezionata, mini-mappa nel player.
 - **Validazione più profonda**: avvisi su timer mai avviati, dialoghi senza
   uscita, oggetti irraggiungibili, finali non collegati.
 - **Anteprima con "stato di gioco" ispezionabile**: pannello che mostra flag,

@@ -1155,26 +1155,29 @@ def test_mappa_posizioni_salvate_e_riordino(qtbot):
     assert (f.nodi["sala"].pos().x(), f.nodi["sala"].pos().y()) != (40, 60)
 
 
-def test_mappa_doppio_clic_apre_stanza(qtbot):
-    """Doppio clic su un riquadro della mappa: l'editor seleziona quella
-    stanza (callback vai_a, come nella Concatenazione dei puzzle) e la
-    finestra si chiude."""
+def test_mappa_clic_seleziona_stanza(qtbot):
+    """Clic su un riquadro: il pannello avvisa chi lo ospita (su_selezione,
+    l'editor seleziona la stanza nel dettaglio); doppio clic: vai_a. Il
+    pannello resta al suo posto: è il piano di lavoro, non una finestra."""
     from PySide6.QtCore import QPointF
-    from gui.mappa import FinestraMappa, BOX_W, BOX_H
+    from gui.mappa import PannelloMappa, BOX_W, BOX_H
     m = mondo_semplice()
-    aperture = []
-    f = FinestraMappa(m, "scuro",
-                      vai_a=lambda cat, ch: aperture.append((cat, ch)))
+    scelte, aperture = [], []
+    f = PannelloMappa(m, "scuro",
+                      vai_a=lambda cat, ch: aperture.append((cat, ch)),
+                      su_selezione=lambda sid: scelte.append(sid))
     qtbot.addWidget(f)
     f.show()
 
-    p = f.pannello
-    nodo = p.nodi["corridoio"]
-    centro = p.vista.mapFromScene(nodo.pos() + QPointF(BOX_W / 2, BOX_H / 2))
-    qtbot.mouseDClick(p.vista.viewport(), Qt.LeftButton, pos=centro)
+    nodo = f.nodi["corridoio"]
+    centro = f.vista.mapFromScene(nodo.pos() + QPointF(BOX_W / 2, BOX_H / 2))
+    qtbot.mouseClick(f.vista.viewport(), Qt.LeftButton, pos=centro)
+    assert scelte == ["corridoio"]
+    assert nodo.isSelected()
 
+    qtbot.mouseDClick(f.vista.viewport(), Qt.LeftButton, pos=centro)
     assert aperture == [("Stanze", "corridoio")]
-    assert f.isHidden()          # la finestra si è chiusa per lasciare l'editor
+    assert not f.isHidden()     # il piano di lavoro non si chiude
 
 
 def test_mappa_crea_ed_elimina_uscite(qtbot, monkeypatch):
@@ -1297,6 +1300,69 @@ def test_mappa_menu_contestuale_non_scavalca_i_nodi(qtbot, monkeypatch):
         QContextMenuEvent(QContextMenuEvent.Mouse, lontano,
                           f.vista.viewport().mapToGlobal(lontano)))
     assert len(canvas) == 1
+
+
+# ------------------- mappa come piano di lavoro (gui 2.0) -------------------
+
+def test_editor_mappa_centrale(qtbot):
+    """La mappa vive al centro dell'editor: conosce le stanze del mondo,
+    la selezione nella lista evidenzia il nodo, il clic sul nodo seleziona
+    la stanza nel pannello di dettaglio."""
+    from PySide6.QtCore import QPointF
+    from gui.mappa import BOX_W, BOX_H
+    m = mondo_semplice()
+    e = Editor(None)
+    qtbot.addWidget(e)
+    e.mondo = m
+    e._carica_in_ui()
+    e.show()
+
+    assert set(e.mappa.nodi) == {"sala", "corridoio"}
+
+    # selezione dalla lista → nodo evidenziato sulla mappa
+    e._vai_a("Stanze", "corridoio")
+    assert e.mappa.nodi["corridoio"].isSelected()
+
+    # clic sul nodo → stanza selezionata nella lista e form nel dettaglio
+    nodo = e.mappa.nodi["sala"]
+    centro = e.mappa.vista.mapFromScene(
+        nodo.pos() + QPointF(BOX_W / 2, BOX_H / 2))
+    qtbot.mouseClick(e.mappa.vista.viewport(), Qt.LeftButton, pos=centro)
+    assert e.lista_el.currentItem().data(Qt.UserRole) == "sala"
+
+
+def test_editor_mappa_si_aggiorna_dalle_modifiche(qtbot):
+    """Le modifiche segnalate all'editor si riflettono sulla mappa in modo
+    differito (mai dentro un gestore di eventi della scena); una stanza
+    nata dalla mappa entra nella lista degli elementi e viene selezionata."""
+    from PySide6.QtCore import QPointF
+    from PySide6.QtWidgets import QGraphicsSimpleTextItem
+    m = mondo_semplice()
+    e = Editor(None)
+    qtbot.addWidget(e)
+    e.mondo = m
+    e._carica_in_ui()
+    e.show()
+
+    # rinomina dal mondo + segnalazione: il titolo del nodo si aggiorna
+    m.stanze["sala"].nome = "Salone delle feste"
+    e._segna_modifica()
+
+    def titolo_nuovo():
+        nodo = e.mappa.nodi.get("sala")
+        return nodo is not None and any(
+            isinstance(ch, QGraphicsSimpleTextItem)
+            and ch.text().startswith("Salone")
+            for ch in nodo.childItems())
+    qtbot.waitUntil(titolo_nuovo, timeout=1000)
+
+    # nuova stanza dalla mappa → lista riallineata e stanza selezionata
+    e.mappa._crea_stanza("cantina", "Cantina", QPointF(600, 400))
+    qtbot.waitUntil(
+        lambda: e.lista_el.currentItem() is not None
+        and e.lista_el.currentItem().data(Qt.UserRole) == "cantina",
+        timeout=1000)
+    assert e.modificato
 
 
 if __name__ == "__main__":
