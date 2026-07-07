@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Mappa grafica dell'avventura per l'editor Qt.
 
-Le stanze sono riquadri trascinabili: la disposizione scelta dall'autore vive
-in meta["editor"]["mappa"] (il motore la ignora; storage la conserva com'è).
-In mancanza di posizioni salvate si usa la griglia di advcore.mappa (_layout).
-I collegamenti (con senso e condizioni) seguono i nodi in tempo reale.
-Vettoriale, con zoom, scorrimento ed esportazione in PNG.
+La logica vive in PannelloMappa, un widget riusabile: le stanze sono riquadri
+trascinabili, la disposizione scelta dall'autore vive in meta["editor"]["mappa"]
+(il motore la ignora; storage la conserva com'è). In mancanza di posizioni
+salvate si usa la griglia di advcore.mappa (_layout). I collegamenti (con senso
+e condizioni) seguono i nodi in tempo reale. Vettoriale, con zoom, scorrimento
+ed esportazione in PNG. FinestraMappa incornicia il pannello in un dialogo.
 """
 from __future__ import annotations
 
@@ -24,7 +25,7 @@ from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QFormLayout,
     QGraphicsItem, QGraphicsRectItem, QGraphicsScene, QGraphicsSimpleTextItem,
     QGraphicsView, QHBoxLayout, QInputDialog, QLabel, QMenu, QMessageBox,
-    QPushButton, QVBoxLayout,
+    QPushButton, QVBoxLayout, QWidget,
 )
 
 CELL_W, CELL_H = 220, 168
@@ -37,9 +38,9 @@ OPPOSTE = {"nord": "sud", "sud": "nord", "est": "ovest", "ovest": "est",
 class VistaMappa(QGraphicsView):
     """QGraphicsView con zoom alla rotellina e trascinamento per scorrere."""
 
-    def __init__(self, scena, finestra=None):
+    def __init__(self, scena, pannello=None):
         super().__init__(scena)
-        self._finestra = finestra
+        self._pannello = pannello
         self.setRenderHint(QPainter.Antialiasing)
         self.setRenderHint(QPainter.TextAntialiasing)
         self.setDragMode(QGraphicsView.ScrollHandDrag)
@@ -53,13 +54,13 @@ class VistaMappa(QGraphicsView):
         """Clic destro sul vuoto: menu del canvas (nuova stanza). Sui nodi
         non fa nulla: lì il tasto destro trascina un collegamento o apre il
         menu delle uscite al rilascio."""
-        if self._finestra is None:
+        if self._pannello is None:
             return
         # su Linux questo evento scatta alla PRESSIONE del destro, subito
         # dopo il press che può aver avviato un collegamento: in quel caso
         # niente menu (e c'è la linea provvisoria sotto il cursore, che
         # farebbe sembrare vuoto il punto)
-        if self._finestra._collegamento_da:
+        if self._pannello._collegamento_da:
             ev.accept()
             return
         # un nodo può stare sotto item non-nodo (linee, etichette):
@@ -70,17 +71,17 @@ class VistaMappa(QGraphicsView):
             if it is not None:
                 ev.accept()
                 return
-        self._finestra._menu_canvas(ev.globalPos(), self.mapToScene(ev.pos()))
+        self._pannello._menu_canvas(ev.globalPos(), self.mapToScene(ev.pos()))
 
 
 class NodoStanza(QGraphicsRectItem):
-    """Riquadro di stanza trascinabile. Mentre si muove avvisa la finestra,
+    """Riquadro di stanza trascinabile. Mentre si muove avvisa il pannello,
     che aggiorna i collegamenti e registra la posizione nei metadati."""
 
-    def __init__(self, sid, finestra):
+    def __init__(self, sid, pannello):
         super().__init__(0, 0, BOX_W, BOX_H)
         self.sid = sid
-        self._finestra = finestra
+        self._pannello = pannello
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsScenePositionChanges)
@@ -89,54 +90,59 @@ class NodoStanza(QGraphicsRectItem):
 
     def itemChange(self, change, value):
         if (change == QGraphicsItem.ItemScenePositionHasChanged
-                and self._finestra is not None):
-            self._finestra._nodo_spostato(self.sid)
+                and self._pannello is not None):
+            self._pannello._nodo_spostato(self.sid)
         return super().itemChange(change, value)
 
     def mousePressEvent(self, ev):
-        if self._finestra is not None and ev.button() == Qt.RightButton:
-            self._finestra._inizia_collegamento(self.sid, ev.scenePos())
+        if self._pannello is not None and ev.button() == Qt.RightButton:
+            self._pannello._inizia_collegamento(self.sid, ev.scenePos())
             ev.accept()
             return
         super().mousePressEvent(ev)
+        if self._pannello is not None and ev.button() == Qt.LeftButton:
+            self._pannello._nodo_scelto(self.sid)
 
     def mouseMoveEvent(self, ev):
-        if self._finestra is not None and self._finestra._collegamento_da:
-            self._finestra._muovi_collegamento(ev.scenePos())
+        if self._pannello is not None and self._pannello._collegamento_da:
+            self._pannello._muovi_collegamento(ev.scenePos())
             return
         super().mouseMoveEvent(ev)
 
     def mouseReleaseEvent(self, ev):
-        if (self._finestra is not None and ev.button() == Qt.RightButton
-                and self._finestra._collegamento_da):
-            self._finestra._chiudi_collegamento(ev.scenePos(), ev.screenPos())
+        if (self._pannello is not None and ev.button() == Qt.RightButton
+                and self._pannello._collegamento_da):
+            self._pannello._chiudi_collegamento(ev.scenePos(), ev.screenPos())
             return
         super().mouseReleaseEvent(ev)
-        if self._finestra is not None:
-            self._finestra._fine_trascinamento(self.sid)
+        if self._pannello is not None:
+            self._pannello._fine_trascinamento(self.sid)
 
     def mouseDoubleClickEvent(self, ev):
-        if self._finestra is not None:
-            self._finestra._apri_stanza(self.sid)
+        if self._pannello is not None:
+            self._pannello._apri_stanza(self.sid)
         ev.accept()
 
 
-class FinestraMappa(QDialog):
+class PannelloMappa(QWidget):
+    """La mappa come piano di lavoro: widget riusabile con vista, comandi e
+    tutti i gesti (trascinare le stanze, creare uscite col tasto destro,
+    nuova stanza dal canvas)."""
+
     def __init__(self, mondo, tema_nome="scuro", parent=None, su_modifica=None,
-                 vai_a=None):
+                 vai_a=None, su_selezione=None):
         super().__init__(parent)
         self.mondo = mondo
         self.su_modifica = su_modifica
         self._vai_a = vai_a
+        self._su_selezione = su_selezione
         self.pal = tema.PALETTE.get(tema_nome, tema.PALETTE["scuro"])
-        self.setWindowTitle("Mappa dell'avventura")
-        self.setStyleSheet(tema.qss(tema_nome))
-        self.resize(960, 720)
 
         self.nodi: dict[str, NodoStanza] = {}
         self._collegamenti = []
         self._spostati = set()
         self._pronta = False
+        self._adattata = False
         self._collegamento_da = None    # sid sorgente del right-drag in corso
         self._collegamento_press = None
         self._linea_tmp = None
@@ -145,35 +151,43 @@ class FinestraMappa(QDialog):
         self.scena.setBackgroundBrush(QColor(self.pal["bg"]))
         self.vista = VistaMappa(self.scena, self)
 
-        legenda = QLabel(
-            "trascina i riquadri · doppio clic apre la stanza · tasto destro "
-            "e trascina = nuova uscita · destro su stanza = uscite · destro "
-            "sul vuoto = nuova stanza\n"
-            "→ senso unico    —  doppio senso    ┄ condizionata (flag)    "
-            "◆ personaggio    • oggetto")
-        legenda.setObjectName("stato")
-
         barra = QHBoxLayout()
-        barra.addWidget(legenda)
         barra.addStretch(1)
         for testo, slot in (("Riordina", self._riordina),
-                            ("Adatta", self._adatta), ("+", lambda: self._zoom(1.2)),
+                            ("Adatta", self.adatta), ("+", lambda: self._zoom(1.2)),
                             ("−", lambda: self._zoom(1 / 1.2)),
-                            ("Esporta PNG…", self._esporta), ("Chiudi", self.accept)):
+                            ("Esporta PNG…", self.esporta_png)):
             b = QPushButton(testo)
             b.clicked.connect(slot)
             if testo in ("+", "−"):
                 b.setFixedWidth(40)
             barra.addWidget(b)
 
+        legenda = QLabel(
+            "clic seleziona · trascina i riquadri · tasto destro e trascina "
+            "= nuova uscita · destro su stanza = uscite · destro sul vuoto "
+            "= nuova stanza\n"
+            "→ senso unico    —  doppio senso    ┄ condizionata (flag)    "
+            "◆ personaggio    • oggetto")
+        legenda.setObjectName("stato")
+        legenda.setWordWrap(True)
+
         radice = QVBoxLayout(self)
-        radice.setContentsMargins(12, 12, 12, 12)
+        radice.setContentsMargins(0, 0, 0, 0)
         radice.addLayout(barra)
         radice.addWidget(self.vista, 1)
+        radice.addWidget(legenda)
 
         self._costruisci()
         self._pronta = True
-        self._adatta()
+
+    def showEvent(self, ev):
+        super().showEvent(ev)
+        # il primo fitInView utile si può fare solo quando la vista ha
+        # la sua dimensione reale
+        if not self._adattata:
+            self._adattata = True
+            self.adatta()
 
     # ---------- costruzione della scena ----------
 
@@ -271,6 +285,56 @@ class FinestraMappa(QDialog):
             piu.setBrush(QBrush(QColor(self.pal["muto"])))
             piu.setPos(12, y)
         return nodo
+
+    # ---------- aggiornamento dall'esterno (editor) ----------
+
+    def aggiorna(self):
+        """Ricostruisce la scena dal mondo conservando zoom e scorrimento.
+        Da chiamare solo FUORI dai gestori di eventi della scena (l'editor
+        la differisce con QTimer.singleShot). Se c'è un gesto in corso non
+        fa nulla: sarà il gesto stesso, al termine, a segnalare la modifica
+        che rimette in coda l'aggiornamento."""
+        if not self._pronta or self._collegamento_da or self._spostati:
+            return
+        scelte = [sid for sid, n in self.nodi.items() if n.isSelected()]
+        self._pronta = False
+        self._scollega_item()
+        self.scena.clear()
+        self._costruisci()
+        self._pronta = True
+        for sid in scelte:
+            if sid in self.nodi:
+                self.nodi[sid].setSelected(True)
+
+    def imposta_mondo(self, mondo):
+        """Cambia l'avventura mostrata (nuovo/apri/chiudi nell'editor)."""
+        self.mondo = mondo
+        self.aggiorna()
+        self.adatta()
+
+    def imposta_tema(self, tema_nome):
+        self.pal = tema.PALETTE.get(tema_nome, tema.PALETTE["scuro"])
+        self.scena.setBackgroundBrush(QColor(self.pal["bg"]))
+        self.aggiorna()
+
+    def evidenzia(self, sid):
+        """Seleziona (e rende visibile) il riquadro della stanza: chiamata
+        dall'editor quando la selezione cambia nelle liste. Se il riquadro è
+        già selezionato — ad esempio perché il clic è partito proprio da lì —
+        non fa nulla, per non far saltare la vista durante il gesto."""
+        nodo = self.nodi.get(sid)
+        if nodo is None or nodo.isSelected():
+            return
+        self.scena.clearSelection()
+        nodo.setSelected(True)
+        self.vista.ensureVisible(nodo, 40, 40)
+
+    def scollega(self):
+        """Da chiamare prima che la finestra che ospita il pannello venga
+        distrutta: lascia andare i wrapper Python degli item (un wrapper
+        sopravvissuto a un item distrutto manda in crash il GC)."""
+        self._pronta = False
+        self._scollega_item()
 
     # ---------- collegamenti ----------
 
@@ -385,7 +449,7 @@ class FinestraMappa(QDialog):
                 return True
         return False
 
-    # ---------- trascinamento ----------
+    # ---------- trascinamento e selezione ----------
 
     def _nodo_spostato(self, sid):
         """Chiamato dal nodo a ogni variazione di posizione: registra la
@@ -407,12 +471,16 @@ class FinestraMappa(QDialog):
         if self.su_modifica:
             self.su_modifica()
 
+    def _nodo_scelto(self, sid):
+        """Clic su un riquadro: avvisa chi ospita il pannello (l'editor
+        seleziona la stanza nel pannello di dettaglio)."""
+        if self._su_selezione:
+            self._su_selezione(sid)
+
     def _apri_stanza(self, sid):
-        """Doppio clic su un riquadro: salta alla stanza nell'editor e chiude
-        la mappa (che è modale) per lasciare il posto."""
+        """Doppio clic su un riquadro: salta alla stanza nell'editor."""
         if self._vai_a:
             self._vai_a("Stanze", sid)
-            self.accept()
 
     # ---------- uscite dal trascinamento col tasto destro ----------
 
@@ -598,13 +666,13 @@ class FinestraMappa(QDialog):
         self.scena.clear()
         self._costruisci()
         self._pronta = True
-        self._adatta()
+        self.adatta()
 
     def _scollega_item(self):
         """Azzera ogni riferimento Python agli item della scena (e i loro
-        riferimenti a questa finestra)."""
+        riferimenti a questo pannello)."""
         for n in self.nodi.values():
-            n._finestra = None
+            n._pannello = None
         self.nodi = {}
         self._collegamenti = []
         self._linea_tmp = None
@@ -612,16 +680,9 @@ class FinestraMappa(QDialog):
         self._collegamento_da = None
         self._collegamento_press = None
 
-    def done(self, esito):
-        # alla chiusura la scena verrà distrutta da Qt: prima si spezzano
-        # i cicli di riferimento con gli item (vedi _scollega_item)
-        self._pronta = False
-        self._scollega_item()
-        super().done(esito)
-
     # ---------- comandi ----------
 
-    def _adatta(self):
+    def adatta(self):
         r = self.scena.itemsBoundingRect().adjusted(-40, -40, 40, 40)
         self.scena.setSceneRect(r)
         self.vista.fitInView(r, Qt.KeepAspectRatio)
@@ -629,7 +690,7 @@ class FinestraMappa(QDialog):
     def _zoom(self, f):
         self.vista.scale(f, f)
 
-    def _esporta(self):
+    def esporta_png(self):
         percorso, _ = QFileDialog.getSaveFileName(
             self, "Esporta mappa", "mappa.png", "Immagini (*.png)")
         if not percorso:
@@ -647,6 +708,42 @@ class FinestraMappa(QDialog):
         self.scena.render(p, QRectF(img.rect()), r)
         p.end()
         img.save(percorso)
+
+
+class FinestraMappa(QDialog):
+    """La mappa in un dialogo modale (Strumenti → Mappa dell'avventura):
+    un involucro sottile attorno a PannelloMappa. Il doppio clic su una
+    stanza salta all'elemento nell'editor e chiude la finestra."""
+
+    def __init__(self, mondo, tema_nome="scuro", parent=None, su_modifica=None,
+                 vai_a=None):
+        super().__init__(parent)
+        self.setWindowTitle("Mappa dell'avventura")
+        self.setStyleSheet(tema.qss(tema_nome))
+        self.resize(960, 720)
+        self._vai_a_editor = vai_a
+        self.pannello = PannelloMappa(
+            mondo, tema_nome, self, su_modifica=su_modifica,
+            vai_a=(self._vai_e_chiudi if vai_a else None))
+        chiudi = QPushButton("Chiudi")
+        chiudi.clicked.connect(self.accept)
+        riga = QHBoxLayout()
+        riga.addStretch(1)
+        riga.addWidget(chiudi)
+        radice = QVBoxLayout(self)
+        radice.setContentsMargins(12, 12, 12, 12)
+        radice.addWidget(self.pannello, 1)
+        radice.addLayout(riga)
+
+    def _vai_e_chiudi(self, categoria, chiave):
+        self._vai_a_editor(categoria, chiave)
+        self.accept()
+
+    def done(self, esito):
+        # alla chiusura la scena verrà distrutta da Qt: prima si spezzano
+        # i cicli di riferimento con gli item (vedi PannelloMappa.scollega)
+        self.pannello.scollega()
+        super().done(esito)
 
 
 def _punta(x1, y1, x2, y2):

@@ -1095,10 +1095,10 @@ def test_mappa_stanze_trascinabili(qtbot):
     """I riquadri delle stanze si trascinano: la posizione finisce in
     meta["editor"]["mappa"] (il motore la ignora), i collegamenti seguono
     il nodo e il rilascio segnala la modifica all'editor."""
-    from gui.mappa import FinestraMappa, BOX_W, BOX_H
+    from gui.mappa import PannelloMappa, BOX_W, BOX_H
     m = mondo_semplice()
     chiamate = []
-    f = FinestraMappa(m, "scuro", su_modifica=lambda: chiamate.append(1))
+    f = PannelloMappa(m, "scuro", su_modifica=lambda: chiamate.append(1))
     qtbot.addWidget(f)
 
     nodo = f.nodi["corridoio"]
@@ -1132,10 +1132,10 @@ def test_mappa_posizioni_salvate_e_riordino(qtbot):
     """All'apertura la mappa rispetta le posizioni salvate in meta, il
     round-trip su file le conserva e «Riordina» torna al layout automatico."""
     import tempfile
-    from gui.mappa import FinestraMappa
+    from gui.mappa import PannelloMappa
     m = mondo_semplice()
     m.meta["editor"] = {"mappa": {"sala": [40, 60], "corridoio": [420, 200]}}
-    f = FinestraMappa(m, "scuro")
+    f = PannelloMappa(m, "scuro")
     qtbot.addWidget(f)
     assert (f.nodi["sala"].pos().x(), f.nodi["sala"].pos().y()) == (40, 60)
     assert f.nodi["corridoio"].pos().x() == 420
@@ -1168,9 +1168,10 @@ def test_mappa_doppio_clic_apre_stanza(qtbot):
     qtbot.addWidget(f)
     f.show()
 
-    nodo = f.nodi["corridoio"]
-    centro = f.vista.mapFromScene(nodo.pos() + QPointF(BOX_W / 2, BOX_H / 2))
-    qtbot.mouseDClick(f.vista.viewport(), Qt.LeftButton, pos=centro)
+    p = f.pannello
+    nodo = p.nodi["corridoio"]
+    centro = p.vista.mapFromScene(nodo.pos() + QPointF(BOX_W / 2, BOX_H / 2))
+    qtbot.mouseDClick(p.vista.viewport(), Qt.LeftButton, pos=centro)
 
     assert aperture == [("Stanze", "corridoio")]
     assert f.isHidden()          # la finestra si è chiusa per lasciare l'editor
@@ -1180,11 +1181,11 @@ def test_mappa_crea_ed_elimina_uscite(qtbot, monkeypatch):
     """Dalla mappa si creano uscite (con ritorno opzionale) e si eliminano;
     una direzione già occupata non viene sovrascritta; ogni cambiamento
     segnala la modifica all'editor."""
-    from gui.mappa import FinestraMappa
+    from gui.mappa import PannelloMappa
     m = mondo_semplice()
     m.stanze["cantina"] = Stanza(id="cantina", nome="Cantina", desc="")
     chiamate = []
-    f = FinestraMappa(m, "scuro", su_modifica=lambda: chiamate.append(1))
+    f = PannelloMappa(m, "scuro", su_modifica=lambda: chiamate.append(1))
     qtbot.addWidget(f)
 
     f._crea_uscita("sala", "cantina", "giu", ritorno=True)
@@ -1205,12 +1206,12 @@ def test_mappa_trascinamento_destro_crea_uscita(qtbot, monkeypatch):
     """Trascinare col tasto destro da una stanza a un'altra chiede la
     direzione e crea l'uscita."""
     from PySide6.QtCore import QPointF
-    from gui.mappa import FinestraMappa, BOX_W, BOX_H
+    from gui.mappa import PannelloMappa, BOX_W, BOX_H
     m = mondo_semplice()
-    f = FinestraMappa(m, "scuro")
+    f = PannelloMappa(m, "scuro")
     qtbot.addWidget(f)
     f.show()
-    monkeypatch.setattr(FinestraMappa, "_chiedi_uscita",
+    monkeypatch.setattr(PannelloMappa, "_chiedi_uscita",
                         lambda self, src, dst: ("est", False))
 
     def vp(sid):
@@ -1232,10 +1233,10 @@ def test_mappa_nuova_stanza_dal_canvas(qtbot, monkeypatch):
     """Il clic destro sul canvas crea una stanza nel punto scelto (posizione
     nei metadati, nodo nella scena); id duplicato rifiutato."""
     from PySide6.QtCore import QPointF
-    from gui.mappa import FinestraMappa
+    from gui.mappa import PannelloMappa
     m = mondo_semplice()
     chiamate = []
-    f = FinestraMappa(m, "scuro", su_modifica=lambda: chiamate.append(1))
+    f = PannelloMappa(m, "scuro", su_modifica=lambda: chiamate.append(1))
     qtbot.addWidget(f)
 
     f._crea_stanza("cantina", "Cantina", QPointF(500, 300))
@@ -1256,15 +1257,15 @@ def test_mappa_menu_contestuale_non_scavalca_i_nodi(qtbot, monkeypatch):
     apriva sempre «Nuova stanza», mai il menu delle uscite né il drag)."""
     from PySide6.QtCore import QPointF
     from PySide6.QtGui import QContextMenuEvent
-    from gui.mappa import FinestraMappa, BOX_W, BOX_H
+    from gui.mappa import PannelloMappa, BOX_W, BOX_H
     m = mondo_semplice()
-    f = FinestraMappa(m, "scuro")
+    f = PannelloMappa(m, "scuro")
     qtbot.addWidget(f)
     f.show()
     canvas, stanza = [], []
-    monkeypatch.setattr(FinestraMappa, "_menu_canvas",
+    monkeypatch.setattr(PannelloMappa, "_menu_canvas",
                         lambda self, g, s: canvas.append(s))
-    monkeypatch.setattr(FinestraMappa, "_menu_stanza",
+    monkeypatch.setattr(PannelloMappa, "_menu_stanza",
                         lambda self, sid, p: stanza.append(sid))
 
     def vp(sid):
