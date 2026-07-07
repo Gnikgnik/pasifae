@@ -16,7 +16,7 @@ from advcore.model import Stanza
 from advcore.parser import DIREZIONI_CANONICHE
 from gui import tema
 
-from PySide6.QtCore import Qt, QLineF, QPointF, QRectF
+from PySide6.QtCore import Qt, QLineF, QPointF, QRectF, QTimer
 from PySide6.QtGui import (
     QBrush, QColor, QFont, QImage, QPainter, QPainterPath, QPen, QPolygonF,
 )
@@ -403,11 +403,18 @@ class FinestraMappa(QDialog):
             self.scena.removeItem(self._linea_tmp)
             self._linea_tmp = None
         dst = self._nodo_a(punto)
+        # menu e dialoghi vanno aperti DOPO che il gestore dell'evento è
+        # tornato e il grab del mouse è stato rilasciato: su Wayland un
+        # popup dentro il gestore fallisce il grab e può andare in crash.
         if dst is None or dst == src:
             # clic destro fermo sulla stanza: menu delle sue uscite
             if press is not None and (punto - press).manhattanLength() < 8:
-                self._menu_stanza(src, punto_schermo)
+                QTimer.singleShot(0, lambda: self._menu_stanza(src,
+                                                               punto_schermo))
             return
+        QTimer.singleShot(0, lambda: self._proponi_uscita(src, dst))
+
+    def _proponi_uscita(self, src, dst):
         scelta = self._chiedi_uscita(src, dst)
         if scelta:
             direz, ritorno = scelta

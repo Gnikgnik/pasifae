@@ -1220,7 +1220,11 @@ def test_mappa_trascinamento_destro_crea_uscita(qtbot, monkeypatch):
     qtbot.mouseMove(f.vista.viewport(), pos=vp("corridoio"))
     qtbot.mouseRelease(f.vista.viewport(), Qt.RightButton,
                        pos=vp("corridoio"))
-    assert m.stanze["sala"].uscite.get("est") == "corridoio"
+    # il dialogo è differito a dopo il rilascio (grab Wayland): un giro
+    # di event loop prima di verificare
+    qtbot.waitUntil(
+        lambda: m.stanze["sala"].uscite.get("est") == "corridoio",
+        timeout=1000)
 
 
 def test_mappa_nuova_stanza_dal_canvas(qtbot, monkeypatch):
