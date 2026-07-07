@@ -122,7 +122,7 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   centrale dell'editor).
 - Suite: **76 test GUI + 10 script**, tutti verdi.
 - Documentazione: `README.md`, `advcore/DOCUMENTAZIONE.md`, `COSTRUIRE.md`,
-  manuale d'uso (Word/PDF), e il progetto dell'avventura "SOTTO ARES".
+  manuale d'uso (Word/PDF).
 
 ## Prossimi sviluppi
 
@@ -136,7 +136,7 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
 - **Verbi personalizzati guidati da dati**: permettere all'autore di definire
   nuovi verbi con effetti, senza toccare il codice.
 - **Stati dei contenitori e dei liquidi**: versare, riempire, mescolare — utile
-  per enigmi più ricchi (anche per SOTTO ARES: bombole, reattore).
+  per enigmi più ricchi.
 
 ### Editor / Player
 - **Mappa come piano di lavoro — FATTO (2.0.0)**: stanze trascinabili
@@ -152,15 +152,6 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   I/O: si presta a un front-end browser) e l'export della mappa come immagine.
 - **Internazionalizzazione (i18n)**: estrarre le stringhe dell'interfaccia per
   aprire Pasifae anche al pubblico non italiano (vedi nota nel README).
-
-### Avventura "SOTTO ARES"
-- Costruire il **JSON** a partire da `SOTTO-ARES-progetto.md` (18 stanze, PNG,
-  timer, finali). Procedere per zone: prima la superficie, poi il livello tecnico,
-  poi sotto la crosta, provando nel player dopo ogni zona.
-- Primo passo concreto consigliato: la stanza `discesa` con l'uscita **condizionata
-  alla tuta** verso `airlock`, e il relativo messaggio di rifiuto.
-- Usare l'appendice "Mappa delle stanze e direzioni" del documento come traccia
-  delle uscite (sono già tutte definite e reciproche).
 
 ### Qualità e distribuzione
 - **`git` + commit piccoli** come canale di revisione (questo file e `.gitignore`
