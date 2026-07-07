@@ -1,5 +1,172 @@
 # Pasifae — cronologia delle versioni
 
+## gui 2.0.0
+Il ribaltone della direzione «mappa come piano di lavoro»: layout a quattro
+pannelli (categorie | elementi | **mappa** | dettaglio). Un clic su un nodo
+seleziona la stanza nel dettaglio, la selezione nella lista evidenzia il
+nodo; ogni modifica riallinea la mappa in modo differito
+(`QTimer.singleShot`, mai dentro i gestori della scena) e una stanza nata
+dalla mappa entra subito nella lista degli elementi. `FinestraMappa` non
+serve più: Ctrl+M adatta la vista, l'export PNG resta nel menu Strumenti.
+
+
+## gui 1.16.3
+**Bugfix**: su Linux il menu contestuale scattava alla *pressione* del
+destro, subito dopo il gesto che avvia un collegamento fra stanze — la
+linea provvisoria sotto il cursore ingannava `itemAt`, così si apriva
+sempre «Nuova stanza» invece del menu delle uscite o del trascinamento.
+Ora, durante un collegamento, il menu del canvas è soppresso e il nodo si
+cerca fra tutti gli item nel punto.
+
+
+## gui 1.16.2
+**Bugfix**: bonificato un segfault in garbage collection («Garbage-
+collecting, no Python frame») nella mappa. I collegamenti non vengono più
+distrutti e ricreati a ogni pixel di trascinamento (item persistenti, si
+aggiorna solo la geometria); i riferimenti Python agli item vengono
+lasciati andare *prima* che `scena.clear()` o la chiusura della finestra
+eliminino il lato C++; anche i dialoghi della nuova stanza sono differiti
+fuori dal menu contestuale.
+
+
+## gui 1.16.1
+**Bugfix**: su Wayland, aprire un `QMenu` o un dialogo modale dentro
+`mouseReleaseEvent` — col grab del mouse della scena ancora attivo —
+falliva il grabbing dei popup e poteva mandare in segfault l'editor. Il
+menu delle uscite e il dialogo «Nuova uscita» ora si aprono con
+`QTimer.singleShot(0, ...)`, a evento concluso e grab rilasciato.
+
+
+## gui 1.16.0
+Quarto passo della «mappa come piano di lavoro»: trascinando col tasto
+destro da una stanza all'altra si crea un'uscita (dialogo con le sole
+direzioni libere e ritorno opzionale); il clic destro fermo su una stanza
+elenca le uscite da eliminare; il clic destro sul vuoto crea una stanza
+nel punto scelto. L'editor riallinea la lista degli elementi alla
+chiusura della mappa.
+
+
+## gui 1.15.0
+Terzo passo della «mappa come piano di lavoro»: doppio clic su un
+riquadro seleziona la stanza nel form dell'editor (come già nella
+Concatenazione dei puzzle). Legenda aggiornata.
+
+
+## gui 1.14.0
+Secondo passo della «mappa come piano di lavoro»: i riquadri delle stanze
+si trascinano, i collegamenti seguono in tempo reale (retta se libera,
+curva se attraversa un riquadro), la disposizione vive in
+`meta["editor"]["mappa"]` — il motore la ignora e `storage` la conserva
+senza modifiche. «Riordina» torna al layout automatico.
+
+
+## gui 1.13.0
+Nuova finestra **«Concatenazione dei puzzle»** (menu Strumenti): mostra ad
+albero, a ritroso dai finali, la catena dei passi — regole, dialoghi,
+esiti di scontro e uscite condizionate, con requisiti e produttori;
+doppio clic per navigare all'elemento. Le condizioni «flag uguale a
+falso» non concatenano (chiedono l'assenza del progresso).
+
+
+## gui 1.12.0
+Il pannello illustrazione del player passa da una striscia con tetto a
+240px a una **colonna a tutta altezza** in uno splitter orizzontale:
+immagine molto più grande, larghezza regolabile e ricordata tra le
+sessioni. La stessa colonna arriva anche nella finestra «Prova
+l'avventura» (l'anteprima nell'editor resta in modalità striscia).
+
+
+## gui 1.11.0
+Nel form della regola il campo preposizione dell'innesco accetta più voci
+separate da virgola («su, con»): una sola regola scatta con «usa chiave
+su automa» e «usa chiave con automa». I riassunti mostrano «su/con»; una
+voce sola resta stringa semplice.
+
+
+## gui 1.10.0
+**Illustrazioni di stanza**: nel form della stanza il campo
+«illustrazione» (Sfoglia… copia il file scelto accanto al JSON per la
+portabilità dell'avventura, Togli lo sgancia senza cancellarlo, la
+duplicazione della stanza la porta con sé); il player e la finestra
+«Prova l'avventura» la mostrano in un pannello dedicato
+(`gui/immagine.py`, interruttore in Visualizza, ricordato tra le
+sessioni); «Compila gioco autonomo» impacchetta le immagini riferite
+nell'eseguibile; «Verifica» avvisa se un'illustrazione non è accanto al
+JSON.
+
+
+## gui 1.9.1
+**Bugfix**: il dialogo «Salva partita» non imponeva un'estensione — un
+nome come «lab1» creava un file senza suffisso che «Carica partita» (filtro
+`*.save *.json`) non mostrava più. Ora il player aggiunge `.save` quando
+manca, e il filtro di caricamento include i `.sav` dei player da terminale
+e la voce «Tutti i file» per i salvataggi nati senza estensione.
+
+
+## gui 1.9.0
+Nel catalogo degli effetti, voci per i nuovi `apri_oggetto`/`chiudi_oggetto`
+del motore (advcore 1.12.0), con selettore dei soli contenitori; aggiornati
+i riferimenti incrociati.
+
+
+## advcore 1.16.1
+Motore: **«prendi tutto»** ora comprende anche il contenuto dei contenitori
+aperti visibili nella stanza, annidati compresi (l'inventario e ciò che
+contiene restano esclusi). Emerso nel playtest de «Il labirinto»: i tre
+libri nella botola andavano presi uno a uno.
+
+
+## advcore 1.16.0
+Nuovo quantificatore **«tutto»/«tutti»** riconosciuto dal parser: il motore
+lo espande in prese singole della stanza, ognuna passando dalle regole
+dell'autore (gli enigmi che intercettano «prendi <oggetto>» restano
+validi). Scenario e non prendibili sono ignorati in silenzio; al buio
+serve una luce; con gli altri verbi «tutto» risponde con un messaggio.
+
+
+## advcore 1.15.0
+Nell'innesco a comando di una regola, ogni campo (in particolare la
+preposizione) ammette ora **una lista di alternative** — «uno qualsiasi di
+questi» — così una sola regola scatta sia con «usa chiave su automa» sia
+con «usa chiave con automa». Le stringhe singole restano valide
+(retrocompatibile).
+
+
+## advcore 1.14.0
+Nuovo campo opzionale **«immagine»** sulla Stanza: nome file relativo al
+JSON dell'avventura. Il motore lo ignora — lo usano le interfacce — ed è
+assente dal JSON quando vuoto, così le avventure e i salvataggi esistenti
+restano validi.
+
+
+## advcore 1.13.0
+Il comando **«aiuto»** ora elenca solo le sezioni che l'avventura rende
+utili (contenitori, indumenti, personaggi, combattenti, punteggio) o per
+cui una regola risponde a quel verbo; i verbi ad hoc dichiarati
+dall'autore compaiono in una riga «speciali». Vale sia per Pasifae Play
+sia per la prova nell'editor.
+
+
+## advcore 1.12.1
+Il parser ora riconosce tutte le **preposizioni articolate** di «in» e
+«su» («metti sasso nello zaino», «nell'astuccio», «sulle mensole»): le
+forme articolate mancanti dividevano male il comando.
+
+
+## advcore 1.12.0
+Nuovi effetti **`apri_oggetto`/`chiudi_oggetto`**: una regola su
+«apri»/«chiudi» che scavalca il verbo predefinito ora può anche commutare
+`props["aperto"]`, rendendo possibile il pattern «apribile solo se…»
+(serrature, chiavi) sui contenitori condizionati.
+
+
+## advcore 1.11.1
+**Bugfix**: `Mondo.in_scope()` non vedeva un oggetto dentro un contenitore
+aperto a sua volta dentro un altro contenitore aperto (es. lente in
+calamaio in scrivania) — l'espansione del contenuto si fermava a un solo
+livello. Ora è ricorsiva.
+
+
 ## gui 1.8.0
 Rifinitura tipografica del player. **Gerarchia nella trascrizione**: il titolo
 del gioco appare grande e senza i «==» decorativi, il nome della stanza spicca
