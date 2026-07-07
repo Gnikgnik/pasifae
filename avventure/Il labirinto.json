@@ -2,9 +2,34 @@
   "meta": {
     "titolo": "Il labirinto delle illusioni",
     "autore": "Vito Antonio Raimondi",
-    "versione": "0.1.0",
+    "versione": "0.2.0",
     "stanza_iniziale": "biblioteca",
-    "intro": "Ti risvegli lentamente mentre un senso di disorientamento ti pervade. Pian piano affiora alla mente il tuo nome, ma proprio non ricordi come sei arrivato qui. Cercando di superare il senso di nausea che ti pervade, lentamente ti metti in piedi, mentre fitte dolorose attraversano la tua testa."
+    "intro": "Ti risvegli lentamente mentre un senso di disorientamento ti pervade. Pian piano affiora alla mente il tuo nome, ma proprio non ricordi come sei arrivato qui. Cercando di superare il senso di nausea che ti pervade, lentamente ti metti in piedi, mentre fitte dolorose attraversano la tua testa.",
+    "editor": {
+      "mappa": {
+        "catacombe": [
+          -97,
+          212
+        ],
+        "biblioteca": [
+          -97,
+          -59
+        ],
+        "pozzo": [
+          -98,
+          405
+        ],
+        "cella": [
+          239,
+          216
+        ],
+        "corridoio": [
+          -411,
+          212
+        ]
+      }
+    },
+    "colore": ""
   },
   "flags": {
     "portale_aperto": false,
@@ -44,13 +69,42 @@
           "bloccata": "La pesante porta è bloccata"
         }
       },
-      "buia": false
+      "buia": false,
+      "immagine": "labirinto_biblioteca.png"
     },
     "catacombe": {
       "nome": "Catacombe del tempo",
       "desc": "Sei entrato finalmente nelle catacombe del tempo",
       "uscite": {
-        "sud": "biblioteca"
+        "su": "biblioteca",
+        "sud": "pozzo",
+        "ovest": "corridoio",
+        "est": "cella"
+      },
+      "buia": false,
+      "immagine": "labirinto_catacombe.jpeg"
+    },
+    "pozzo": {
+      "nome": "Pozzo dei bisbigli",
+      "desc": "",
+      "uscite": {
+        "nord": "catacombe"
+      },
+      "buia": false
+    },
+    "cella": {
+      "nome": "Cella della prigione",
+      "desc": "",
+      "uscite": {
+        "ovest": "catacombe"
+      },
+      "buia": false
+    },
+    "corridoio": {
+      "nome": "Corridoio oscuro",
+      "desc": "",
+      "uscite": {
+        "est": "catacombe"
       },
       "buia": false
     }
@@ -541,6 +595,9 @@
         {
           "set_flag": "tappeto_esplorabile",
           "valore": true
+        },
+        {
+          "punti": 100
         }
       ],
       "altrimenti": []
@@ -612,6 +669,9 @@
         {
           "set_flag": "nicchia_aperta",
           "valore": true
+        },
+        {
+          "punti": 100
         }
       ],
       "altrimenti": []
@@ -671,6 +731,9 @@
         },
         {
           "stampa": "Con un rumore di scatti e ticchettii, l'automa si mette in movimento, posizionandosi davanti alla statua dell'astronomo e sollevando le braccia meccaniche esponendo lo specchio verso il lucernario."
+        },
+        {
+          "punti": 100
         }
       ],
       "altrimenti": [
@@ -803,6 +866,9 @@
         {
           "set_flag": "portale_aperto",
           "valore": true
+        },
+        {
+          "punti": 100
         }
       ],
       "altrimenti": [
@@ -810,6 +876,23 @@
           "stampa": "clic"
         }
       ]
+    },
+    {
+      "id": "vittoria",
+      "quando": {
+        "evento": "entra",
+        "stanza": "catacombe"
+      },
+      "se": [],
+      "allora": [
+        {
+          "stampa": "Sei arrivato alla fine di questa avventura di test! Fammi sapere che ne pensi e soprattutto cosa migliorare. A presto!"
+        },
+        {
+          "vittoria": "The end... per ora!"
+        }
+      ],
+      "altrimenti": []
     }
   ]
 }
