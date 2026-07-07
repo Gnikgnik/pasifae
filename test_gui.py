@@ -1110,12 +1110,13 @@ def test_mappa_stanze_trascinabili(qtbot):
         round(prima.x() + 300), round(prima.y() + 120)]
 
     # il collegamento segue: un estremo raggiunge il bordo del nodo spostato
+    # (gli item sono persistenti: durante il drag cambia solo la geometria)
     cx = nodo.pos().x() + BOX_W / 2
     cy = nodo.pos().y() + BOX_H / 2
     estremi = []
-    for it in f._item_collegamenti:
-        if hasattr(it, "line"):
-            estremi += [it.line().p1(), it.line().p2()]
+    for e in f._collegamenti:
+        tracciato = e["linea"].path()
+        estremi += [tracciato.pointAtPercent(0), tracciato.pointAtPercent(1)]
     assert any(abs(p.x() - cx) <= BOX_W and abs(p.y() - cy) <= BOX_H
                for p in estremi)
 

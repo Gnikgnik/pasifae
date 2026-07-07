@@ -78,32 +78,36 @@ class NodoStanza(QGraphicsRectItem):
         self.setZValue(1)
 
     def itemChange(self, change, value):
-        if change == QGraphicsItem.ItemScenePositionHasChanged:
+        if (change == QGraphicsItem.ItemScenePositionHasChanged
+                and self._finestra is not None):
             self._finestra._nodo_spostato(self.sid)
         return super().itemChange(change, value)
 
     def mousePressEvent(self, ev):
-        if ev.button() == Qt.RightButton:
+        if self._finestra is not None and ev.button() == Qt.RightButton:
             self._finestra._inizia_collegamento(self.sid, ev.scenePos())
             ev.accept()
             return
         super().mousePressEvent(ev)
 
     def mouseMoveEvent(self, ev):
-        if self._finestra._collegamento_da:
+        if self._finestra is not None and self._finestra._collegamento_da:
             self._finestra._muovi_collegamento(ev.scenePos())
             return
         super().mouseMoveEvent(ev)
 
     def mouseReleaseEvent(self, ev):
-        if ev.button() == Qt.RightButton and self._finestra._collegamento_da:
+        if (self._finestra is not None and ev.button() == Qt.RightButton
+                and self._finestra._collegamento_da):
             self._finestra._chiudi_collegamento(ev.scenePos(), ev.screenPos())
             return
         super().mouseReleaseEvent(ev)
-        self._finestra._fine_trascinamento(self.sid)
+        if self._finestra is not None:
+            self._finestra._fine_trascinamento(self.sid)
 
     def mouseDoubleClickEvent(self, ev):
-        self._finestra._apri_stanza(self.sid)
+        if self._finestra is not None:
+            self._finestra._apri_stanza(self.sid)
         ev.accept()
 
 
@@ -120,7 +124,7 @@ class FinestraMappa(QDialog):
         self.resize(960, 720)
 
         self.nodi: dict[str, NodoStanza] = {}
-        self._item_collegamenti = []
+        self._collegamenti = []
         self._spostati = set()
         self._pronta = False
         self._collegamento_da = None    # sid sorgente del right-drag in corso
@@ -265,9 +269,17 @@ class FinestraMappa(QDialog):
         return (p.x() + BOX_W / 2, p.y() + BOX_H / 2)
 
     def _ridisegna_collegamenti(self):
-        for it in self._item_collegamenti:
-            self.scena.removeItem(it)
-        self._item_collegamenti = []
+        """Ricostruisce gli item dei collegamenti. Da chiamare solo FUORI
+        dai gestori di eventi della scena (creazione/eliminazione di uscite,
+        riordino): rimuovere item durante itemChange è pericoloso. Durante
+        il trascinamento si usa _traccia_collegamenti, che aggiorna solo
+        la geometria degli item esistenti."""
+        vecchi = self._collegamenti
+        self._collegamenti = []
+        for e in vecchi:
+            for it in (e["linea"], e["freccia"], e["testo"]):
+                if it is not None:
+                    self.scena.removeItem(it)
         conns = []
         for sid in self.nodi:
             for direz, u in self.mondo.stanze[sid].uscite.items():
@@ -284,22 +296,52 @@ class FinestraMappa(QDialog):
                 if chiave in fatti:
                     continue
                 fatti.add(chiave)
-            self._linea(src, dst, direz, cond, freccia=not doppio)
+            self._collegamenti.append(
+                self._nuovo_collegamento(src, dst, direz, cond,
+                                         freccia=not doppio))
+        self._traccia_collegamenti()
 
-    def _linea(self, src, dst, direz, cond, freccia):
-        cx, cy = self._centro(src)
-        tx, ty = self._centro(dst)
-        x1, y1 = _bordo(cx, cy, BOX_W / 2, BOX_H / 2, tx, ty)
-        x2, y2 = _bordo(tx, ty, BOX_W / 2, BOX_H / 2, cx, cy)
-        colore = QColor(self.pal["accento"]) if not cond else QColor(self.pal["muto"])
+    def _nuovo_collegamento(self, src, dst, direz, cond, freccia):
+        """Crea gli item (vuoti) di un collegamento; la geometria la mette
+        _traccia."""
+        colore = (QColor(self.pal["accento"]) if not cond
+                  else QColor(self.pal["muto"]))
         pen = QPen(colore, 2)
         if cond:
             pen.setStyle(Qt.DashLine)
+        linea = self.scena.addPath(QPainterPath(), pen)
+        linea.setZValue(0)
+        fr = None
+        if freccia:
+            fr = self.scena.addPolygon(QPolygonF(), QPen(colore, 1),
+                                       QBrush(colore))
+            fr.setZValue(0)
+        testo = None
+        if direz not in CARD:
+            etichetta = {"giu": "giù"}.get(direz, direz)
+            testo = self.scena.addSimpleText(
+                etichetta, QFont(tema.FONT_TESTO.split(",")[0], 8))
+            testo.setBrush(QBrush(QColor(self.pal["muto"])))
+            testo.setZValue(3)
+        return {"src": src, "dst": dst, "linea": linea, "freccia": fr,
+                "testo": testo}
 
-        if not self._attraversa_nodi(x1, y1, x2, y2, {src, dst}):
-            it = self.scena.addLine(x1, y1, x2, y2, pen)
-            it.setZValue(0)
-            self._item_collegamenti.append(it)
+    def _traccia_collegamenti(self):
+        for e in self._collegamenti:
+            self._traccia(e)
+
+    def _traccia(self, e):
+        """Aggiorna la geometria degli item di un collegamento in base alla
+        posizione attuale dei nodi (nessun item creato o distrutto: sicuro
+        anche dentro itemChange)."""
+        cx, cy = self._centro(e["src"])
+        tx, ty = self._centro(e["dst"])
+        x1, y1 = _bordo(cx, cy, BOX_W / 2, BOX_H / 2, tx, ty)
+        x2, y2 = _bordo(tx, ty, BOX_W / 2, BOX_H / 2, cx, cy)
+
+        if not self._attraversa_nodi(x1, y1, x2, y2, {e["src"], e["dst"]}):
+            path = QPainterPath(QPointF(x1, y1))
+            path.lineTo(QPointF(x2, y2))
             ax, ay = x1, y1                         # origine per l'orientamento freccia
             lx, ly = (x1 + x2) / 2, (y1 + y2) / 2   # punto dell'etichetta
         else:
@@ -312,21 +354,14 @@ class FinestraMappa(QDialog):
             ctrlx, ctrly = mx + nx * off, my + ny * off
             path = QPainterPath(QPointF(x1, y1))
             path.quadTo(QPointF(ctrlx, ctrly), QPointF(x2, y2))
-            it = self.scena.addPath(path, pen)
-            it.setZValue(0)
-            self._item_collegamenti.append(it)
             ax, ay = ctrlx, ctrly
             lx, ly = ctrlx, ctrly
-        if freccia:
-            self._freccia(ax, ay, x2, y2, colore)
-        if direz not in CARD:
-            etichetta = {"giu": "giù"}.get(direz, direz)
-            txt = self.scena.addSimpleText(etichetta,
-                                           QFont(tema.FONT_TESTO.split(",")[0], 8))
-            txt.setBrush(QBrush(QColor(self.pal["muto"])))
-            txt.setPos(lx - txt.boundingRect().width() / 2, ly - 8)
-            txt.setZValue(3)
-            self._item_collegamenti.append(txt)
+        e["linea"].setPath(path)
+        if e["freccia"] is not None:
+            e["freccia"].setPolygon(_punta(ax, ay, x2, y2))
+        if e["testo"] is not None:
+            e["testo"].setPos(lx - e["testo"].boundingRect().width() / 2,
+                              ly - 8)
 
     def _attraversa_nodi(self, x1, y1, x2, y2, esclusi):
         """Vero se il segmento passa sopra il riquadro di un'altra stanza."""
@@ -340,16 +375,6 @@ class FinestraMappa(QDialog):
                 return True
         return False
 
-    def _freccia(self, x1, y1, x2, y2, colore):
-        ang = math.atan2(y2 - y1, x2 - x1)
-        s = 10
-        p1 = QPointF(x2, y2)
-        p2 = QPointF(x2 - s * math.cos(ang - 0.4), y2 - s * math.sin(ang - 0.4))
-        p3 = QPointF(x2 - s * math.cos(ang + 0.4), y2 - s * math.sin(ang + 0.4))
-        it = self.scena.addPolygon(QPolygonF([p1, p2, p3]),
-                                   QPen(colore, 1), QBrush(colore))
-        self._item_collegamenti.append(it)
-
     # ---------- trascinamento ----------
 
     def _nodo_spostato(self, sid):
@@ -361,7 +386,7 @@ class FinestraMappa(QDialog):
         (self.mondo.meta.setdefault("editor", {})
              .setdefault("mappa", {}))[sid] = [round(p.x()), round(p.y())]
         self._spostati.add(sid)
-        self._ridisegna_collegamenti()
+        self._traccia_collegamenti()
 
     def _fine_trascinamento(self, sid):
         """Al rilascio del mouse: se il nodo si è davvero mosso, una sola
@@ -514,7 +539,8 @@ class FinestraMappa(QDialog):
         menu.setStyleSheet(self.styleSheet())
         az = menu.addAction("Nuova stanza qui…")
         if menu.exec(punto_schermo) == az:
-            self._chiedi_stanza(punto_scena)
+            # i dialoghi si aprono a menu ormai chiuso (grab Wayland)
+            QTimer.singleShot(0, lambda: self._chiedi_stanza(punto_scena))
 
     def _chiedi_stanza(self, punto):
         sid, ok = QInputDialog.getText(self, "Nuova stanza",
@@ -556,13 +582,32 @@ class FinestraMappa(QDialog):
             if self.su_modifica:
                 self.su_modifica()
         self._pronta = False
+        # lascia andare i wrapper Python PRIMA che clear() distrugga il C++:
+        # un wrapper sopravvissuto a un item distrutto manda in crash il GC.
+        self._scollega_item()
         self.scena.clear()
-        self.nodi = {}
-        self._item_collegamenti = []
-        self._spostati = set()
         self._costruisci()
         self._pronta = True
         self._adatta()
+
+    def _scollega_item(self):
+        """Azzera ogni riferimento Python agli item della scena (e i loro
+        riferimenti a questa finestra)."""
+        for n in self.nodi.values():
+            n._finestra = None
+        self.nodi = {}
+        self._collegamenti = []
+        self._linea_tmp = None
+        self._spostati = set()
+        self._collegamento_da = None
+        self._collegamento_press = None
+
+    def done(self, esito):
+        # alla chiusura la scena verrà distrutta da Qt: prima si spezzano
+        # i cicli di riferimento con gli item (vedi _scollega_item)
+        self._pronta = False
+        self._scollega_item()
+        super().done(esito)
 
     # ---------- comandi ----------
 
@@ -592,6 +637,17 @@ class FinestraMappa(QDialog):
         self.scena.render(p, QRectF(img.rect()), r)
         p.end()
         img.save(percorso)
+
+
+def _punta(x1, y1, x2, y2):
+    """La punta di freccia (triangolo) in (x2,y2), orientata da (x1,y1)."""
+    ang = math.atan2(y2 - y1, x2 - x1)
+    s = 10
+    return QPolygonF([
+        QPointF(x2, y2),
+        QPointF(x2 - s * math.cos(ang - 0.4), y2 - s * math.sin(ang - 0.4)),
+        QPointF(x2 - s * math.cos(ang + 0.4), y2 - s * math.sin(ang + 0.4)),
+    ])
 
 
 def _bordo(cx, cy, hw, hh, tx, ty):
