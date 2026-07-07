@@ -6,6 +6,11 @@
 
 ---
 
+<p align="center">
+  <img src="docs/pasifae-editor.png" alt="Pasifae Editor: la mappa dell'avventura al centro, i dettagli della stanza a lato" width="900">
+</p>
+<p align="center"><sub>Pasifae Editor: la mappa è il piano di lavoro — trascini le stanze, crei le uscite col mouse, i dettagli si modificano a lato.</sub></p>
+
 ## Cos'è Pasifae
 
 **Pasifae** è una suite per creare e giocare **avventure testuali** (interactive
@@ -47,7 +52,7 @@ python3 play.py  avventura.json            # player a riga di comando
 ```
 
 Avventure di esempio in [`avventure/`](avventure/) (caverna, faro, duello,
-tutorial). Per imparare a usare l'editor, vedi il **manuale d'uso** (Word/PDF) e,
+tutorial, Il labirinto). Per imparare a usare l'editor, vedi il **manuale d'uso** (Word/PDF) e,
 per chi sviluppa, la documentazione del motore in
 [`advcore/DOCUMENTAZIONE.md`](advcore/DOCUMENTAZIONE.md).
 
