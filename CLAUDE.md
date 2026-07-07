@@ -102,6 +102,14 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   vecchie alcune API differiscono.
 - **PyInstaller**: la build impacchetta Qt; è lenta (~1 min) e pesante (~80 MB),
   e l'eseguibile vale solo per il sistema operativo su cui lo compili.
+- **Qt/Wayland e QGraphicsScene** (lezioni del lavoro sulla mappa):
+  su Linux il menu contestuale scatta alla *pressione* del destro — i gesti
+  right-drag devono sopprimerlo; mai creare/rimuovere item della scena dentro
+  `itemChange` (aggiornare solo la geometria); lasciar andare i riferimenti
+  Python agli item *prima* di `scena.clear()` o della distruzione della
+  finestra, altrimenti il GC crasha su wrapper di C++ già morto (firma:
+  «Garbage-collecting, no Python frame»); menu e dialoghi da gesti della
+  scena vanno aperti con `QTimer.singleShot(0, ...)`.
 
 ## Stato attuale
 - `advcore` **1.16.1** · interfaccia `gui` **1.16.3**.
