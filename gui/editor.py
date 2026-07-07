@@ -664,7 +664,8 @@ class Editor(QMainWindow):
     def _apri_mappa(self):
         from gui.mappa import FinestraMappa
         FinestraMappa(self.mondo, self.tema, self,
-                      su_modifica=self._segna_modifica).exec()
+                      su_modifica=self._segna_modifica,
+                      vai_a=self._vai_a).exec()
 
     def _apri_catena(self):
         from gui.catena import FinestraCatena

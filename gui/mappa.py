@@ -67,12 +67,18 @@ class NodoStanza(QGraphicsRectItem):
         super().mouseReleaseEvent(ev)
         self._finestra._fine_trascinamento(self.sid)
 
+    def mouseDoubleClickEvent(self, ev):
+        self._finestra._apri_stanza(self.sid)
+        ev.accept()
+
 
 class FinestraMappa(QDialog):
-    def __init__(self, mondo, tema_nome="scuro", parent=None, su_modifica=None):
+    def __init__(self, mondo, tema_nome="scuro", parent=None, su_modifica=None,
+                 vai_a=None):
         super().__init__(parent)
         self.mondo = mondo
         self.su_modifica = su_modifica
+        self._vai_a = vai_a
         self.pal = tema.PALETTE.get(tema_nome, tema.PALETTE["scuro"])
         self.setWindowTitle("Mappa dell'avventura")
         self.setStyleSheet(tema.qss(tema_nome))
@@ -88,9 +94,9 @@ class FinestraMappa(QDialog):
         self.vista = VistaMappa(self.scena)
 
         legenda = QLabel(
-            "trascina i riquadri per disporre la mappa    → senso unico    "
-            "—  doppio senso    ┄ condizionata (flag)    ◆ personaggio    "
-            "• oggetto")
+            "trascina i riquadri per disporre la mappa · doppio clic apre la "
+            "stanza    → senso unico    —  doppio senso    ┄ condizionata "
+            "(flag)    ◆ personaggio    • oggetto")
         legenda.setObjectName("stato")
 
         barra = QHBoxLayout()
@@ -325,6 +331,13 @@ class FinestraMappa(QDialog):
         self._spostati.discard(sid)
         if self.su_modifica:
             self.su_modifica()
+
+    def _apri_stanza(self, sid):
+        """Doppio clic su un riquadro: salta alla stanza nell'editor e chiude
+        la mappa (che è modale) per lasciare il posto."""
+        if self._vai_a:
+            self._vai_a("Stanze", sid)
+            self.accept()
 
     def _riordina(self):
         """Dimentica le posizioni manuali e torna al layout automatico."""

@@ -1154,5 +1154,26 @@ def test_mappa_posizioni_salvate_e_riordino(qtbot):
     assert (f.nodi["sala"].pos().x(), f.nodi["sala"].pos().y()) != (40, 60)
 
 
+def test_mappa_doppio_clic_apre_stanza(qtbot):
+    """Doppio clic su un riquadro della mappa: l'editor seleziona quella
+    stanza (callback vai_a, come nella Concatenazione dei puzzle) e la
+    finestra si chiude."""
+    from PySide6.QtCore import QPointF
+    from gui.mappa import FinestraMappa, BOX_W, BOX_H
+    m = mondo_semplice()
+    aperture = []
+    f = FinestraMappa(m, "scuro",
+                      vai_a=lambda cat, ch: aperture.append((cat, ch)))
+    qtbot.addWidget(f)
+    f.show()
+
+    nodo = f.nodi["corridoio"]
+    centro = f.vista.mapFromScene(nodo.pos() + QPointF(BOX_W / 2, BOX_H / 2))
+    qtbot.mouseDClick(f.vista.viewport(), Qt.LeftButton, pos=centro)
+
+    assert aperture == [("Stanze", "corridoio")]
+    assert f.isHidden()          # la finestra si è chiusa per lasciare l'editor
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
