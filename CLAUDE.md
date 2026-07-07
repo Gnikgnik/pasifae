@@ -70,8 +70,9 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   catena dei puzzle (`catena_puzzle`).
 - `catena.py` — finestra "Concatenazione dei puzzle" (albero dai finali).
 - `anteprima.py` — finestra "Prova l'avventura" dentro l'editor.
-- `mappa.py` — mappa visuale; stanze trascinabili, posizioni salvate in
-  `meta["editor"]["mappa"]` (il motore le ignora).
+- `mappa.py` — mappa visuale e modificabile: stanze trascinabili (posizioni in
+  `meta["editor"]["mappa"]`, il motore le ignora), doppio clic → editor,
+  uscite col trascinamento destro, nuova stanza dal canvas.
 - `tema.py` — temi chiaro/scuro.
 - `risorse.py` — icona, loghi, dialogo "Informazioni" condiviso.
 - `compila.py` — logica pura per "Compila gioco autonomo" (PyInstaller).
@@ -103,8 +104,8 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   e l'eseguibile vale solo per il sistema operativo su cui lo compili.
 
 ## Stato attuale
-- `advcore` **1.16.1** · interfaccia `gui` **1.15.0**.
-- Suite: **70 test GUI + 10 script**, tutti verdi.
+- `advcore` **1.16.1** · interfaccia `gui` **1.16.0**.
+- Suite: **73 test GUI + 10 script**, tutti verdi.
 - Documentazione: `README.md`, `advcore/DOCUMENTAZIONE.md`, `COSTRUIRE.md`,
   manuale d'uso (Word/PDF), e il progetto dell'avventura "SOTTO ARES".
 
@@ -124,10 +125,10 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
 
 ### Editor / Player
 - **Mappa come piano di lavoro** (direzione GUI 2.0, a passi): fatte le stanze
-  trascinabili (gui 1.14.0) e il doppio clic sul nodo → selezione nell'editor
-  (gui 1.15.0); poi creare/modificare uscite trascinando tra stanze e nuova
-  stanza dal canvas, infine mappa come widget centrale con i form a pannello
-  di dettaglio.
+  trascinabili (1.14.0), il doppio clic sul nodo → selezione nell'editor
+  (1.15.0), uscite col trascinamento destro + nuova stanza dal canvas
+  (1.16.0); resta il ribaltone finale: mappa come widget centrale con i form
+  a pannello di dettaglio.
 - **Validazione più profonda**: avvisi su timer mai avviati, dialoghi senza
   uscita, oggetti irraggiungibili, finali non collegati.
 - **Anteprima con "stato di gioco" ispezionabile**: pannello che mostra flag,

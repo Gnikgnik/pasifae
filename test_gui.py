@@ -1175,5 +1175,74 @@ def test_mappa_doppio_clic_apre_stanza(qtbot):
     assert f.isHidden()          # la finestra si è chiusa per lasciare l'editor
 
 
+def test_mappa_crea_ed_elimina_uscite(qtbot, monkeypatch):
+    """Dalla mappa si creano uscite (con ritorno opzionale) e si eliminano;
+    una direzione già occupata non viene sovrascritta; ogni cambiamento
+    segnala la modifica all'editor."""
+    from gui.mappa import FinestraMappa
+    m = mondo_semplice()
+    m.stanze["cantina"] = Stanza(id="cantina", nome="Cantina", desc="")
+    chiamate = []
+    f = FinestraMappa(m, "scuro", su_modifica=lambda: chiamate.append(1))
+    qtbot.addWidget(f)
+
+    f._crea_uscita("sala", "cantina", "giu", ritorno=True)
+    assert m.stanze["sala"].uscite["giu"] == "cantina"
+    assert m.stanze["cantina"].uscite["su"] == "sala"       # il ritorno
+    assert chiamate
+
+    # direzione già occupata: rifiuto senza sovrascrivere
+    monkeypatch.setattr(QMessageBox, "information", lambda *a, **k: None)
+    f._crea_uscita("sala", "cantina", "nord", ritorno=False)
+    assert m.stanze["sala"].uscite["nord"] == "corridoio"
+
+    f._elimina_uscita("sala", "giu")
+    assert "giu" not in m.stanze["sala"].uscite
+
+
+def test_mappa_trascinamento_destro_crea_uscita(qtbot, monkeypatch):
+    """Trascinare col tasto destro da una stanza a un'altra chiede la
+    direzione e crea l'uscita."""
+    from PySide6.QtCore import QPointF
+    from gui.mappa import FinestraMappa, BOX_W, BOX_H
+    m = mondo_semplice()
+    f = FinestraMappa(m, "scuro")
+    qtbot.addWidget(f)
+    f.show()
+    monkeypatch.setattr(FinestraMappa, "_chiedi_uscita",
+                        lambda self, src, dst: ("est", False))
+
+    def vp(sid):
+        n = f.nodi[sid]
+        return f.vista.mapFromScene(n.pos() + QPointF(BOX_W / 2, BOX_H / 2))
+
+    qtbot.mousePress(f.vista.viewport(), Qt.RightButton, pos=vp("sala"))
+    qtbot.mouseMove(f.vista.viewport(), pos=vp("corridoio"))
+    qtbot.mouseRelease(f.vista.viewport(), Qt.RightButton,
+                       pos=vp("corridoio"))
+    assert m.stanze["sala"].uscite.get("est") == "corridoio"
+
+
+def test_mappa_nuova_stanza_dal_canvas(qtbot, monkeypatch):
+    """Il clic destro sul canvas crea una stanza nel punto scelto (posizione
+    nei metadati, nodo nella scena); id duplicato rifiutato."""
+    from PySide6.QtCore import QPointF
+    from gui.mappa import FinestraMappa
+    m = mondo_semplice()
+    chiamate = []
+    f = FinestraMappa(m, "scuro", su_modifica=lambda: chiamate.append(1))
+    qtbot.addWidget(f)
+
+    f._crea_stanza("cantina", "Cantina", QPointF(500, 300))
+    assert "cantina" in m.stanze and m.stanze["cantina"].nome == "Cantina"
+    assert m.meta["editor"]["mappa"]["cantina"] == [500, 300]
+    assert "cantina" in f.nodi
+    assert chiamate
+
+    monkeypatch.setattr(QMessageBox, "information", lambda *a, **k: None)
+    f._crea_stanza("sala", "Doppione", QPointF(0, 0))
+    assert m.stanze["sala"].nome == "Sala"                  # intatta
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))

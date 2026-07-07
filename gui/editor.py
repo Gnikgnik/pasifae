@@ -666,6 +666,9 @@ class Editor(QMainWindow):
         FinestraMappa(self.mondo, self.tema, self,
                       su_modifica=self._segna_modifica,
                       vai_a=self._vai_a).exec()
+        # dalla mappa si possono creare stanze e uscite: riallinea la lista
+        if self.lista_cat.currentRow() >= 0:
+            self._scegli_categoria(self.lista_cat.currentRow())
 
     def _apri_catena(self):
         from gui.catena import FinestraCatena
