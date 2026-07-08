@@ -1,5 +1,18 @@
 # Pasifae — cronologia delle versioni
 
+## gui 2.1.0
+La mappa lascia la colonna fissa dello splitter e diventa un **pannello
+dock** (`QDockWidget`, ancorato a destra di default): ridimensionabile,
+richiudibile e anche flottante fuori dalla finestra principale. Con il
+dock chiuso, categorie/elementi/dettaglio recuperano tutto lo spazio: il
+layout a quattro colonne fisse della 2.0.0 lasciava troppo poco margine al
+form di modifica su schermi non ampi. Nuovo toggle "Pannello mappa" nel
+menu Strumenti (Ctrl+Shift+M); "Adatta la mappa" ed "Esporta la mappa come
+PNG" restano invariati. Da staccata, la finestra della mappa ha i pulsanti
+nativi di minimizza/massimizza/chiudi (il `Qt::Tool` di default non li
+mostra): a tutto schermo senza doverla ridimensionare a mano.
+
+
 ## gui 2.0.0
 Il ribaltone della direzione «mappa come piano di lavoro»: layout a quattro
 pannelli (categorie | elementi | **mappa** | dettaglio). Un clic su un nodo

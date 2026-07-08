@@ -64,16 +64,20 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
 
 **`gui/` — la suite grafica (PySide6/Qt), solo viste:**
 - `editor.py` — Pasifae Editor (file grande, ~1850 righe; vedi insidie).
-  Layout 2.0: categorie | elementi | **mappa al centro** | dettaglio; le
-  modifiche riallineano la mappa in modo differito (`_segna_modifica` →
-  `QTimer.singleShot(0, _aggiorna_mappa)`).
+  Layout 2.1: splitter a tre colonne (categorie | elementi | dettaglio) più
+  la **mappa in un `QDockWidget`** ancorato a destra (`dock_mappa`),
+  ridimensionabile/richiudibile/flottante — toggle "Pannello mappa" nel menu
+  Strumenti; da staccata, `topLevelChanged` le assegna i flag di finestra
+  nativa (min/max/chiudi), altrimenti il `Qt::Tool` di default non mostra il
+  pulsante di massimizza; le modifiche riallineano la mappa in modo differito
+  (`_segna_modifica` → `QTimer.singleShot(0, _aggiorna_mappa)`).
 - `player.py` — Pasifae Play.
 - `regole.py` — costruzione/serializzazione regole nell'editor.
 - `analisi.py` — riferimenti incrociati, "Dove è usato", problemi,
   catena dei puzzle (`catena_puzzle`).
 - `catena.py` — finestra "Concatenazione dei puzzle" (albero dai finali).
 - `anteprima.py` — finestra "Prova l'avventura" dentro l'editor.
-- `mappa.py` — `PannelloMappa`, il piano di lavoro al centro dell'editor:
+- `mappa.py` — `PannelloMappa`, il piano di lavoro nel dock della mappa:
   stanze trascinabili (posizioni in `meta["editor"]["mappa"]`, il motore le
   ignora), clic → selezione nel dettaglio, uscite col trascinamento destro,
   nuova stanza dal canvas; API per l'editor: `aggiorna()`, `imposta_mondo()`,
@@ -118,8 +122,8 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   scena vanno aperti con `QTimer.singleShot(0, ...)`.
 
 ## Stato attuale
-- `advcore` **1.16.1** · interfaccia `gui` **2.0.0** (mappa come widget
-  centrale dell'editor).
+- `advcore` **1.16.1** · interfaccia `gui` **2.1.0** (mappa in un dock
+  ridimensionabile/richiudibile invece che colonna fissa nello splitter).
 - Suite: **76 test GUI + 10 script**, tutti verdi.
 - Documentazione: `README.md`, `advcore/DOCUMENTAZIONE.md`, `COSTRUIRE.md`,
   manuale d'uso (Word/PDF).
@@ -139,11 +143,14 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   per enigmi più ricchi.
 
 ### Editor / Player
-- **Mappa come piano di lavoro — FATTO (2.0.0)**: stanze trascinabili
-  (1.14.0), doppio clic → editor (1.15.0), uscite col trascinamento destro +
-  nuova stanza dal canvas (1.16.0), mappa come widget centrale con i form a
-  pannello di dettaglio (2.0.0). Possibili rifiniture: evidenziare sulla
-  mappa le uscite della stanza selezionata, mini-mappa nel player.
+- **Mappa come piano di lavoro — FATTO (2.0.0, rivisto in 2.1.0)**: stanze
+  trascinabili (1.14.0), doppio clic → editor (1.15.0), uscite col
+  trascinamento destro + nuova stanza dal canvas (1.16.0), mappa come widget
+  centrale con i form a pannello di dettaglio (2.0.0); il layout a colonna
+  fissa lasciava troppo poco spazio al form su schermi non ampi, quindi la
+  mappa è passata a un `QDockWidget` ridimensionabile/richiudibile/flottante
+  (2.1.0). Possibili rifiniture: evidenziare sulla mappa le uscite della
+  stanza selezionata, mini-mappa nel player.
 - **Validazione più profonda**: avvisi su timer mai avviati, dialoghi senza
   uscita, oggetti irraggiungibili, finali non collegati.
 - **Anteprima con "stato di gioco" ispezionabile**: pannello che mostra flag,

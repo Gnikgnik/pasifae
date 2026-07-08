@@ -485,9 +485,10 @@ class Editor(QMainWindow):
 
         self.resize(1400, 800)
         self._mappa_sporca = False      # aggiornamento della mappa in coda
-        self._costruisci_menu()
 
-        # quattro pannelli: categorie | elementi | mappa | dettaglio
+        # tre pannelli nello splitter: categorie | elementi | dettaglio;
+        # la mappa vive in un dock a parte (ridimensionabile, richiudibile,
+        # anche flottante), non più come colonna a larghezza fissa
         self.lista_cat = QListWidget()
         self.lista_cat.addItems(CATEGORIE)
         self.lista_cat.currentRowChanged.connect(self._scegli_categoria)
@@ -511,8 +512,7 @@ class Editor(QMainWindow):
         self.dettaglio.setWidgetResizable(True)
         self.dettaglio.setFrameShape(QScrollArea.NoFrame)
 
-        # la mappa è il piano di lavoro al centro dell'editor: il clic su un
-        # nodo seleziona la stanza, i form la modificano nel dettaglio
+        # clic su un nodo della mappa → stanza selezionata, form nel dettaglio
         self.mappa = PannelloMappa(
             self.mondo, self.tema,
             su_modifica=self._segna_modifica,
@@ -523,18 +523,22 @@ class Editor(QMainWindow):
         cx = self._colonna("ELEMENTI", self.lista_el,
                             [self.btn_nuovo, self.btn_duplica, self.btn_elimina],
                             filtro=self.filtro_el)
-        mp = self._colonna("MAPPA", self.mappa)
         split = QSplitter()
         split.addWidget(sx)
         split.addWidget(cx)
-        split.addWidget(mp)
         split.addWidget(self.dettaglio)
         split.setStretchFactor(0, 0)
         split.setStretchFactor(1, 0)
         split.setStretchFactor(2, 1)
-        split.setStretchFactor(3, 0)
-        split.setSizes([180, 240, 560, 420])
+        split.setSizes([180, 260, 620])
         self.setCentralWidget(split)
+
+        self.dock_mappa = QDockWidget("Mappa", self)
+        self.dock_mappa.setObjectName("dock_mappa")
+        self.dock_mappa.setWidget(self.mappa)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.dock_mappa)
+        self.resizeDocks([self.dock_mappa], [520], Qt.Horizontal)
+        self.dock_mappa.topLevelChanged.connect(self._su_mappa_flottante)
 
         self.lista_problemi = QListWidget()
         self.lista_problemi.itemDoubleClicked.connect(self._vai_da_problema)
@@ -545,6 +549,7 @@ class Editor(QMainWindow):
         self.dock_problemi.hide()
         self.dock_problemi.visibilityChanged.connect(self._su_visibilita_problemi)
 
+        self._costruisci_menu()
         self._applica_tema()
         self._aggiorna_titolo()
         self.lista_cat.setCurrentRow(0)
@@ -614,6 +619,10 @@ class Editor(QMainWindow):
         a_png = QAction("Esporta la mappa come PNG…", self)
         a_png.triggered.connect(lambda: self.mappa.esporta_png())
         m_str.addAction(a_png)
+        a_pannello_mappa = self.dock_mappa.toggleViewAction()
+        a_pannello_mappa.setText("Pannello mappa")
+        a_pannello_mappa.setShortcut("Ctrl+Shift+M")
+        m_str.addAction(a_pannello_mappa)
         a_catena = QAction("Concatenazione dei puzzle…", self)
         a_catena.triggered.connect(self._apri_catena)
         m_str.addAction(a_catena)
@@ -689,6 +698,18 @@ class Editor(QMainWindow):
     def _informazioni(self):
         from gui import risorse
         risorse.mostra_informazioni(self, "Pasifae Editor")
+
+    def _su_mappa_flottante(self, flottante):
+        # da staccata la mappa deve poter usare il pulsante nativo di
+        # massimizza del window manager, non solo il trascinamento manuale
+        # dei bordi: senza questi flag il Qt::Tool di default non lo mostra.
+        if flottante:
+            self.dock_mappa.setWindowFlags(
+                Qt.Window
+                | Qt.WindowMinimizeButtonHint
+                | Qt.WindowMaximizeButtonHint
+                | Qt.WindowCloseButtonHint)
+            self.dock_mappa.show()
 
     def _su_visibilita_problemi(self, vis):
         if hasattr(self, "act_problemi"):

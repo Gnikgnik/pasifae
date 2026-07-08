@@ -1302,10 +1302,10 @@ def test_mappa_menu_contestuale_non_scavalca_i_nodi(qtbot, monkeypatch):
     assert len(canvas) == 1
 
 
-# ------------------- mappa come piano di lavoro (gui 2.0) -------------------
+# ---------------------- mappa come pannello dock (gui) ----------------------
 
 def test_editor_mappa_centrale(qtbot):
-    """La mappa vive al centro dell'editor: conosce le stanze del mondo,
+    """La mappa vive in un dock dell'editor: conosce le stanze del mondo,
     la selezione nella lista evidenzia il nodo, il clic sul nodo seleziona
     la stanza nel pannello di dettaglio."""
     from PySide6.QtCore import QPointF
@@ -1363,6 +1363,21 @@ def test_editor_mappa_si_aggiorna_dalle_modifiche(qtbot):
         and e.lista_el.currentItem().data(Qt.UserRole) == "cantina",
         timeout=1000)
     assert e.modificato
+
+
+def test_dock_mappa_flottante_ha_pulsanti_finestra(qtbot):
+    """Staccata dal bordo, la mappa deve potersi massimizzare a tutto
+    schermo col pulsante nativo del window manager, senza doverla
+    ridimensionare a mano trascinando i bordi."""
+    e = Editor(None)
+    qtbot.addWidget(e)
+    e.show()
+
+    e.dock_mappa.setFloating(True)
+    flags = e.dock_mappa.windowFlags()
+    assert flags & Qt.WindowMaximizeButtonHint
+    assert flags & Qt.WindowMinimizeButtonHint
+    assert flags & Qt.WindowCloseButtonHint
 
 
 if __name__ == "__main__":
