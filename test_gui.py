@@ -452,6 +452,35 @@ def test_player_colonna_di_lettura_limitata(qtbot):
     assert p.vista.viewport().width() >= 560, p.vista.viewport().width()
 
 
+def test_player_mappa_si_nasconde_su_finestra_stretta(qtbot, monkeypatch, tmp_path):
+    """La mini-mappa lascia il posto alla colonna di lettura sotto
+    LARGHEZZA_MIN_MAPPA, e torna quando la finestra si riallarga — a patto
+    che l'utente non l'abbia comunque disattivata da Visualizza."""
+    from PySide6.QtCore import QSettings
+    import gui.player as gp
+    ini = str(tmp_path / "prova.ini")
+    monkeypatch.setattr(gp, "_impostazioni",
+                        lambda: QSettings(ini, QSettings.IniFormat))
+    p = Player(str(AVV / "faro.json"))
+    qtbot.addWidget(p)
+    p.show()
+    p.resize(1600, 700)
+    QApplication.processEvents()
+    assert p.mappa.isVisible()
+
+    p.resize(640, 700)
+    QApplication.processEvents()
+    assert not p.mappa.isVisible()
+
+    p.resize(1600, 700)
+    QApplication.processEvents()
+    assert p.mappa.isVisible()
+
+    p._imposta_mappa(False)
+    QApplication.processEvents()
+    assert not p.mappa.isVisible()
+
+
 def test_player_dimensione_testo(qtbot, monkeypatch, tmp_path):
     """La dimensione del testo si regola (più grande / più piccola / normale)
     e viene ricordata tra le sessioni."""
@@ -1378,6 +1407,92 @@ def test_dock_mappa_flottante_ha_pulsanti_finestra(qtbot):
     assert flags & Qt.WindowMaximizeButtonHint
     assert flags & Qt.WindowMinimizeButtonHint
     assert flags & Qt.WindowCloseButtonHint
+
+
+# ------------------------ mini-mappa nel player -----------------------------
+
+def test_minimappa_nessuna_stanza_visitata(qtbot):
+    """Prima di guardarsi intorno la mappa è vuota: niente stanze mai
+    visitate da mostrare."""
+    from gui.mappa_player import MiniMappa
+    m = mondo_semplice()
+    mm = MiniMappa("scuro")
+    qtbot.addWidget(mm)
+    mm.imposta_mondo(m)
+    assert mm.nodi == {}
+
+
+def test_minimappa_stanza_corrente_con_trattino_verso_ignoto(qtbot):
+    """Solo la stanza visitata compare; l'uscita nord verso il corridoio
+    (mai visitato) resta un trattino, non un riquadro."""
+    from gui.mappa_player import MiniMappa
+    from PySide6.QtWidgets import QGraphicsLineItem
+    m = mondo_semplice()
+    m.stanze["sala"].visitata = True
+    m.stanza_corrente = "sala"
+    mm = MiniMappa("scuro")
+    qtbot.addWidget(mm)
+    mm.imposta_mondo(m)
+
+    assert set(mm.nodi) == {"sala"}
+    linee = [it for it in mm.scena.items() if isinstance(it, QGraphicsLineItem)]
+    assert len(linee) == 1                  # il trattino verso il corridoio
+
+
+def test_minimappa_collega_due_stanze_visitate(qtbot):
+    """Visitate entrambe, il collegamento nord/sud diventa una linea piena
+    unica (non due, una per direzione)."""
+    from gui.mappa_player import MiniMappa
+    from PySide6.QtWidgets import QGraphicsLineItem
+    m = mondo_semplice()
+    m.stanze["sala"].visitata = True
+    m.stanze["corridoio"].visitata = True
+    m.stanza_corrente = "corridoio"
+    mm = MiniMappa("scuro")
+    qtbot.addWidget(mm)
+    mm.imposta_mondo(m)
+
+    assert set(mm.nodi) == {"sala", "corridoio"}
+    linee = [it for it in mm.scena.items() if isinstance(it, QGraphicsLineItem)]
+    assert len(linee) == 1
+
+
+def test_minimappa_uscita_condizionata_bloccata_resta_nascosta(qtbot):
+    """Un'uscita condizionata non ancora sbloccata non produce né linea né
+    trattino: il giocatore non sa ancora che esiste."""
+    from gui.mappa_player import MiniMappa
+    from PySide6.QtWidgets import QGraphicsLineItem
+    m = Mondo()
+    m.stanze["a"] = Stanza(id="a", nome="A", desc="", uscite={
+        "nord": {"to": "b", "se": "trovata_chiave"}})
+    m.stanze["b"] = Stanza(id="b", nome="B", desc="", uscite={"sud": "a"})
+    m.stanze["a"].visitata = True
+    m.stanza_corrente = "a"
+    mm = MiniMappa("scuro")
+    qtbot.addWidget(mm)
+    mm.imposta_mondo(m)
+
+    assert set(mm.nodi) == {"a"}
+    assert [it for it in mm.scena.items() if isinstance(it, QGraphicsLineItem)] == []
+
+    m.flags["trovata_chiave"] = True
+    mm.aggiorna()
+    linee = [it for it in mm.scena.items() if isinstance(it, QGraphicsLineItem)]
+    assert len(linee) == 1                  # ora il trattino compare
+
+
+def test_minimappa_svuota_con_imposta_mondo_none(qtbot):
+    from gui.mappa_player import MiniMappa
+    m = mondo_semplice()
+    m.stanze["sala"].visitata = True
+    m.stanza_corrente = "sala"
+    mm = MiniMappa("scuro")
+    qtbot.addWidget(mm)
+    mm.imposta_mondo(m)
+    assert mm.nodi
+
+    mm.imposta_mondo(None)
+    assert mm.nodi == {}
 
 
 if __name__ == "__main__":

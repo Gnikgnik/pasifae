@@ -44,6 +44,7 @@ def _con_estensione(percorso: str) -> str:
 from advcore import carica_mondo, Motore, salva_partita, carica_partita  # noqa: E402
 from gui import tema  # noqa: E402
 from gui.immagine import PannelloImmagine  # noqa: E402
+from gui.mappa_player import MiniMappa  # noqa: E402
 
 from PySide6.QtCore import QSettings, Qt, QTimer, Signal  # noqa: E402
 from PySide6.QtGui import QAction, QActionGroup, QFont, QKeySequence  # noqa: E402
@@ -132,6 +133,12 @@ class VistaTrascrizione(QTextEdit):
 
 
 class Player(QMainWindow):
+    # sotto questa larghezza la mini-mappa si nasconde: la colonna di testo
+    # ha la priorità (com'è già per l'illustrazione, che collassa da sola
+    # quando la stanza non ne ha una — qui però è una questione di spazio,
+    # non di contenuto, quindi va decisa a ogni resize).
+    LARGHEZZA_MIN_MAPPA = 900
+
     def __init__(self, percorso: str | None = None):
         super().__init__()
         from gui import risorse
@@ -157,6 +164,10 @@ class Player(QMainWindow):
             self.illustrazioni = bool(int(imp.value("illustrazioni", 1)))
         except (TypeError, ValueError):
             self.illustrazioni = True
+        try:
+            self.mostra_mappa = bool(int(imp.value("mappa", 1)))
+        except (TypeError, ValueError):
+            self.mostra_mappa = True
         self._voci: list[tuple[str, str]] = []
         # stato dell'animazione "telescrivente"
         self._anim = QTimer(self)
@@ -187,6 +198,10 @@ class Player(QMainWindow):
         # grande della vecchia striscia, con larghezza regolabile e ricordata
         self.immagine = PannelloImmagine(riempi=True)
         self.immagine.imposta_attiva(self.illustrazioni)
+
+        # mini-mappa a destra: si popola via via che si visitano le stanze
+        self.mappa = MiniMappa(self.tema)
+        self.mappa.setVisible(self.mostra_mappa)
 
         self.vista = VistaTrascrizione(); self.vista.setObjectName("vista")
         self.vista.setReadOnly(True); self.vista.setFrameStyle(QFrame.NoFrame)
@@ -222,21 +237,29 @@ class Player(QMainWindow):
         self.spartizione = QSplitter(Qt.Horizontal)
         self.spartizione.addWidget(self.immagine)
         self.spartizione.addWidget(colonna)
+        self.spartizione.addWidget(self.mappa)
         self.spartizione.setCollapsible(1, False)   # il testo non sparisce mai
         self.spartizione.setStretchFactor(0, 2)
         self.spartizione.setStretchFactor(1, 3)
+        self.spartizione.setStretchFactor(2, 2)
         try:
             col = int(imp.value("colonna_immagine", 0))
         except (TypeError, ValueError):
             col = 0
+        try:
+            col_mappa = int(imp.value("colonna_mappa", 0))
+        except (TypeError, ValueError):
+            col_mappa = 0
         largo = self.width()
-        col = col if 0 < col < largo else int(largo * 0.44)
-        self.spartizione.setSizes([col, largo - col])
+        col = col if 0 < col < largo else int(largo * 0.3)
+        col_mappa = col_mappa if 0 < col_mappa < largo else int(largo * 0.3)
+        self.spartizione.setSizes([col, largo - col - col_mappa, col_mappa])
         self.spartizione.splitterMoved.connect(self._ricorda_colonna)
         radice.addWidget(self.spartizione, 1)
 
         self.setCentralWidget(centrale)
         self._applica_tema()
+        self._aggiorna_visibilita_mappa()
 
         if percorso:
             self._apri_avventura(percorso)
@@ -288,6 +311,10 @@ class Player(QMainWindow):
         a_illu.setChecked(self.illustrazioni)
         a_illu.triggered.connect(self._imposta_illustrazioni)
         v.addAction(a_illu)
+        a_mappa = QAction("Mappa", self, checkable=True)
+        a_mappa.setChecked(self.mostra_mappa)
+        a_mappa.triggered.connect(self._imposta_mappa)
+        v.addAction(a_mappa)
         v.addSeparator()
         a_piu = QAction("Testo più grande", self)
         a_piu.setShortcut(QKeySequence.ZoomIn)
@@ -324,6 +351,7 @@ class Player(QMainWindow):
         mondo = carica_mondo(percorso)               # se fallisce, _apri lo segnala
         self.mondo = mondo
         self.motore = Motore(mondo)
+        self.mappa.imposta_mondo(mondo)
         self.percorso = percorso
         self._titoli_stanze = {s.nome.upper() for s in mondo.stanze.values()}
         colore = str(mondo.meta.get("colore") or "")
@@ -355,6 +383,7 @@ class Player(QMainWindow):
         self.titolo.setText("Pasifae")
         self.stato.setText("")
         self.immagine.mostra_file(None)
+        self.mappa.imposta_mondo(None)
         self._abilita_gioco(False)
         self._ridisegna()
 
@@ -561,11 +590,30 @@ class Player(QMainWindow):
         _impostazioni().setValue("illustrazioni", int(self.illustrazioni))
         self.immagine.imposta_attiva(self.illustrazioni)
 
+    def _imposta_mappa(self, attiva: bool):
+        self.mostra_mappa = bool(attiva)
+        _impostazioni().setValue("mappa", int(self.mostra_mappa))
+        self._aggiorna_visibilita_mappa()
+
+    def _aggiorna_visibilita_mappa(self):
+        """Visibile solo se l'utente l'ha attivata E la finestra è abbastanza
+        larga: sotto LARGHEZZA_MIN_MAPPA la colonna di lettura ha la
+        priorità (vedi resizeEvent)."""
+        if not hasattr(self, "mappa"):
+            return
+        self.mappa.setVisible(
+            self.mostra_mappa and self.width() >= self.LARGHEZZA_MIN_MAPPA)
+
+    def resizeEvent(self, ev):
+        super().resizeEvent(ev)
+        self._aggiorna_visibilita_mappa()
+
     def _ricorda_colonna(self, *_):
-        """La larghezza scelta per la colonna dell'illustrazione si conserva
-        tra le sessioni."""
-        _impostazioni().setValue("colonna_immagine",
-                                 self.spartizione.sizes()[0])
+        """La larghezza scelta per le colonne di illustrazione e mappa si
+        conserva tra le sessioni."""
+        larghezze = self.spartizione.sizes()
+        _impostazioni().setValue("colonna_immagine", larghezze[0])
+        _impostazioni().setValue("colonna_mappa", larghezze[2])
 
     def _accendi_cornice(self, acceso: bool):
         self.cornice_input.setProperty("fuoco", acceso)
@@ -577,6 +625,7 @@ class Player(QMainWindow):
         if self.mondo is None:
             self.titolo.setText("Pasifae"); self.stato.setText("")
             self.immagine.mostra_file(None)
+            self.mappa.imposta_mondo(None)
             return
         self.titolo.setText(self.mondo.meta.get("titolo", "Avventura"))
         stanza = self.mondo.stanze.get(self.mondo.stanza_corrente)
@@ -585,6 +634,7 @@ class Player(QMainWindow):
             f"{luogo}punteggio {self.mondo.punteggio}"
             f"    ·    turni {self.mondo.mosse}")
         self._aggiorna_immagine(stanza)
+        self.mappa.aggiorna()
 
     def _aggiorna_immagine(self, stanza):
         """Illustrazione della stanza corrente: il nome file nel campo
@@ -601,6 +651,7 @@ class Player(QMainWindow):
     def _cambia_tema(self, nome: str):
         self.tema = nome
         self._applica_tema()
+        self.mappa.imposta_tema(nome)
         self._ridisegna()
 
     def _applica_tema(self):

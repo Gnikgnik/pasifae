@@ -60,7 +60,9 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
 - `storage.py` — carica/salva l'avventura (JSON).
 - `salvataggio.py` — salva/carica lo stato della partita.
 - `validazione.py` — controlli statici (`valida -> list[Problema]`).
-- `mappa.py` — mappa testuale (ASCII).
+- `mappa.py` — mappa testuale (ASCII); anche `uscite_visibili(mondo, stanza)`,
+  le uscite attualmente sbloccate come coppie (direzione, destinazione) —
+  usata dalla mini-mappa del player, non solo dalla mappa ASCII.
 
 **`gui/` — la suite grafica (PySide6/Qt), solo viste:**
 - `editor.py` — Pasifae Editor (file grande, ~1850 righe; vedi insidie).
@@ -71,7 +73,25 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   nativa (min/max/chiudi), altrimenti il `Qt::Tool` di default non mostra il
   pulsante di massimizza; le modifiche riallineano la mappa in modo differito
   (`_segna_modifica` → `QTimer.singleShot(0, _aggiorna_mappa)`).
-- `player.py` — Pasifae Play.
+- `player.py` — Pasifae Play. Splitter a tre colonne: illustrazione |
+  trascrizione | mini-mappa (`self.mappa`, `MiniMappa`); quest'ultima si
+  aggiorna in `_aggiorna_stato()` (come l'illustrazione) e si nasconde da
+  sola sotto `Player.LARGHEZZA_MIN_MAPPA` (900px, vedi `resizeEvent`) per
+  lasciare spazio alla lettura — indipendentemente dal toggle "Mappa" in
+  Visualizza, che resta l'interruttore dell'utente.
+- `mappa_player.py` — `MiniMappa`: mappa **di sola lettura** nel player
+  (nessun drag, nessun menu contestuale). Un riquadro per ogni stanza
+  visitata (evidenziata quella corrente), una linea fra due visitate
+  collegate; verso una non ancora visitata, un trattino verso il bordo
+  (direzioni cardinali) o un'etichetta "altre uscite: …" (su/giù/dentro/
+  fuori) — mai un riquadro "?": niente fog-of-war, solo ciò che il
+  giocatore già sa dal testo. I riquadri **non hanno dimensione fissa**:
+  si ricalcolano a ogni `aggiorna()`/`resizeEvent` fra un minimo leggibile
+  e un massimo (130–220px) per riempire il pannello disponibile in base a
+  quante stanze sono visitate (griglia automatica, non le posizioni
+  disegnate a mano nell'editor: quelle sono libere, incompatibili con
+  celle uniformi). Griglia condivisa con l'editor via
+  `gui.mappa._posizioni_griglia`.
 - `regole.py` — costruzione/serializzazione regole nell'editor.
 - `analisi.py` — riferimenti incrociati, "Dove è usato", problemi,
   catena dei puzzle (`catena_puzzle`).
@@ -122,9 +142,9 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   scena vanno aperti con `QTimer.singleShot(0, ...)`.
 
 ## Stato attuale
-- `advcore` **1.16.1** · interfaccia `gui` **2.1.0** (mappa in un dock
-  ridimensionabile/richiudibile invece che colonna fissa nello splitter).
-- Suite: **76 test GUI + 10 script**, tutti verdi.
+- `advcore` **1.17.0** · interfaccia `gui` **2.2.0** (mini-mappa nel
+  player, popolata via via che si esplora l'avventura).
+- Suite: **83 test GUI + 10 script**, tutti verdi.
 - Documentazione: `README.md`, `advcore/DOCUMENTAZIONE.md`, `COSTRUIRE.md`,
   manuale d'uso (Word/PDF).
 
@@ -149,8 +169,13 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   centrale con i form a pannello di dettaglio (2.0.0); il layout a colonna
   fissa lasciava troppo poco spazio al form su schermi non ampi, quindi la
   mappa è passata a un `QDockWidget` ridimensionabile/richiudibile/flottante
-  (2.1.0). Possibili rifiniture: evidenziare sulla mappa le uscite della
-  stanza selezionata, mini-mappa nel player.
+  (2.1.0). Possibile rifinitura: evidenziare sulla mappa le uscite della
+  stanza selezionata.
+- **Mini-mappa nel player — FATTO (2.2.0)**: le stanze visitate compaiono
+  via via in un pannello a destra (`gui/mappa_player.py`), con le uscite
+  verso l'ignoto solo accennate (trattino o etichetta), mai svelate —
+  vedi mappa dei moduli. Richiesta dall'utente dopo aver visto la mappa
+  come piano di lavoro nell'editor.
 - **Validazione più profonda**: avvisi su timer mai avviati, dialoghi senza
   uscita, oggetti irraggiungibili, finali non collegati.
 - **Anteprima con "stato di gioco" ispezionabile**: pannello che mostra flag,

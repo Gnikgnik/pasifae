@@ -25,6 +25,22 @@ def _destinazione(uscita):
     return uscita["to"] if isinstance(uscita, dict) else uscita
 
 
+def uscite_visibili(mondo: Mondo, stanza) -> list[tuple[str, str]]:
+    """Uscite attualmente sbloccate di una stanza (le condizionate non
+    ancora sbloccate restano fuori), come coppie (direzione, id_destinazione).
+    Duplica il filtro di Motore._uscite_visibili: qui serve anche la
+    destinazione, non solo l'etichetta mostrata al giocatore, per poter
+    disegnare i collegamenti sulla mappa (editor e mini-mappa del player)."""
+    out = []
+    for direzione, uscita in stanza.uscite.items():
+        if isinstance(uscita, dict):
+            flag = uscita.get("se")
+            if flag and not mondo.flags.get(flag):
+                continue
+        out.append((direzione, _destinazione(uscita)))
+    return out
+
+
 def _layout(mondo: Mondo):
     """Assegna coordinate (x,y) alle stanze via BFS sulle uscite cardinali.
     Ritorna (coord, isolate)."""

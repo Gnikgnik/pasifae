@@ -1,5 +1,27 @@
 # Pasifae — cronologia delle versioni
 
+## gui 2.2.0
+Mini-mappa nel Pasifae Player: una terza colonna a destra (dopo
+illustrazione e trascrizione) che si popola via via che si esplora
+l'avventura. Sola lettura — nessun drag, nessun menu contestuale, solo
+`PannelloImmagine`-style — mostra un riquadro per ogni stanza già
+visitata (evidenziata quella corrente), una linea per ogni collegamento
+fra due stanze visitate. Dalle stanze visitate, le uscite verso
+l'ignoto restano un breve trattino verso il bordo per le direzioni
+cardinali, o un'etichetta "altre uscite: …" per quelle non cardinali
+(su/giù/dentro/fuori): indicano che di là si può andare, senza
+svelarne nome o contenuto — le uscite condizionate non ancora
+sbloccate restano del tutto invisibili. I riquadri non hanno una
+dimensione fissa: si ridimensionano da soli fra un minimo leggibile e un
+massimo (130–220px) per riempire lo spazio del pannello in base a quante
+stanze sono visitate in quel momento — poche stanze restano comode e
+centrate, molte si stringono fino al minimo e poi si scorrono. Nuovo
+toggle "Mappa" nel menu Visualizza; sotto `Player.LARGHEZZA_MIN_MAPPA`
+(900px) la mappa lascia il posto alla colonna di lettura, che resta la
+priorità su finestre strette. Nuovo modulo `gui/mappa_player.py`; la
+griglia automatica (`_posizioni_griglia`) è stata estratta a livello di
+modulo in `gui/mappa.py` per essere condivisa con l'editor.
+
 ## gui 2.1.0
 La mappa lascia la colonna fissa dello splitter e diventa un **pannello
 dock** (`QDockWidget`, ancorato a destra di default): ridimensionabile,
@@ -120,6 +142,17 @@ e la voce «Tutti i file» per i salvataggi nati senza estensione.
 Nel catalogo degli effetti, voci per i nuovi `apri_oggetto`/`chiudi_oggetto`
 del motore (advcore 1.12.0), con selettore dei soli contenitori; aggiornati
 i riferimenti incrociati.
+
+
+## advcore 1.17.0
+Nuova funzione pura `uscite_visibili(mondo, stanza)` in `advcore/mappa.py`
+(esportata da `advcore`): le uscite attualmente sbloccate di una stanza
+(le condizionate non ancora sbloccate restano fuori) come coppie
+(direzione, id_destinazione) — duplica il filtro di
+`Motore._uscite_visibili`, ma restituisce anche la destinazione, non solo
+l'etichetta, per poter disegnare i collegamenti sulla mappa. Nata per la
+mini-mappa del player (gui 2.2.0); nessun cambiamento al comportamento
+esistente.
 
 
 ## advcore 1.16.1

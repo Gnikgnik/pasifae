@@ -35,6 +35,39 @@ OPPOSTE = {"nord": "sud", "sud": "nord", "est": "ovest", "ovest": "est",
            "su": "giu", "giu": "su", "dentro": "fuori", "fuori": "dentro"}
 
 
+def _posizioni_griglia(mondo):
+    """Coordinate di griglia per ogni stanza (BFS di advcore.mappa._layout,
+    le isolate in una riga sotto), normalizzate a partire da (0, 0)."""
+    coord, isolate = _layout(mondo)
+    if not coord and not isolate:
+        return {}
+    maxy = max((y for _, y in coord.values()), default=-1)
+    for i, sid in enumerate(isolate):
+        coord[sid] = (i, maxy + 2)
+    minx = min(x for x, _ in coord.values())
+    miny = min(y for _, y in coord.values())
+    return {sid: (x - minx, y - miny) for sid, (x, y) in coord.items()}
+
+
+def _posizioni_pixel(mondo):
+    """Angolo alto-sinistro di ogni riquadro: prima le posizioni salvate
+    dall'autore (meta["editor"]["mappa"]), per le altre stanze la griglia
+    automatica. Condivisa fra l'editor (PannelloMappa) e la mini-mappa del
+    player (gui/mappa_player.py)."""
+    griglia = _posizioni_griglia(mondo)
+    salvate = mondo.meta.get("editor", {}).get("mappa", {})
+    pos = {}
+    for sid, (gx, gy) in griglia.items():
+        p = salvate.get(sid)
+        if (isinstance(p, (list, tuple)) and len(p) == 2
+                and all(isinstance(v, (int, float)) for v in p)):
+            pos[sid] = (float(p[0]), float(p[1]))
+        else:
+            pos[sid] = (gx * CELL_W + (CELL_W - BOX_W) / 2,
+                        gy * CELL_H + (CELL_H - BOX_H) / 2)
+    return pos
+
+
 class VistaMappa(QGraphicsView):
     """QGraphicsView con zoom alla rotellina e trascinamento per scorrere."""
 
@@ -192,34 +225,10 @@ class PannelloMappa(QWidget):
     # ---------- costruzione della scena ----------
 
     def _posizioni_griglia(self):
-        coord, isolate = _layout(self.mondo)
-        if not coord and not isolate:
-            return {}
-        # le stanze non posizionabili vanno in una riga sotto la griglia
-        maxy = max((y for _, y in coord.values()), default=-1)
-        for i, sid in enumerate(isolate):
-            coord[sid] = (i, maxy + 2)
-        # normalizza in modo che il minimo sia (0,0)
-        minx = min(x for x, _ in coord.values())
-        miny = min(y for _, y in coord.values())
-        return {sid: (x - minx, y - miny) for sid, (x, y) in coord.items()}
+        return _posizioni_griglia(self.mondo)
 
     def _posizioni_pixel(self):
-        """Angolo alto-sinistro di ogni riquadro: prima le posizioni salvate
-        dall'autore (meta["editor"]["mappa"]), per le altre stanze la griglia
-        automatica."""
-        griglia = self._posizioni_griglia()
-        salvate = self.mondo.meta.get("editor", {}).get("mappa", {})
-        pos = {}
-        for sid, (gx, gy) in griglia.items():
-            p = salvate.get(sid)
-            if (isinstance(p, (list, tuple)) and len(p) == 2
-                    and all(isinstance(v, (int, float)) for v in p)):
-                pos[sid] = (float(p[0]), float(p[1]))
-            else:
-                pos[sid] = (gx * CELL_W + (CELL_W - BOX_W) / 2,
-                            gy * CELL_H + (CELL_H - BOX_H) / 2)
-        return pos
+        return _posizioni_pixel(self.mondo)
 
     def _costruisci(self):
         pos = self._posizioni_pixel()

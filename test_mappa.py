@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from advcore import carica_mondo, mappa_testuale, Mondo, Stanza, Oggetto
+from advcore import carica_mondo, mappa_testuale, uscite_visibili, Mondo, Stanza, Oggetto
 
 
 def test_mappa_griglia_cardinale():
@@ -50,6 +50,23 @@ def test_mappa_collegamenti_speciali_e_isolate():
 def test_mappa_vuota():
     m = Mondo()
     assert "nessuna stanza" in mappa_testuale(m)
+
+
+def test_uscite_visibili_esclude_condizionate_bloccate():
+    """Un'uscita condizionata resta fuori finché il flag non è impostato;
+    un'uscita semplice (senza «se») è sempre visibile."""
+    m = Mondo(meta={"stanza_iniziale": "a"})
+    m.stanze["a"] = Stanza(id="a", nome="A", desc="", uscite={
+        "nord": "b",
+        "sud": {"to": "c", "se": "porta_aperta"},
+    })
+    m.stanze["b"] = Stanza(id="b", nome="B", desc="", uscite={})
+    m.stanze["c"] = Stanza(id="c", nome="C", desc="", uscite={})
+
+    assert uscite_visibili(m, m.stanze["a"]) == [("nord", "b")]
+
+    m.flags["porta_aperta"] = True
+    assert uscite_visibili(m, m.stanze["a"]) == [("nord", "b"), ("sud", "c")]
 
 
 def main() -> int:
