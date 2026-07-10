@@ -62,7 +62,8 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   di `props["png"]`), condivisa dal verbo builtin "parla" e dall'effetto
   di regola `avvia_dialogo` (apre il dialogo di un oggetto qualsiasi
   agganciandolo al verbo che l'autore preferisce, es. "usa" su un
-  terminale: si usa, non si parla).
+  terminale: si usa, non si parla). La voce «0.» del menu dialogo è
+  `props["etichetta_uscita"]` (fallback: `"saluta e vai"`, invariato).
 - `testo.py` — testo dinamico: `{flag}` e frammenti `[flag: ...]`.
 - `storage.py` — carica/salva l'avventura (JSON).
 - `salvataggio.py` — salva/carica lo stato della partita.
@@ -152,9 +153,9 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   scena vanno aperti con `QTimer.singleShot(0, ...)`.
 
 ## Stato attuale
-- `advcore` **1.18.0** · interfaccia `gui` **2.3.0** (dialoghi apribili
+- `advcore` **1.18.1** · interfaccia `gui` **2.3.1** (dialoghi apribili
   da qualunque verbo/oggetto con l'effetto `avvia_dialogo`, non solo dal
-  "parla" sui png; congedo personalizzabile).
+  "parla" sui png; congedo e voce di uscita del menu personalizzabili).
 - Suite: **84 test GUI + 10 script**, tutti verdi.
 - Documentazione: `README.md`, `advcore/DOCUMENTAZIONE.md`, `COSTRUIRE.md`,
   manuale d'uso (Word/PDF).
@@ -172,11 +173,14 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   nuovi verbi con effetti, senza toccare il codice.
 - **Stati dei contenitori e dei liquidi**: versare, riempire, mescolare — utile
   per enigmi più ricchi.
-- **Dialoghi disaccoppiati da "parla"/png — FATTO (1.18.0)**: un oggetto
-  qualsiasi (non solo i personaggi) può avere saluto/battute/congedo e
-  aprirli con qualunque verbo tramite l'effetto di regola `avvia_dialogo`
-  — nato dal caso concreto di un terminale ("si usa", non "si parla",
-  e "Saluti terminale" non ha senso). Il verbo builtin "parla" non è
+- **Dialoghi disaccoppiati da "parla"/png — FATTO (1.18.0, rifinito in
+  1.18.1)**: un oggetto qualsiasi (non solo i personaggi) può avere
+  saluto/battute/congedo e aprirli con qualunque verbo tramite l'effetto
+  di regola `avvia_dialogo` — nato dal caso concreto di un terminale
+  ("si usa", non "si parla", e "Saluti terminale" non ha senso). Anche
+  la voce «0.» del menu ("saluta e vai") è personalizzabile
+  (`props["etichetta_uscita"]`, 1.18.1: stesso problema del congedo,
+  emerso testando l'avventura vera). Il verbo builtin "parla" non è
   cambiato: resta bloccato sui non-png.
 
 ### Editor / Player

@@ -1178,9 +1178,12 @@ class Editor(QMainWindow):
         e_congedo.setPlaceholderText(
             "vuoto = «Saluti «nome»» (default); qui puoi scrivere un "
             "congedo diverso, utile se non è un personaggio (es. un terminale)")
+        e_uscita = QLineEdit(props.get("etichetta_uscita", ""))
+        e_uscita.setPlaceholderText("vuoto = «saluta e vai» (default)")
         form.addRow(self._campetto("stato iniziale conversazione"), s_stato)
         form.addRow(self._campetto("saluto"), e_saluto)
         form.addRow(self._campetto("congedo"), e_congedo)
+        form.addRow(self._campetto("voce «0.» del menu dialogo"), e_uscita)
         dialogo_lav = [copy.deepcopy(b) for b in props.get("dialogo", [])]
         form.addRow(self._battute_widget(dialogo_lav))
 
@@ -1227,6 +1230,10 @@ class Editor(QMainWindow):
                 props["congedo"] = e_congedo.toPlainText()
             else:
                 props.pop("congedo", None)
+            if e_uscita.text().strip():
+                props["etichetta_uscita"] = e_uscita.text().strip()
+            else:
+                props.pop("etichetta_uscita", None)
             if dialogo_lav:
                 props["dialogo"] = dialogo_lav
             else:

@@ -154,6 +154,21 @@ def test_congedo_personalizzato_a_battute_esaurite():
     assert m.conversazione == ""
 
 
+def test_etichetta_uscita_personalizzata():
+    """La voce «0.» del menu di dialogo è personalizzabile (props
+    «etichetta_uscita»): «(saluta e vai)» non ha senso per un terminale.
+    Senza la prop, resta l'etichetta di default, invariata."""
+    m, mot = _mondo_terminale()
+    m.oggetti["terminale"].props["etichetta_uscita"] = "torna alla shell"
+    apertura = mot.esegui("usa terminale")
+    assert "0. (torna alla shell)" in apertura
+    assert "saluta e vai" not in apertura
+
+    m2, mot2 = _mondo_terminale()
+    apertura2 = mot2.esegui("usa terminale")
+    assert "0. (saluta e vai)" in apertura2
+
+
 def main() -> int:
     for nome, fn in sorted(globals().items()):
         if nome.startswith("test_") and callable(fn):

@@ -118,7 +118,8 @@ def menu_dialogo(mondo: Mondo, o) -> str:
     righe = []
     for n, (_i, b) in enumerate(battute_disponibili(mondo, o), start=1):
         righe.append(f"  {n}. {b['etichetta']}")
-    righe.append("  0. (saluta e vai)")
+    etichetta_uscita = o.props.get("etichetta_uscita") or "saluta e vai"
+    righe.append(f"  0. ({etichetta_uscita})")
     return "\n".join(righe)
 
 

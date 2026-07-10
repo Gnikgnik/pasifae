@@ -849,10 +849,11 @@ def test_elimina_regola(qtbot, monkeypatch):
 
 
 def test_form_oggetto_salva_congedo(qtbot):
-    """Il campo «congedo» del form Oggetto (accanto a «saluto») si salva in
-    props; vuoto lo rimuove. Disponibile su qualunque oggetto, non solo sui
-    png: un terminale può avere il suo, senza spuntare «personaggio»."""
-    from PySide6.QtWidgets import QPlainTextEdit, QPushButton
+    """I campi «congedo» ed «etichetta_uscita» del form Oggetto (accanto a
+    «saluto») si salvano in props; vuoti li rimuovono. Disponibili su
+    qualunque oggetto, non solo sui png: un terminale può avere i suoi,
+    senza spuntare «personaggio»."""
+    from PySide6.QtWidgets import QLineEdit, QPlainTextEdit, QPushButton
     m = mondo_semplice()
     e = Editor(None)
     qtbot.addWidget(e)
@@ -864,16 +865,22 @@ def test_form_oggetto_salva_congedo(qtbot):
     campi = e.dettaglio.widget().findChildren(QPlainTextEdit)
     e_congedo = campi[2]      # ordine di creazione: desc, saluto, congedo
     e_congedo.setPlainText("La lampada si spegne con un ronzio.")
+    e_uscita = next(w for w in e.dettaglio.widget().findChildren(QLineEdit)
+                    if w.placeholderText().startswith("vuoto = «saluta e vai»"))
+    e_uscita.setText("smetti di parlarci")
     applica = next(b for b in e.dettaglio.widget().findChildren(QPushButton)
                    if b.text() == "Applica")
     qtbot.mouseClick(applica, Qt.LeftButton)
 
     assert (m.oggetti["lampada"].props.get("congedo")
             == "La lampada si spegne con un ronzio.")
+    assert m.oggetti["lampada"].props.get("etichetta_uscita") == "smetti di parlarci"
 
     e_congedo.setPlainText("")
+    e_uscita.setText("")
     qtbot.mouseClick(applica, Qt.LeftButton)
     assert "congedo" not in m.oggetti["lampada"].props
+    assert "etichetta_uscita" not in m.oggetti["lampada"].props
 
 
 # --------------------------- regressione: Invio nell'anteprima ---------------------------

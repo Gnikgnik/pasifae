@@ -1,5 +1,11 @@
 # Pasifae — cronologia delle versioni
 
+## gui 2.3.1
+Nel form Oggetto, nuovo campo **voce «0.» del menu dialogo** (accanto a
+«congedo»): personalizza l'etichetta della riga di uscita nel menu
+delle battute (default «saluta e vai», anche questo senza senso su un
+terminale). Vedi advcore 1.18.1.
+
 ## gui 2.3.0
 Nell'editor, il form Oggetto guadagna il campo **congedo**, accanto a
 «saluto»: personalizza il messaggio di chiusura di un dialogo (vuoto =
@@ -152,6 +158,14 @@ e la voce «Tutti i file» per i salvataggi nati senza estensione.
 Nel catalogo degli effetti, voci per i nuovi `apri_oggetto`/`chiudi_oggetto`
 del motore (advcore 1.12.0), con selettore dei soli contenitori; aggiornati
 i riferimenti incrociati.
+
+
+## advcore 1.18.1
+**`props["etichetta_uscita"]`**: personalizza la voce «0.» del menu di
+dialogo (`menu_dialogo` in `advcore/rules.py`), per default `"saluta e
+vai"` — invariato senza la prop. Emerso testando l'avventura con il
+terminale (1.18.0): il congedo era personalizzabile, ma la riga del
+menu che lo introduce no.
 
 
 ## advcore 1.18.0
