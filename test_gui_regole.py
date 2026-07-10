@@ -42,6 +42,17 @@ def test_val_da_testo():
     assert R.val_da_testo("ciao") == "ciao"
 
 
+def test_avvia_dialogo():
+    # assemblaggio, inverso (per la modifica) e riassunto leggibile: apre il
+    # dialogo di un oggetto qualsiasi (non serve che sia un png), utile per
+    # agganciarlo a un verbo diverso da "parla" (es. "usa" su un terminale)
+    assert R.ASSEMBLA["avvia_dialogo"]({"oggetto": "terminale"}) == \
+        {"avvia_dialogo": "terminale"}
+    assert R.da_dict({"avvia_dialogo": "terminale"}) == \
+        ("avvia_dialogo", {"oggetto": "terminale"})
+    assert "terminale" in R.riassunto_effetto({"avvia_dialogo": "terminale"})
+
+
 def test_riassunti_e_innesco():
     assert "p" in R.riassunto_condizione({"flag": "p", "uguale": True})
     assert R.quando_breve({"evento": "turno"}) == "a ogni turno"

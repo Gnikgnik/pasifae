@@ -848,6 +848,34 @@ def test_elimina_regola(qtbot, monkeypatch):
     assert len(e.mondo.regole) == n - 1
 
 
+def test_form_oggetto_salva_congedo(qtbot):
+    """Il campo «congedo» del form Oggetto (accanto a «saluto») si salva in
+    props; vuoto lo rimuove. Disponibile su qualunque oggetto, non solo sui
+    png: un terminale può avere il suo, senza spuntare «personaggio»."""
+    from PySide6.QtWidgets import QPlainTextEdit, QPushButton
+    m = mondo_semplice()
+    e = Editor(None)
+    qtbot.addWidget(e)
+    e.mondo = m
+    e._carica_in_ui()
+    e.show()
+    e._vai_a("Oggetti", "lampada")
+
+    campi = e.dettaglio.widget().findChildren(QPlainTextEdit)
+    e_congedo = campi[2]      # ordine di creazione: desc, saluto, congedo
+    e_congedo.setPlainText("La lampada si spegne con un ronzio.")
+    applica = next(b for b in e.dettaglio.widget().findChildren(QPushButton)
+                   if b.text() == "Applica")
+    qtbot.mouseClick(applica, Qt.LeftButton)
+
+    assert (m.oggetti["lampada"].props.get("congedo")
+            == "La lampada si spegne con un ronzio.")
+
+    e_congedo.setPlainText("")
+    qtbot.mouseClick(applica, Qt.LeftButton)
+    assert "congedo" not in m.oggetti["lampada"].props
+
+
 # --------------------------- regressione: Invio nell'anteprima ---------------------------
 
 def test_anteprima_invio_processa_comando(qtbot):

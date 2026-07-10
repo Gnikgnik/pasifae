@@ -1166,13 +1166,21 @@ class Editor(QMainWindow):
         form.addRow("", c_fuga)
         form.addRow(self._campetto("intro scontro"), e_intro)
 
-        # --- dialogo a livelli (per i png) ---
+        # --- dialogo a livelli (funziona su qualunque oggetto, non solo sui
+        # png: un terminale può avere un suo saluto/congedo e battute, aperte
+        # da un verbo diverso da "parla" con l'effetto avvia_dialogo) ---
         s_stato = QSpinBox(); s_stato.setRange(0, 99)
         s_stato.setValue(int(props.get("stato_iniziale", 0)))
         e_saluto = QPlainTextEdit(props.get("saluto", ""))
         e_saluto.setMinimumHeight(64)
+        e_congedo = QPlainTextEdit(props.get("congedo", ""))
+        e_congedo.setMinimumHeight(64)
+        e_congedo.setPlaceholderText(
+            "vuoto = «Saluti «nome»» (default); qui puoi scrivere un "
+            "congedo diverso, utile se non è un personaggio (es. un terminale)")
         form.addRow(self._campetto("stato iniziale conversazione"), s_stato)
         form.addRow(self._campetto("saluto"), e_saluto)
+        form.addRow(self._campetto("congedo"), e_congedo)
         dialogo_lav = [copy.deepcopy(b) for b in props.get("dialogo", [])]
         form.addRow(self._battute_widget(dialogo_lav))
 
@@ -1215,6 +1223,10 @@ class Editor(QMainWindow):
                 props["saluto"] = e_saluto.toPlainText()
             else:
                 props.pop("saluto", None)
+            if e_congedo.toPlainText().strip():
+                props["congedo"] = e_congedo.toPlainText()
+            else:
+                props.pop("congedo", None)
             if dialogo_lav:
                 props["dialogo"] = dialogo_lav
             else:

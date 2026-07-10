@@ -46,6 +46,7 @@ TIPI_EFFETTO = [
     ("inizia scontro con png", "inizia_scontro"),
     ("avvia un timer", "avvia_timer"),
     ("ferma un timer", "ferma_timer"),
+    ("avvia dialogo (saluto + battute)", "avvia_dialogo"),
 ]
 
 # ----- campi per ciascun tipo: (id_campo, etichetta, genere_widget) -----
@@ -78,6 +79,9 @@ CAMPI = {
     "inizia_scontro": [("png", "con il png", "png")],
     "avvia_timer": [("nome", "nome timer", "timer"), ("turni", "fra (turni)", "intero")],
     "ferma_timer": [("nome", "nome timer", "timer")],
+    # non "png": funziona su qualunque oggetto (un terminale non è un
+    # personaggio, ma può avere un dialogo suo)
+    "avvia_dialogo": [("oggetto", "apre il dialogo di", "oggetto")],
 }
 
 # ----- assemblaggio: valori {id_campo: valore} -> dizionario del motore -----
@@ -109,6 +113,7 @@ ASSEMBLA = {
     "inizia_scontro": lambda v: {"inizia_scontro": v["png"]},
     "avvia_timer": lambda v: {"avvia_timer": v["nome"], "turni": v["turni"]},
     "ferma_timer": lambda v: {"ferma_timer": v["nome"]},
+    "avvia_dialogo": lambda v: {"avvia_dialogo": v["oggetto"]},
 }
 
 
@@ -231,6 +236,8 @@ def da_dict(voce: dict):
         return "avvia_timer", {"nome": e["avvia_timer"], "turni": e.get("turni", 1)}
     if "ferma_timer" in e:
         return "ferma_timer", {"nome": e["ferma_timer"]}
+    if "avvia_dialogo" in e:
+        return "avvia_dialogo", {"oggetto": e["avvia_dialogo"]}
     return None, {}
 
 
@@ -318,6 +325,8 @@ def riassunto_effetto(e: dict) -> str:
         return f"avvia timer «{e['avvia_timer']}» (fra {e.get('turni', 1)})"
     if "ferma_timer" in e:
         return f"ferma timer «{e['ferma_timer']}»"
+    if "avvia_dialogo" in e:
+        return f"avvia il dialogo di «{e['avvia_dialogo']}»"
     return "(effetto)"
 
 

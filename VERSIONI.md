@@ -1,5 +1,15 @@
 # Pasifae — cronologia delle versioni
 
+## gui 2.3.0
+Nell'editor, il form Oggetto guadagna il campo **congedo**, accanto a
+«saluto»: personalizza il messaggio di chiusura di un dialogo (vuoto =
+resta «Saluti «nome»»). Nel catalogo degli effetti delle regole, nuova
+voce **"avvia dialogo (saluto + battute)"** (`avvia_dialogo`): apre il
+dialogo di un oggetto qualsiasi — non serve spuntare "personaggio (png)"
+— agganciandolo al verbo che si preferisce tramite una regola dell'autore.
+Pensato per oggetti come un terminale, che si "usano" e non si
+"parlano". Vedi advcore 1.18.0.
+
 ## gui 2.2.0
 Mini-mappa nel Pasifae Player: una terza colonna a destra (dopo
 illustrazione e trascrizione) che si popola via via che si esplora
@@ -142,6 +152,24 @@ e la voce «Tutti i file» per i salvataggi nati senza estensione.
 Nel catalogo degli effetti, voci per i nuovi `apri_oggetto`/`chiudi_oggetto`
 del motore (advcore 1.12.0), con selettore dei soli contenitori; aggiornati
 i riferimenti incrociati.
+
+
+## advcore 1.18.0
+Dialoghi disaccoppiati dal verbo "parla" e dal ruolo di "personaggio":
+- **`props["congedo"]`**: personalizza il messaggio di chiusura di un
+  dialogo (per default, invariato, `"Saluti «nome»."`). Utile per un
+  oggetto che non è un personaggio — un terminale, per cui salutare non
+  ha senso.
+- **Nuovo effetto di regola `{"avvia_dialogo": id_oggetto}`**: apre il
+  dialogo (saluto + battute) di un oggetto qualunque, non solo dei png.
+  Una regola dell'autore può agganciarlo a qualsiasi verbo — es. "usa
+  terminale" invece di "parla con terminale", perché un terminale si usa,
+  non si parla. La logica di apertura (`avvia_conversazione`,
+  `battute_disponibili`, `menu_dialogo`) è stata estratta da `Motore` a
+  funzioni pure in `advcore/rules.py`, condivise dal verbo builtin
+  "parla" e dal nuovo effetto — nessun cambiamento al comportamento
+  esistente di "parla" (resta bloccato sui non-png). Vedi gui 2.3.0 per
+  il supporto nell'editor.
 
 
 ## advcore 1.17.0

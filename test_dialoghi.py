@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from advcore import carica_mondo, Motore
+from advcore import carica_mondo, Motore, Mondo, Stanza, Oggetto, Regola
 
 
 def _gioca():
@@ -83,6 +83,75 @@ def test_combinazione_simmetrica():
 def test_usa_senza_regola():
     m, mot = _gioca()
     assert "usar" in mot.esegui("usa lampada").lower()   # messaggio di default
+
+
+def _mondo_terminale(congedo=None):
+    """Un oggetto NON marcato «png» (un terminale), con un dialogo aperto
+    dal verbo «usa» tramite una regola (effetto avvia_dialogo), non da
+    «parla» — vedi test_avvia_dialogo_da_regola_su_oggetto_non_png."""
+    m = Mondo(meta={"titolo": "Terminale", "stanza_iniziale": "qui"})
+    m.stanze["qui"] = Stanza(id="qui", nome="Qui", desc="Una stanza con un terminale.")
+    props = {
+        "scenario": True,
+        "saluto": "Il cursore lampeggia in attesa di un comando.",
+        "dialogo": [{"etichetta": "Chiedi lo stato del sistema",
+                     "testo": "SISTEMA OK.", "se": [], "allora": [],
+                     "una_volta": False}],
+    }
+    if congedo is not None:
+        props["congedo"] = congedo
+    m.oggetti["terminale"] = Oggetto(id="terminale", nome="terminale",
+                                     nomi=["terminale"], posizione="qui",
+                                     props=props)
+    m.regole.append(Regola(id="r_usa_terminale",
+                           quando={"verbo": "usa", "oggetto": "terminale"},
+                           allora=[{"avvia_dialogo": "terminale"}]))
+    mot = Motore(m)
+    mot.avvia()
+    return m, mot
+
+
+def test_avvia_dialogo_da_regola_su_oggetto_non_png():
+    """Un oggetto non marcato «png» (un terminale) può avviare un dialogo
+    se una regola dell'autore lo aggancia a un verbo qualsiasi (qui «usa»)
+    con l'effetto avvia_dialogo — «parla» resta bloccato dal controllo sul
+    png, così l'autore sceglie il verbo giusto per l'oggetto giusto."""
+    m, mot = _mondo_terminale()
+    bloccato = mot.esegui("parla con terminale")
+    assert "conversazione" in bloccato.lower()
+    assert m.conversazione == ""
+
+    apertura = mot.esegui("usa terminale")
+    assert "cursore" in apertura.lower()
+    assert "Chiedi lo stato" in apertura
+    assert m.conversazione == "terminale"
+
+    risposta = mot.esegui("1")
+    assert "SISTEMA OK" in risposta
+
+
+def test_congedo_personalizzato():
+    """Il messaggio di congedo di un dialogo è personalizzabile (props
+    «congedo»): utile per un terminale, per cui «Saluti terminale.» non
+    avrebbe senso. Senza la prop, il motore usa il saluto di default."""
+    m, mot = _mondo_terminale(congedo="Il terminale torna alla schermata inattiva.")
+    mot.esegui("usa terminale")
+    assert mot.esegui("esci") == "Il terminale torna alla schermata inattiva."
+
+    m2, mot2 = _mondo_terminale()
+    mot2.esegui("usa terminale")
+    assert mot2.esegui("esci") == "Saluti terminale."
+
+
+def test_congedo_personalizzato_a_battute_esaurite():
+    """Il congedo personalizzato vale anche quando le battute finiscono da
+    sole (non solo quando il giocatore scrive «esci»)."""
+    m, mot = _mondo_terminale(congedo="Il terminale torna alla schermata inattiva.")
+    m.oggetti["terminale"].props["dialogo"][0]["una_volta"] = True
+    mot.esegui("usa terminale")
+    fine = mot.esegui("1")
+    assert "Non hai altro da chiedere. Il terminale torna alla schermata inattiva." in fine
+    assert m.conversazione == ""
 
 
 def main() -> int:

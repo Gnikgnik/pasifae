@@ -36,6 +36,11 @@ Vocabolario degli EFFETTI (campi "allora"/"altrimenti"):
   {"inizia_scontro": id_png}              avvia un combattimento con il png
   {"avvia_timer": nome, "turni": k}        avvia un timer che scade fra k turni
   {"ferma_timer": nome}                    annulla un timer in corso
+  {"avvia_dialogo": id_oggetto}            apre il dialogo (saluto + battute)
+                                           dell'oggetto — come il verbo builtin
+                                           "parla", ma agganciabile a qualunque
+                                           verbo/oggetto tramite una regola
+                                           dell'autore (non richiede props["png"])
 """
 
 from __future__ import annotations
@@ -92,6 +97,50 @@ def _valuta_una(c: dict, mondo: Mondo) -> bool:
     if "mosse_min" in c:
         return mondo.mosse >= c["mosse_min"]
     return False
+
+
+def battute_disponibili(mondo: Mondo, o) -> list[tuple[int, dict]]:
+    """Battute di un dialogo attualmente selezionabili: (indice, battuta).
+
+    Pura logica di modello (condiviso da Motore._battute_disponibili e
+    dall'effetto avvia_dialogo): non richiede che l'oggetto sia un png."""
+    disp = []
+    for i, b in enumerate(o.props.get("dialogo", [])):
+        if b.get("una_volta") and mondo.flags.get(f"__dlg_{o.id}_{i}"):
+            continue
+        if not valuta_condizioni(b.get("se", []), mondo):
+            continue
+        disp.append((i, b))
+    return disp
+
+
+def menu_dialogo(mondo: Mondo, o) -> str:
+    righe = []
+    for n, (_i, b) in enumerate(battute_disponibili(mondo, o), start=1):
+        righe.append(f"  {n}. {b['etichetta']}")
+    righe.append("  0. (saluta e vai)")
+    return "\n".join(righe)
+
+
+def avvia_conversazione(mondo: Mondo, o) -> str:
+    """Apre il dialogo di un oggetto: saluto (se presente) + primo menu, o
+    chiusura immediata se non ci sono battute disponibili. Condivisa dal
+    verbo builtin "parla" e dall'effetto di regola "avvia_dialogo", così
+    un autore può agganciare l'apertura del dialogo a un verbo qualsiasi
+    (es. "usa" su un terminale, che non è un personaggio/png)."""
+    parti = []
+    if o.props.get("saluto"):
+        parti.append(o.props["saluto"])
+    # imposto l'oggetto corrente PRIMA di filtrare le battute, così le
+    # condizioni/effetti di stato sanno con chi/cosa si sta interagendo
+    mondo.conversazione = o.id
+    if not battute_disponibili(mondo, o):
+        mondo.conversazione = ""
+        parti.append(f"{o.nome.capitalize()} non ha nulla da dirti.")
+        return "\n".join(parti)
+    parti.append(menu_dialogo(mondo, o))
+    parti.append("(scegli un numero)")
+    return "\n".join(parti)
 
 
 def _stato_conversazione(mondo: Mondo) -> int:
@@ -169,3 +218,7 @@ def _esegui_uno(e: dict, mondo: Mondo, out: list[str]) -> None:
         mondo.timer[e["avvia_timer"]] = int(e.get("turni", 1))
     elif "ferma_timer" in e:
         mondo.timer.pop(e["ferma_timer"], None)
+    elif "avvia_dialogo" in e:
+        o = mondo.oggetti.get(e["avvia_dialogo"])
+        if o is not None:
+            out.append(avvia_conversazione(mondo, o))

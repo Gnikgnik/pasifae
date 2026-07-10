@@ -53,9 +53,16 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
 **`advcore/` — il motore (niente I/O):**
 - `model.py` — dataclass del mondo: Mondo, Stanza, Oggetto, Verbo, Regola.
 - `engine.py` — `Motore`: parser + applicazione regole + verbi predefiniti,
-  movimento, dialoghi, combattimento, timer.
+  movimento, dialoghi, combattimento, timer. Il congedo di un dialogo è
+  `props["congedo"]` (fallback: `"Saluti «nome»."`, invariato).
 - `parser.py` — verbo + preposizione + oggetto; sinonimi e direzioni.
-- `rules.py` — valutazione condizioni (NON/OR/E, confronti) ed effetti.
+- `rules.py` — valutazione condizioni (NON/OR/E, confronti) ed effetti;
+  anche l'apertura dei dialoghi (`avvia_conversazione`,
+  `battute_disponibili`, `menu_dialogo` — pura logica, nessun requisito
+  di `props["png"]`), condivisa dal verbo builtin "parla" e dall'effetto
+  di regola `avvia_dialogo` (apre il dialogo di un oggetto qualsiasi
+  agganciandolo al verbo che l'autore preferisce, es. "usa" su un
+  terminale: si usa, non si parla).
 - `testo.py` — testo dinamico: `{flag}` e frammenti `[flag: ...]`.
 - `storage.py` — carica/salva l'avventura (JSON).
 - `salvataggio.py` — salva/carica lo stato della partita.
@@ -92,7 +99,10 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   disegnate a mano nell'editor: quelle sono libere, incompatibili con
   celle uniformi). Griglia condivisa con l'editor via
   `gui.mappa._posizioni_griglia`.
-- `regole.py` — costruzione/serializzazione regole nell'editor.
+- `regole.py` — costruzione/serializzazione regole nell'editor; catalogo
+  degli effetti (`TIPI_EFFETTO`/`CAMPI`/`ASSEMBLA`/`da_dict`) allineato a
+  `advcore/rules.py`, incluso `avvia_dialogo` (campo di tipo "oggetto",
+  non "png": funziona su qualunque oggetto).
 - `analisi.py` — riferimenti incrociati, "Dove è usato", problemi,
   catena dei puzzle (`catena_puzzle`).
 - `catena.py` — finestra "Concatenazione dei puzzle" (albero dai finali).
@@ -142,9 +152,10 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   scena vanno aperti con `QTimer.singleShot(0, ...)`.
 
 ## Stato attuale
-- `advcore` **1.17.0** · interfaccia `gui` **2.2.0** (mini-mappa nel
-  player, popolata via via che si esplora l'avventura).
-- Suite: **83 test GUI + 10 script**, tutti verdi.
+- `advcore` **1.18.0** · interfaccia `gui` **2.3.0** (dialoghi apribili
+  da qualunque verbo/oggetto con l'effetto `avvia_dialogo`, non solo dal
+  "parla" sui png; congedo personalizzabile).
+- Suite: **84 test GUI + 10 script**, tutti verdi.
 - Documentazione: `README.md`, `advcore/DOCUMENTAZIONE.md`, `COSTRUIRE.md`,
   manuale d'uso (Word/PDF).
 
@@ -161,6 +172,12 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   nuovi verbi con effetti, senza toccare il codice.
 - **Stati dei contenitori e dei liquidi**: versare, riempire, mescolare — utile
   per enigmi più ricchi.
+- **Dialoghi disaccoppiati da "parla"/png — FATTO (1.18.0)**: un oggetto
+  qualsiasi (non solo i personaggi) può avere saluto/battute/congedo e
+  aprirli con qualunque verbo tramite l'effetto di regola `avvia_dialogo`
+  — nato dal caso concreto di un terminale ("si usa", non "si parla",
+  e "Saluti terminale" non ha senso). Il verbo builtin "parla" non è
+  cambiato: resta bloccato sui non-png.
 
 ### Editor / Player
 - **Mappa come piano di lavoro — FATTO (2.0.0, rivisto in 2.1.0)**: stanze

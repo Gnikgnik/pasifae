@@ -20,7 +20,10 @@ from dataclasses import replace
 
 from .model import Mondo, INVENTARIO
 from .parser import Parser, ComandoParser, VERBI_BUILTIN
-from .rules import valuta_condizioni, esegui_effetti
+from .rules import (
+    valuta_condizioni, esegui_effetti,
+    battute_disponibili, menu_dialogo, avvia_conversazione,
+)
 from .salvataggio import stato_partita, applica_stato
 from .testo import rendi_testo
 
@@ -484,35 +487,20 @@ class Motore:
 
     def _battute_disponibili(self, o):
         """Battute attualmente selezionabili: (indice, battuta)."""
-        disp = []
-        for i, b in enumerate(o.props.get("dialogo", [])):
-            if b.get("una_volta") and self.mondo.flags.get(f"__dlg_{o.id}_{i}"):
-                continue
-            if not valuta_condizioni(b.get("se", []), self.mondo):
-                continue
-            disp.append((i, b))
-        return disp
+        return battute_disponibili(self.mondo, o)
 
     def _menu_dialogo(self, o) -> str:
-        righe = []
-        for n, (_i, b) in enumerate(self._battute_disponibili(o), start=1):
-            righe.append(f"  {n}. {b['etichetta']}")
-        righe.append("  0. (saluta e vai)")
-        return "\n".join(righe)
+        return menu_dialogo(self.mondo, o)
 
     def _inizia_conversazione(self, o) -> str:
-        parti = []
-        if o.props.get("saluto"):
-            parti.append(o.props["saluto"])
-        # imposto il png corrente PRIMA di filtrare le battute, così le
-        # condizioni/effetti di stato sanno con chi si sta parlando
-        self.mondo.conversazione = o.id
-        if not self._battute_disponibili(o):
-            self.mondo.conversazione = ""
-            return "\n".join(parti + [f"{o.nome.capitalize()} non ha nulla da dirti."])
-        parti.append(self._menu_dialogo(o))
-        parti.append("(scegli un numero)")
-        return "\n".join(parti)
+        return avvia_conversazione(self.mondo, o)
+
+    def _congedo(self, o) -> str:
+        """Messaggio di chiusura di un dialogo: personalizzabile con
+        props["congedo"] (utile per un oggetto che non è un personaggio,
+        come un terminale, per cui «Saluti terminale.» non avrebbe senso).
+        Senza la prop, resta il saluto di default invariato."""
+        return o.props.get("congedo") or f"Saluti {o.nome}."
 
     def _dialogo(self, comando: str) -> str:
         o = self.mondo.oggetti.get(self.mondo.conversazione)
@@ -523,7 +511,7 @@ class Motore:
         if s in ("0", "esci", "basta", "addio", "arrivederci", "ciao",
                  "stop", "fine", "vai"):
             self.mondo.conversazione = ""
-            return f"Saluti {o.nome}."
+            return self._congedo(o)
         if not s.isdigit():
             return ("Sei in conversazione con " + o.nome
                     + ". Scegli il numero di un argomento, oppure «esci».\n"
@@ -547,7 +535,7 @@ class Motore:
             out.append(self._menu_dialogo(o))
         else:
             self.mondo.conversazione = ""
-            out.append(f"Non hai altro da chiedere. Saluti {o.nome}.")
+            out.append(f"Non hai altro da chiedere. {self._congedo(o)}")
         return "\n".join(out)
 
     # ------- combattimento (minimale, deterministico) -------
