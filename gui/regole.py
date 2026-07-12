@@ -37,6 +37,8 @@ TIPI_EFFETTO = [
     ("scarta oggetto (scarico/rovinato)", "scarta_oggetto"),
     ("apri contenitore", "apri_oggetto"),
     ("chiudi contenitore", "chiudi_oggetto"),
+    ("mostra oggetto nascosto", "mostra_oggetto"),
+    ("nascondi oggetto", "nascondi_oggetto"),
     ("stampa testo", "stampa"),
     ("teleporta giocatore", "teleporta"),
     ("vittoria", "vittoria"),
@@ -70,6 +72,8 @@ CAMPI = {
                        ("messaggio", "messaggio (facolt.)", "testo_lungo")],
     "apri_oggetto": [("oggetto", "contenitore", "contenitore")],
     "chiudi_oggetto": [("oggetto", "contenitore", "contenitore")],
+    "mostra_oggetto": [("oggetto", "oggetto", "oggetto")],
+    "nascondi_oggetto": [("oggetto", "oggetto", "oggetto")],
     "stampa": [("testo", "testo", "testo_lungo")],
     "teleporta": [("stanza", "verso la stanza", "stanza")],
     "vittoria": [("testo", "messaggio", "testo_lungo")],
@@ -104,6 +108,8 @@ ASSEMBLA = {
                                     if v.get("messaggio", "").strip() else {})),
     "apri_oggetto": lambda v: {"apri_oggetto": v["oggetto"]},
     "chiudi_oggetto": lambda v: {"chiudi_oggetto": v["oggetto"]},
+    "mostra_oggetto": lambda v: {"mostra_oggetto": v["oggetto"]},
+    "nascondi_oggetto": lambda v: {"nascondi_oggetto": v["oggetto"]},
     "stampa": lambda v: {"stampa": v["testo"]},
     "teleporta": lambda v: {"teleporta": v["stanza"]},
     "vittoria": lambda v: {"vittoria": v["testo"]},
@@ -218,6 +224,10 @@ def da_dict(voce: dict):
         return "apri_oggetto", {"oggetto": e["apri_oggetto"]}
     if "chiudi_oggetto" in e:
         return "chiudi_oggetto", {"oggetto": e["chiudi_oggetto"]}
+    if "mostra_oggetto" in e:
+        return "mostra_oggetto", {"oggetto": e["mostra_oggetto"]}
+    if "nascondi_oggetto" in e:
+        return "nascondi_oggetto", {"oggetto": e["nascondi_oggetto"]}
     if "stampa" in e:
         return "stampa", {"testo": e["stampa"]}
     if "teleporta" in e:
@@ -307,6 +317,10 @@ def riassunto_effetto(e: dict) -> str:
         return f"apre il contenitore «{e['apri_oggetto']}»"
     if "chiudi_oggetto" in e:
         return f"chiude il contenitore «{e['chiudi_oggetto']}»"
+    if "mostra_oggetto" in e:
+        return f"mostra «{e['mostra_oggetto']}» (lo rende visibile e prendibile)"
+    if "nascondi_oggetto" in e:
+        return f"nasconde «{e['nascondi_oggetto']}»"
     if "stampa" in e:
         return f"stampa: {e['stampa'][:40]}…" if len(e["stampa"]) > 40 else f"stampa: {e['stampa']}"
     if "teleporta" in e:

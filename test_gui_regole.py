@@ -35,6 +35,16 @@ def test_apri_chiudi_contenitore():
     assert "chiude" in R.riassunto_effetto({"chiudi_oggetto": "baule"})
 
 
+def test_mostra_nascondi_oggetto():
+    # assemblaggio, inverso (per la modifica) e riassunto leggibile
+    assert R.ASSEMBLA["mostra_oggetto"]({"oggetto": "chiave"}) == {"mostra_oggetto": "chiave"}
+    assert R.ASSEMBLA["nascondi_oggetto"]({"oggetto": "chiave"}) == {"nascondi_oggetto": "chiave"}
+    assert R.da_dict({"mostra_oggetto": "chiave"}) == ("mostra_oggetto", {"oggetto": "chiave"})
+    assert R.da_dict({"nascondi_oggetto": "chiave"}) == ("nascondi_oggetto", {"oggetto": "chiave"})
+    assert "chiave" in R.riassunto_effetto({"mostra_oggetto": "chiave"})
+    assert "chiave" in R.riassunto_effetto({"nascondi_oggetto": "chiave"})
+
+
 def test_val_da_testo():
     assert R.val_da_testo("vero") is True
     assert R.val_da_testo("falso") is False

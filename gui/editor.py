@@ -1137,6 +1137,7 @@ class Editor(QMainWindow):
         for chiave, etichetta in (
                 ("prendibile", "prendibile"),
                 ("scenario", "scenario (non elencato)"),
+                ("nascosto", "nascosto (invisibile finché non rivelato)"),
                 ("contenitore", "contenitore"), ("aperto", "aperto"),
                 ("indossabile", "indossabile"), ("png", "personaggio (png)")):
             cb = QCheckBox(etichetta)

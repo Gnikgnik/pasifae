@@ -1,5 +1,15 @@
 # Pasifae — cronologia delle versioni
 
+## gui 2.4.0
+Nuovo checkbox **nascosto** nel form Oggetto (accanto a scenario):
+un oggetto nascosto non compare nella descrizione della stanza né nel
+contenuto di un contenitore aperto, e il giocatore non può esaminarlo
+o prenderlo per nome finché resta tale — non solo "non elencato" come
+scenario, ma proprio irraggiungibile. Nel catalogo degli effetti delle
+regole, nuove voci **"mostra oggetto nascosto"** / **"nascondi
+oggetto"** (`mostra_oggetto`/`nascondi_oggetto`) per rivelarlo o
+nasconderlo di nuovo. Vedi advcore 1.19.0.
+
 ## gui 2.3.1
 Nel form Oggetto, nuovo campo **voce «0.» del menu dialogo** (accanto a
 «congedo»): personalizza l'etichetta della riga di uscita nel menu
@@ -158,6 +168,20 @@ e la voce «Tutti i file» per i salvataggi nati senza estensione.
 Nel catalogo degli effetti, voci per i nuovi `apri_oggetto`/`chiudi_oggetto`
 del motore (advcore 1.12.0), con selettore dei soli contenitori; aggiornati
 i riferimenti incrociati.
+
+
+## advcore 1.19.0
+**Oggetti nascosti**: `props["nascosto"]` toglie un oggetto dalla vista
+del giocatore — non compare nella descrizione della stanza né nel
+contenuto di un contenitore aperto, e `Mondo.in_scope()` (usato dal
+parser per risolvere i nomi) lo esclude, quindi «esamina»/«prendi» su
+di lui rispondono come per un oggetto che non esiste («Non vedo nessun
+"X" qui.»), non solo «non elencato» — quella era già la funzione di
+`scenario`. Ignorato anche da «prendi tutto». Due nuovi effetti di
+regola: `{"mostra_oggetto": id}` lo rivela (`nascosto = False`),
+`{"nascondi_oggetto": id}` lo rinasconde. Pensato per un oggetto che
+il giocatore deve prima scoprire (aprendo un cassetto, spostando un
+quadro) prima di poterci interagire.
 
 
 ## advcore 1.18.1

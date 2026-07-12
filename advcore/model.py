@@ -92,7 +92,10 @@ class Mondo:
 
     def in_scope(self) -> list[Oggetto]:
         """Oggetti che il giocatore puo' nominare: stanza corrente + inventario
-        + contenuto dei contenitori aperti in scope (anche annidati)."""
+        + contenuto dei contenitori aperti in scope (anche annidati). Un
+        oggetto con props["nascosto"] resta fuori finche' una regola non lo
+        rivela (effetto mostra_oggetto): per il parser e' come se non ci
+        fosse, non solo "non elencato"."""
         visti = self.oggetti_in(self.stanza_corrente) + self.inventario()
         # contenuto dei contenitori aperti gia' in scope, ricorsivamente:
         # un contenitore trovato dentro un altro va espanso a sua volta.
@@ -103,7 +106,7 @@ class Mondo:
                 contenuto = self.oggetti_in(o.id)
                 visti = visti + contenuto
                 da_espandere.extend(contenuto)
-        return visti
+        return [o for o in visti if not o.props.get("nascosto")]
 
     def luce_disponibile(self) -> bool:
         """C'e' luce nella stanza corrente? Vero se la stanza non e' buia,

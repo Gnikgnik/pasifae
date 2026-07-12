@@ -343,6 +343,81 @@ def test_immagine_stanza_opzionale():
     assert all(s.immagine == "" for s in m3.stanze.values())
 
 
+def _mondo_nascondino():
+    m = Mondo(meta={"stanza_iniziale": "studio"})
+    m.stanze["studio"] = Stanza(id="studio", nome="Studio",
+                                desc="Una scrivania polverosa.")
+    m.oggetti["chiave"] = Oggetto(id="chiave", nome="chiave", nomi=["chiave"],
+                                  posizione="studio",
+                                  props={"prendibile": True, "nascosto": True})
+    return m
+
+
+def test_oggetto_nascosto_invisibile_e_non_prendibile():
+    """Un oggetto «nascosto» non compare nella descrizione della stanza, non
+    si può esaminare né prendere per nome (il parser lo tratta come
+    inesistente, non diversamente da un oggetto che non c'è)."""
+    m = _mondo_nascondino()
+    mot = Motore(m)
+    descrizione = mot.avvia()
+    assert "chiave" not in descrizione.lower()
+    assert "Non vedo nessun" in mot.esegui("esamina chiave")
+    assert "Non vedo nessun" in mot.esegui("prendi chiave")
+    assert m.oggetti["chiave"].posizione == "studio"
+
+
+def test_mostra_oggetto_lo_rende_visibile_e_prendibile():
+    """L'effetto mostra_oggetto rimuove nascosto: da quel momento l'oggetto
+    compare nella stanza e si può esaminare/prendere normalmente."""
+    m = _mondo_nascondino()
+    m.regole.append(Regola(
+        id="r_apri_cassetto",
+        quando={"verbo": "apri", "oggetto": "scrivania"},
+        allora=[{"mostra_oggetto": "chiave"}]))
+    m.oggetti["scrivania"] = Oggetto(id="scrivania", nome="scrivania",
+                                     nomi=["scrivania"], posizione="studio",
+                                     props={"scenario": True})
+    mot = Motore(m)
+    mot.avvia()
+    assert "Non vedo nessun" in mot.esegui("prendi chiave")
+
+    mot.esegui("apri scrivania")
+    assert m.oggetti["chiave"].props.get("nascosto") is False
+    assert "chiave" in mot.esegui("guarda").lower()
+    assert "Prendi chiave." in mot.esegui("prendi chiave")
+    assert m.oggetti["chiave"].posizione == "inventario"
+
+
+def test_nascondi_oggetto_lo_toglie_di_nuovo_di_mezzo():
+    """nascondi_oggetto è il simmetrico di mostra_oggetto: rimette
+    nascosto a vero su un oggetto in precedenza visibile."""
+    m = Mondo(meta={"stanza_iniziale": "studio"})
+    m.stanze["studio"] = Stanza(id="studio", nome="Studio", desc="")
+    m.oggetti["moneta"] = Oggetto(id="moneta", nome="moneta", nomi=["moneta"],
+                                  posizione="studio", props={"prendibile": True})
+    from advcore.rules import esegui_effetti
+    out = []
+    esegui_effetti([{"nascondi_oggetto": "moneta"}], m, out)
+    assert m.oggetti["moneta"].props["nascosto"] is True
+    mot = Motore(m)
+    mot.avvia()
+    assert "Non vedo nessun" in mot.esegui("esamina moneta")
+
+
+def test_prendi_tutto_ignora_oggetti_nascosti():
+    """«prendi tutto» non deve raccogliere un oggetto nascosto: il
+    giocatore non sa nemmeno che esiste finché non viene rivelato."""
+    m = _mondo_nascondino()
+    m.oggetti["moneta"] = Oggetto(id="moneta", nome="moneta", nomi=["moneta"],
+                                  posizione="studio", props={"prendibile": True})
+    mot = Motore(m)
+    mot.avvia()
+    r = mot.esegui("prendi tutto")
+    assert "Prendi moneta." in r
+    assert "chiave" not in r.lower()
+    assert m.oggetti["chiave"].posizione == "studio"
+
+
 def main() -> int:
     for nome, fn in sorted(globals().items()):
         if nome.startswith("test_") and callable(fn):

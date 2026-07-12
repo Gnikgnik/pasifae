@@ -883,6 +883,29 @@ def test_form_oggetto_salva_congedo(qtbot):
     assert "etichetta_uscita" not in m.oggetti["lampada"].props
 
 
+def test_form_oggetto_salva_nascosto(qtbot):
+    """Il checkbox «nascosto» del form Oggetto si salva in props, come
+    prendibile/scenario/png: nessuna spunta speciale richiesta."""
+    from PySide6.QtWidgets import QCheckBox, QPushButton
+    m = mondo_semplice()
+    e = Editor(None)
+    qtbot.addWidget(e)
+    e.mondo = m
+    e._carica_in_ui()
+    e.show()
+    e._vai_a("Oggetti", "lampada")
+
+    c_nascosto = next(cb for cb in e.dettaglio.widget().findChildren(QCheckBox)
+                       if cb.text().startswith("nascosto"))
+    assert not c_nascosto.isChecked()
+    c_nascosto.setChecked(True)
+    applica = next(b for b in e.dettaglio.widget().findChildren(QPushButton)
+                   if b.text() == "Applica")
+    qtbot.mouseClick(applica, Qt.LeftButton)
+
+    assert m.oggetti["lampada"].props.get("nascosto") is True
+
+
 # --------------------------- regressione: Invio nell'anteprima ---------------------------
 
 def test_anteprima_invio_processa_comando(qtbot):

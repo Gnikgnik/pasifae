@@ -261,7 +261,8 @@ class Motore:
         testo = o.props.get("desc") or f"Un {o.nome}, niente di speciale."
         if o.props.get("contenitore"):
             if o.props.get("aperto"):
-                dentro = self.mondo.oggetti_in(o.id)
+                dentro = [c for c in self.mondo.oggetti_in(o.id)
+                          if not c.props.get("nascosto")]
                 if dentro:
                     testo += (" Contiene: "
                               + ", ".join(c.nome for c in dentro) + ".")
@@ -288,8 +289,8 @@ class Motore:
         contenitori aperti (anche annidati). L'inventario e ciò che
         contiene restano fuori. Ogni presa passa dalle regole
         dell'autore come un «prendi» singolo, così gli enigmi che
-        intercettano la presa restano validi. Scenario e oggetti non
-        prendibili vengono ignorati in silenzio."""
+        intercettano la presa restano validi. Scenario, nascosti e
+        oggetti non prendibili vengono ignorati in silenzio."""
         if not self.mondo.luce_disponibile():
             return "E' troppo buio per vedere cosa c'e' da prendere."
         visibili = list(self.mondo.oggetti_in(self.mondo.stanza_corrente))
@@ -300,7 +301,8 @@ class Motore:
                 contenuto = self.mondo.oggetti_in(o.id)
                 visibili += contenuto
                 da_espandere.extend(contenuto)
-        candidati = [o for o in visibili if o.props.get("prendibile")]
+        candidati = [o for o in visibili
+                     if o.props.get("prendibile") and not o.props.get("nascosto")]
         if not candidati:
             return "Non c'e' nulla da prendere qui."
         righe = []
@@ -343,7 +345,8 @@ class Motore:
         if o.props.get("aperto"):
             return f"{o.nome.capitalize()} è già aperto."
         o.props["aperto"] = True
-        dentro = self.mondo.oggetti_in(o.id)
+        dentro = [c for c in self.mondo.oggetti_in(o.id)
+                  if not c.props.get("nascosto")]
         if dentro:
             return (f"Apri {o.nome}. Contiene: "
                     + ", ".join(c.nome for c in dentro) + ".")
@@ -664,7 +667,7 @@ class Motore:
         parti = [stanza.nome.upper(), stanza.desc]
 
         oggetti = [o for o in m.oggetti_in(stanza.id)
-                   if not o.props.get("scenario")]
+                   if not o.props.get("scenario") and not o.props.get("nascosto")]
         # oggetti con una "frase di presenza" propria: la mostrano finché sono
         # qui (e sparisce quando vengono presi); gli altri vanno nell'elenco
         with_frase = [o for o in oggetti if o.props.get("in_stanza")]

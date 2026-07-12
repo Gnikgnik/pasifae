@@ -128,7 +128,10 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   Non confonderli: le regole e le uscite puntano agli id.
 - In testa a ogni sorgente c'è `# SPDX-License-Identifier: GPL-3.0-or-later`
   (licenza **GPLv3**, vedi `LICENSE`). Mantienilo sui nuovi file.
-- `oggetto.props` usa la chiave `"scenario"` (oggetto fisso, non raccoglibile).
+- `oggetto.props` usa la chiave `"scenario"` (oggetto fisso, non raccoglibile,
+  ma resta esaminabile/nominabile) e `"nascosto"` (invisibile e non
+  nominabile finché una regola non lo rivela con `mostra_oggetto` — non è
+  lo stesso concetto di `scenario`: quello è sempre lì, solo non elencato).
 - Costanti utili: `INVENTARIO = "inventario"`, `SCARTATO = "__scartato__"`.
 
 ## Insidie note
@@ -153,10 +156,11 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   scena vanno aperti con `QTimer.singleShot(0, ...)`.
 
 ## Stato attuale
-- `advcore` **1.18.1** · interfaccia `gui` **2.3.1** (dialoghi apribili
-  da qualunque verbo/oggetto con l'effetto `avvia_dialogo`, non solo dal
+- `advcore` **1.19.0** · interfaccia `gui` **2.4.0** (oggetti nascosti,
+  rivelabili con l'effetto `mostra_oggetto`; dialoghi apribili da
+  qualunque verbo/oggetto con l'effetto `avvia_dialogo`, non solo dal
   "parla" sui png; congedo e voce di uscita del menu personalizzabili).
-- Suite: **84 test GUI + 10 script**, tutti verdi.
+- Suite: **85 test GUI + 10 script**, tutti verdi.
 - Documentazione: `README.md`, `advcore/DOCUMENTAZIONE.md`, `COSTRUIRE.md`,
   manuale d'uso (Word/PDF).
 
@@ -182,6 +186,11 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   (`props["etichetta_uscita"]`, 1.18.1: stesso problema del congedo,
   emerso testando l'avventura vera). Il verbo builtin "parla" non è
   cambiato: resta bloccato sui non-png.
+- **Oggetti nascosti — FATTO (1.19.0)**: `props["nascosto"]` esclude un
+  oggetto da `Mondo.in_scope()` (quindi dal parser, non solo dall'elenco
+  della stanza) finché una regola non lo rivela con l'effetto
+  `mostra_oggetto` (simmetrico: `nascondi_oggetto`). Diverso da
+  `scenario`, che resta sempre esaminabile/nominabile.
 
 ### Editor / Player
 - **Mappa come piano di lavoro — FATTO (2.0.0, rivisto in 2.1.0)**: stanze
