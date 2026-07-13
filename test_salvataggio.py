@@ -71,6 +71,29 @@ def test_round_trip_stato():
     assert "HAI VINTO" in vittoria, vittoria
 
 
+def test_round_trip_immagine_attuale():
+    """L'illustrazione sostituita a runtime (cambia_immagine) sopravvive al
+    salvataggio/caricamento della partita, come le stanze visitate."""
+    from advcore import Mondo, Stanza, Regola
+    m = Mondo(meta={"stanza_iniziale": "a"})
+    m.stanze["a"] = Stanza(id="a", nome="A", desc="", immagine="a.png")
+    m.regole.append(Regola(id="r", quando={"verbo": "guarda"},
+                           allora=[{"cambia_immagine": "a", "immagine": "a_buia.png"}]))
+    mot = Motore(m)
+    mot.avvia()
+    mot.esegui("guarda")
+    assert m.stanze["a"].immagine_attuale == "a_buia.png"
+
+    stato = stato_partita(m)
+    assert stato["immagini"] == {"a": "a_buia.png"}
+
+    m2 = Mondo(meta={"stanza_iniziale": "a"})
+    m2.stanze["a"] = Stanza(id="a", nome="A", desc="", immagine="a.png")
+    applica_stato(m2, stato)
+    assert m2.stanze["a"].immagine_attuale == "a_buia.png"
+    assert m2.stanze["a"].immagine == "a.png"              # default intatto
+
+
 def test_salva_carica_su_file():
     m = carica_mondo("avventure/caverna.json")
     mot = Motore(m)

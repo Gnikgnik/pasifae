@@ -637,14 +637,16 @@ class Player(QMainWindow):
         self.mappa.aggiorna()
 
     def _aggiorna_immagine(self, stanza):
-        """Illustrazione della stanza corrente: il nome file nel campo
-        `immagine` è relativo al JSON dell'avventura (e quindi, nei giochi
-        compilati, alla cartella delle risorse impacchettate)."""
-        if stanza is None or not stanza.immagine or not self.percorso:
+        """Illustrazione della stanza corrente: il nome file (relativo al
+        JSON dell'avventura, e quindi nei giochi compilati alla cartella
+        delle risorse impacchettate) è quello sostituito a runtime
+        dall'effetto di regola cambia_immagine, se presente, altrimenti
+        l'illustrazione di default dichiarata dall'autore."""
+        nome = (stanza.immagine_attuale or stanza.immagine) if stanza else ""
+        if not nome or not self.percorso:
             self.immagine.mostra_file(None)
             return
-        self.immagine.mostra_file(
-            str(Path(self.percorso).parent / stanza.immagine))
+        self.immagine.mostra_file(str(Path(self.percorso).parent / nome))
 
     # ---------- tema ----------
 

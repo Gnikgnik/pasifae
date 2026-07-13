@@ -62,7 +62,7 @@ from PySide6.QtWidgets import (  # noqa: E402
     QSplitter, QVBoxLayout, QWidget,
 )
 
-CATEGORIE = ["Stanze", "Oggetti", "Verbi", "Regole", "Flag iniziali", "Metadati"]
+CATEGORIE = ["Stanze", "Oggetti", "Verbi", "Regole", "Flag iniziali", "Timer", "Metadati"]
 
 SUGG_TESTO = ("Testo dinamico:\n"
               "• {flag} inserisce il valore di un flag (o {punteggio}, {mosse}, {stanza}).\n"
@@ -356,96 +356,6 @@ class DialogoUscita(QDialog):
         return d, dest
 
 
-class DialogoTimer(QDialog):
-    """Gestisce i nomi dei timer dell'avventura: quelli dichiarati (riusabili
-    dalle tendine) e quelli già usati nelle regole, con il conteggio degli usi."""
-
-    def __init__(self, parent, mondo, tema_nome):
-        super().__init__(parent)
-        self.mondo = mondo
-        self._cambiato = False
-        self.setWindowTitle("Gestione timer")
-        self.setStyleSheet(tema.qss(tema_nome))
-        self.setMinimumWidth(440)
-        v = QVBoxLayout(self)
-        intro = QLabel("I timer dichiarati qui compaiono nelle tendine quando crei "
-                       "regole ed effetti. Quelli già usati nell'avventura sono "
-                       "elencati con il numero di utilizzi.")
-        intro.setObjectName("campetto")
-        intro.setWordWrap(True)
-        v.addWidget(intro)
-        self.lista = QListWidget()
-        v.addWidget(self.lista)
-        riga = QHBoxLayout()
-        b_add = QPushButton("+ Aggiungi")
-        b_del = QPushButton("Rimuovi")
-        b_chiudi = QPushButton("Chiudi")
-        for b in (b_add, b_del, b_chiudi):
-            b.setAutoDefault(False)
-        riga.addWidget(b_add)
-        riga.addWidget(b_del)
-        riga.addStretch(1)
-        riga.addWidget(b_chiudi)
-        v.addLayout(riga)
-        b_add.clicked.connect(self._aggiungi)
-        b_del.clicked.connect(self._rimuovi)
-        b_chiudi.clicked.connect(self._chiudi)
-        self._refill()
-
-    def _refill(self, sel=-1):
-        self.lista.clear()
-        dichiarati = list(self.mondo.meta.get("timer", []) or [])
-        rif = R.riferimenti_timer(self.mondo)
-        nomi = sorted(set(dichiarati) | set(rif))
-        for nome in nomi:
-            usi = rif.get(nome, 0)
-            parti = []
-            parti.append("dichiarato" if nome in dichiarati else "non dichiarato")
-            parti.append(f"{usi} usi" if usi else "non ancora usato")
-            it = QListWidgetItem(f"{nome}    ·    {'  ·  '.join(parti)}")
-            it.setData(Qt.UserRole, nome)
-            self.lista.addItem(it)
-        if 0 <= sel < self.lista.count():
-            self.lista.setCurrentRow(sel)
-
-    def _aggiungi(self):
-        nome, ok = QInputDialog.getText(self, "Nuovo timer", "Nome del timer:")
-        nome = nome.strip()
-        if not (ok and nome):
-            return
-        dichiarati = self.mondo.meta.setdefault("timer", [])
-        if nome in dichiarati:
-            return
-        dichiarati.append(nome)
-        self._cambiato = True
-        self._refill(self.lista.count())
-
-    def _rimuovi(self):
-        it = self.lista.currentItem()
-        if it is None:
-            return
-        nome = it.data(Qt.UserRole)
-        dichiarati = self.mondo.meta.get("timer", []) or []
-        if nome not in dichiarati:
-            QMessageBox.information(
-                self, "Timer in uso",
-                "Questo timer non è dichiarato: è solo usato nelle regole. "
-                "Per toglierlo, rimuovi gli effetti/inneschi che lo usano.")
-            return
-        usi = R.riferimenti_timer(self.mondo).get(nome, 0)
-        if usi and QMessageBox.question(
-                self, "Timer in uso",
-                f"«{nome}» è ancora usato in {usi} punti. Rimuovere solo la "
-                f"dichiarazione? (gli usi restano)") != QMessageBox.StandardButton.Yes:
-            return
-        dichiarati.remove(nome)
-        self._cambiato = True
-        self._refill()
-
-    def _chiudi(self):
-        self.accept() if self._cambiato else self.reject()
-
-
 class _CompilaWorker(QThread):
     """Esegue la compilazione PyInstaller in un thread, senza bloccare la GUI."""
     fatto = Signal(str)        # percorso dell'eseguibile prodotto
@@ -627,10 +537,6 @@ class Editor(QMainWindow):
         a_catena.triggered.connect(self._apri_catena)
         m_str.addAction(a_catena)
         m_str.addSeparator()
-        a_timer = QAction("Gestione timer…", self)
-        a_timer.triggered.connect(self._gestione_timer)
-        m_str.addAction(a_timer)
-        m_str.addSeparator()
         a_prob = QAction("Pannello problemi", self, checkable=True)
         a_prob.setShortcut("Ctrl+J")
         a_prob.toggled.connect(lambda on: self.dock_problemi.setVisible(on))
@@ -689,11 +595,6 @@ class Editor(QMainWindow):
     def _apri_catena(self):
         from gui.catena import FinestraCatena
         FinestraCatena(self.mondo, self.tema, self, vai_a=self._vai_a).exec()
-
-    def _gestione_timer(self):
-        dlg = DialogoTimer(self, self.mondo, self.tema)
-        if dlg.exec():
-            self._segna_modifica()
 
     def _informazioni(self):
         from gui import risorse
@@ -853,7 +754,7 @@ class Editor(QMainWindow):
         if riga < 0:
             return
         cat = CATEGORIE[riga]
-        modificabile = cat in ("Stanze", "Oggetti", "Verbi", "Regole", "Flag iniziali")
+        modificabile = cat in ("Stanze", "Oggetti", "Verbi", "Regole", "Flag iniziali", "Timer")
         self.btn_nuovo.setEnabled(modificabile)
         self.btn_elimina.setEnabled(modificabile)
         self.btn_duplica.setEnabled(cat in ("Stanze", "Oggetti", "Regole"))
@@ -877,6 +778,14 @@ class Editor(QMainWindow):
         elif cat == "Flag iniziali":
             for k, v in self.mondo.flags.items():
                 self._voce(f"{k} = {v}", k)
+        elif cat == "Timer":
+            dichiarati = list(self.mondo.meta.get("timer", []) or [])
+            rif = R.riferimenti_timer(self.mondo)
+            for nome in sorted(set(dichiarati) | set(rif)):
+                usi = rif.get(nome, 0)
+                stato = "dichiarato" if nome in dichiarati else "non dichiarato"
+                conteggio = f"{usi} usi" if usi else "non ancora usato"
+                self._voce(f"{nome}   ·   {stato}   ·   {conteggio}", nome)
         elif cat == "Metadati":
             self._voce("Metadati dell'avventura", "__meta__")
         self.lista_el.blockSignals(False)
@@ -904,6 +813,8 @@ class Editor(QMainWindow):
             self._form_verbo(chiave)
         elif cat == "Flag iniziali":
             self._form_flag(chiave)
+        elif cat == "Timer":
+            self._form_timer(chiave)
         elif cat == "Regole":
             self._form_regola(chiave)
         elif cat == "Metadati":
@@ -1378,6 +1289,23 @@ class Editor(QMainWindow):
         self._aggiungi_applica(cont, applica)
         self._mostra_dettaglio(cont)
 
+    # ---------- form: TIMER ----------
+
+    def _form_timer(self, nome):
+        """Solo lettura: il nome è l'id stesso (niente da modificare oltre a
+        crearlo/eliminarlo dalla lista, come i flag iniziali)."""
+        cont, form = self._form_base(f"Timer · {nome}")
+        dichiarati = self.mondo.meta.get("timer", []) or []
+        rif = R.riferimenti_timer(self.mondo)
+        stato = ("dichiarato" if nome in dichiarati
+                 else "non dichiarato (solo usato nelle regole)")
+        usi = rif.get(nome, 0)
+        conteggio = f"usato in {usi} punti" if usi else "non ancora usato"
+        lab = QLabel(f"{stato}\n{conteggio}")
+        lab.setWordWrap(True)
+        form.addRow(lab)
+        self._mostra_dettaglio(cont)
+
     # ---------- form: REGOLA ----------
 
     def _form_regola(self, idx):
@@ -1552,6 +1480,15 @@ class Editor(QMainWindow):
             if nome in self.mondo.flags:
                 return self._err("Esiste già un flag con questo nome.")
             self.mondo.flags[nome] = False
+        elif cat == "Timer":
+            nome, ok = QInputDialog.getText(self, "Nuovo timer", "Nome del timer:")
+            nome = nome.strip()
+            if not (ok and nome):
+                return
+            dichiarati = self.mondo.meta.setdefault("timer", [])
+            if nome in dichiarati:
+                return self._err("Esiste già un timer con questo nome.")
+            dichiarati.append(nome)
         else:
             nome, ok = QInputDialog.getText(self, "Nuovo elemento",
                                             "Identificatore (id) univoco:")
@@ -1580,7 +1517,15 @@ class Editor(QMainWindow):
                     Regola(id=nome, quando={}, se=[], allora=[], altrimenti=[]))
         self._segna_modifica()
         self._scegli_categoria(self.lista_cat.currentRow())
-        self.lista_el.setCurrentRow(self.lista_el.count() - 1)
+        if cat == "Timer":
+            # la lista è ordinata alfabeticamente: il nuovo timer non è
+            # detto sia l'ultimo elemento, va cercato per nome
+            for i in range(self.lista_el.count()):
+                if self.lista_el.item(i).data(Qt.UserRole) == nome:
+                    self.lista_el.setCurrentRow(i)
+                    break
+        else:
+            self.lista_el.setCurrentRow(self.lista_el.count() - 1)
 
     def _elimina(self):
         cat = CATEGORIE[self.lista_cat.currentRow()]
@@ -1588,12 +1533,24 @@ class Editor(QMainWindow):
         if it is None:
             return
         chiave = it.data(Qt.UserRole)
+        if cat == "Timer":
+            dichiarati = self.mondo.meta.get("timer", []) or []
+            if chiave not in dichiarati:
+                QMessageBox.information(
+                    self, "Timer in uso",
+                    "Questo timer non è dichiarato: è solo usato nelle regole. "
+                    "Per toglierlo, rimuovi gli effetti/inneschi che lo usano.")
+                return
         if QMessageBox.question(self, "Elimina",
                                 f"Eliminare «{it.text()}»?") != QMessageBox.StandardButton.Yes:
             return
         if cat == "Regole":
             if isinstance(chiave, int) and 0 <= chiave < len(self.mondo.regole):
                 self.mondo.regole.pop(chiave)
+        elif cat == "Timer":
+            dichiarati = self.mondo.meta.get("timer", []) or []
+            if chiave in dichiarati:
+                dichiarati.remove(chiave)
         else:
             deposito = {"Stanze": self.mondo.stanze, "Oggetti": self.mondo.oggetti,
                         "Verbi": self.mondo.verbi, "Flag iniziali": self.mondo.flags}.get(cat)

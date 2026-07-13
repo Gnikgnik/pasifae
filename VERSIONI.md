@@ -1,5 +1,20 @@
 # Pasifae — cronologia delle versioni
 
+## gui 2.5.0
+Due cambiamenti nell'editor:
+- **"Gestione timer…" lascia il menu Strumenti**: i timer sono ora una
+  categoria della colonna a sinistra (fra "Flag iniziali" e "Metadati"),
+  con +Nuovo/Elimina come i flag — la vecchia finestra `DialogoTimer`
+  è stata rimossa, sostituita dalla stessa lista/dettaglio delle altre
+  categorie.
+- **Illustrazione di una stanza condizionabile**: nel catalogo degli
+  effetti delle regole, nuova voce **"cambia illustrazione di una
+  stanza"** (`cambia_immagine`): sostituisce l'immagine mostrata per una
+  stanza a runtime (un'immagine vuota ripristina il default). Impacchettata
+  automaticamente anche in "Compila gioco autonomo" e controllata dal
+  pannello problemi (riferimento a stanza inesistente, file mancante) come
+  l'illustrazione di default. Vedi advcore 1.20.0.
+
 ## gui 2.4.0
 Nuovo checkbox **nascosto** nel form Oggetto (accanto a scenario):
 un oggetto nascosto non compare nella descrizione della stanza né nel
@@ -168,6 +183,17 @@ e la voce «Tutti i file» per i salvataggi nati senza estensione.
 Nel catalogo degli effetti, voci per i nuovi `apri_oggetto`/`chiudi_oggetto`
 del motore (advcore 1.12.0), con selettore dei soli contenitori; aggiornati
 i riferimenti incrociati.
+
+
+## advcore 1.20.0
+**Illustrazione di stanza sostituibile a runtime**: nuovo campo
+`Stanza.immagine_attuale` (non nei dati statici dell'avventura, solo
+nello stato di gioco — persiste nei salvataggi come `visitate`) e nuovo
+effetto di regola `{"cambia_immagine": id_stanza, "immagine": nome_file}`:
+un'illustrazione vuota ripristina il default dichiarato dall'autore
+(`Stanza.immagine`, mai toccato). La logica di apertura dialogo/mostra
+oggetto ecc. sceglie sempre `immagine_attuale or immagine`; l'effetto
+non richiede che la stanza cambiata sia quella corrente.
 
 
 ## advcore 1.19.0

@@ -110,14 +110,17 @@ def prepara(mondo, build_dir: str, radice: Path = RADICE,
 
 
 def _copia_immagini(mondo, build: Path, origine: str | None) -> list[Path]:
-    """Copia in *build* le illustrazioni riferite dalle stanze e ne
+    """Copia in *build* le illustrazioni riferite dalle stanze (di default
+    e quelle alternative usate da cambia_immagine nelle regole) e ne
     restituisce i percorsi copiati (solo quelle che esistono davvero)."""
     if not origine:
         return []
+    from gui.regole import immagini_regole
     base = Path(origine).resolve().parent
     copiate: list[Path] = []
-    for nome_img in sorted({s.immagine for s in mondo.stanze.values()
-                            if getattr(s, "immagine", "")}):
+    nomi = ({s.immagine for s in mondo.stanze.values() if getattr(s, "immagine", "")}
+            | immagini_regole(mondo))
+    for nome_img in sorted(nomi):
         src = base / nome_img
         if not src.is_file():
             continue

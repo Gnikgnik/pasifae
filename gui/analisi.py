@@ -146,6 +146,11 @@ def analizza_problemi(mondo, percorso: str | None = None) -> list:
             if img and not (base / img).is_file():
                 agg(f"Stanza «{sid}»: illustrazione «{img}» non trovata "
                     "accanto al JSON.", "Stanze", sid, grave=False)
+        for contesto, cat, chiave, tipo, v in _sorgenti(mondo):
+            img = v.get("cambia_immagine") and v.get("immagine")
+            if img and not (base / img).is_file():
+                agg(f"{contesto}: illustrazione «{img}» non trovata "
+                    "accanto al JSON.", cat, chiave, grave=False)
 
     # stanze irraggiungibili (via uscite o teleport) dalla iniziale
     if init in stanze:
@@ -187,6 +192,8 @@ def _riferimenti(v: dict):
         out.append(("stanza", v["teleporta"]))
     if "inizia_scontro" in v:
         out.append(("png", v["inizia_scontro"]))
+    if "cambia_immagine" in v:
+        out.append(("stanza", v["cambia_immagine"]))
     return out
 
 

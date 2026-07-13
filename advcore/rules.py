@@ -43,6 +43,11 @@ Vocabolario degli EFFETTI (campi "allora"/"altrimenti"):
                                            "parla", ma agganciabile a qualunque
                                            verbo/oggetto tramite una regola
                                            dell'autore (non richiede props["png"])
+  {"cambia_immagine": id_stanza, "immagine": nome_file}
+                                           sostituisce l'illustrazione della
+                                           stanza a runtime; "immagine" vuota
+                                           (o assente) ripristina il default
+                                           dichiarato dall'autore
 """
 
 from __future__ import annotations
@@ -231,3 +236,7 @@ def _esegui_uno(e: dict, mondo: Mondo, out: list[str]) -> None:
         o = mondo.oggetti.get(e["avvia_dialogo"])
         if o is not None:
             out.append(avvia_conversazione(mondo, o))
+    elif "cambia_immagine" in e:
+        st = mondo.stanze.get(e["cambia_immagine"])
+        if st is not None:
+            st.immagine_attuale = e.get("immagine", "")

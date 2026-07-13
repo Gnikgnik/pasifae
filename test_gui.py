@@ -583,6 +583,34 @@ def test_player_illustrazione_mancante_o_assente(qtbot, tmp_path):
     assert not p2.immagine.isVisible()
 
 
+def test_player_cambia_immagine_da_regola(qtbot, tmp_path):
+    """L'effetto cambia_immagine sostituisce l'illustrazione mostrata (senza
+    toccare il file di default dichiarato per la stanza)."""
+    import json
+    (tmp_path / "atrio.png").write_bytes(_PNG_MINIMO)
+    (tmp_path / "atrio_buio.png").write_bytes(_PNG_MINIMO)
+    dati = {
+        "meta": {"titolo": "Figure", "stanza_iniziale": "atrio"},
+        "stanze": {"atrio": {"nome": "Atrio", "desc": "Un atrio.",
+                             "immagine": "atrio.png"}},
+        "regole": [{"id": "r_guarda",
+                    "quando": {"verbo": "guarda"},
+                    "allora": [{"cambia_immagine": "atrio",
+                               "immagine": "atrio_buio.png"}]}],
+    }
+    f = tmp_path / "figure.json"
+    f.write_text(json.dumps(dati), encoding="utf-8")
+    p = Player(str(f))
+    qtbot.addWidget(p)
+    p.show()
+    QApplication.processEvents()
+    assert p.immagine._percorso.endswith("atrio.png")
+
+    p.input.setText("guarda"); p._invia()
+    QApplication.processEvents()
+    assert p.immagine._percorso.endswith("atrio_buio.png")
+
+
 def test_player_illustrazioni_disattivabili(qtbot, monkeypatch, tmp_path):
     """Visualizza ▸ Illustrazioni spegne il pannello e la scelta viene
     ricordata tra le sessioni."""
@@ -784,6 +812,26 @@ def test_compila_prepara_con_immagini(tmp_path):
     ast.parse(src)                                  # lo spec è Python valido
     assert "atrio.png" in src
     assert "sparita.png" not in src
+
+
+def test_compila_prepara_con_immagini_da_regola(tmp_path):
+    """Le illustrazioni alternative usate da cambia_immagine nelle regole
+    vengono impacchettate anche loro, non solo quelle di default della
+    stanza: altrimenti il gioco compilato le troverebbe mancanti."""
+    import ast
+    from gui import compila
+    origine = _avventura_con_immagine(tmp_path)
+    (tmp_path / "atrio_buio.png").write_bytes(_PNG_MINIMO)
+    m = carica_mondo(origine)
+    m.regole.append(Regola(id="r_spegni", quando={"verbo": "spegni"},
+                           allora=[{"cambia_immagine": "atrio",
+                                   "immagine": "atrio_buio.png"}]))
+    build = tmp_path / "build"
+    spec, _ = compila.prepara(m, str(build), origine=origine)
+    assert (build / "atrio_buio.png").exists()
+    src = open(spec, encoding="utf-8").read()
+    ast.parse(src)
+    assert "atrio_buio.png" in src
     # avventura senza illustrazioni: nessun file extra (retrocompatibile)
     m2 = carica_mondo(str(AVV / "faro.json"))
     spec2, _ = compila.prepara(m2, str(tmp_path / "build2"), origine=str(AVV / "faro.json"))
@@ -846,6 +894,51 @@ def test_elimina_regola(qtbot, monkeypatch):
     e.lista_el.setCurrentRow(0)
     e._elimina()
     assert len(e.mondo.regole) == n - 1
+
+
+def test_categoria_timer_crea_e_elimina(qtbot, monkeypatch):
+    """«Timer» è una categoria come «Flag iniziali»: +Nuovo dichiara un
+    timer, Elimina lo toglie (sostituisce la vecchia finestra «Gestione
+    timer…» di Strumenti)."""
+    e = Editor(str(AVV / "caverna.json"))
+    qtbot.addWidget(e)
+    e.lista_cat.setCurrentRow(CATEGORIE.index("Timer"))
+    assert e.lista_el.count() == 0        # caverna.json non usa timer
+
+    monkeypatch.setattr(QInputDialog, "getText", lambda *a, **k: ("bomba", True))
+    e._nuovo()
+    assert "bomba" in e.mondo.meta.get("timer", [])
+    assert e.lista_el.currentItem().data(Qt.UserRole) == "bomba"
+
+    monkeypatch.setattr(QMessageBox, "question",
+                        lambda *a, **k: QMessageBox.StandardButton.Yes)
+    e._elimina()
+    assert "bomba" not in e.mondo.meta.get("timer", [])
+
+
+def test_categoria_timer_non_dichiarato_non_si_elimina(qtbot, monkeypatch):
+    """Un timer usato solo in una regola (mai dichiarato in meta) compare
+    comunque nell'elenco col conteggio degli usi, ma Elimina lo protegge:
+    va tolto rimuovendo l'innesco/effetto che lo usa, non dalla lista."""
+    e = Editor(None)
+    qtbot.addWidget(e)
+    m = mondo_semplice()
+    m.regole.append(Regola(id="r_sveglia",
+                           quando={"evento": "timer", "timer": "sveglia"},
+                           allora=[{"stampa": "Trillo."}]))
+    e.mondo = m
+    e._carica_in_ui()
+    e.lista_cat.setCurrentRow(CATEGORIE.index("Timer"))
+    assert e.lista_el.count() == 1
+    assert "non dichiarato" in e.lista_el.item(0).text()
+
+    avvisato = []
+    monkeypatch.setattr(QMessageBox, "information",
+                        lambda *a, **k: avvisato.append(True))
+    e.lista_el.setCurrentRow(0)
+    e._elimina()
+    assert avvisato
+    assert m.regole[0].quando["timer"] == "sveglia"   # ancora lì
 
 
 def test_form_oggetto_salva_congedo(qtbot):
@@ -1047,6 +1140,29 @@ def test_problema_immagine_mancante(tmp_path):
     probs = A.analizza_problemi(m, percorso=percorso)
     assert any("sparita.png" in p["testo"] and p["chiave"] == "cella"
                and not p["grave"] for p in probs), probs
+    assert A.analizza_problemi(m) == []            # senza percorso: nessun avviso
+
+
+def test_problema_cambia_immagine_stanza_inesistente():
+    """cambia_immagine verso una stanza inesistente è un riferimento rotto
+    come qualsiasi altro (teleporta, sposta_oggetto, ...)."""
+    m = mondo_semplice()
+    m.regole.append(Regola(id="r", quando={"verbo": "guarda"},
+                           allora=[{"cambia_immagine": "boh", "immagine": "x.png"}]))
+    testi = " | ".join(p["testo"] for p in A.analizza_problemi(m))
+    assert "boh" in testi
+
+
+def test_problema_cambia_immagine_file_mancante(tmp_path):
+    """Come per l'illustrazione di default, un'immagine alternativa
+    (cambia_immagine) che punta a un file inesistente è segnalata (non
+    grave), solo quando si conosce il percorso del JSON."""
+    percorso = _avventura_con_immagine(tmp_path)
+    m = carica_mondo(percorso)
+    m.regole.append(Regola(id="r", quando={"verbo": "guarda"},
+                           allora=[{"cambia_immagine": "atrio", "immagine": "sparita2.png"}]))
+    probs = A.analizza_problemi(m, percorso=percorso)
+    assert any("sparita2.png" in p["testo"] and not p["grave"] for p in probs), probs
     assert A.analizza_problemi(m) == []            # senza percorso: nessun avviso
 
 

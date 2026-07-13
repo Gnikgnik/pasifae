@@ -5,6 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from advcore import Mondo, Regola
 from gui import regole as R
 
 
@@ -43,6 +44,33 @@ def test_mostra_nascondi_oggetto():
     assert R.da_dict({"nascondi_oggetto": "chiave"}) == ("nascondi_oggetto", {"oggetto": "chiave"})
     assert "chiave" in R.riassunto_effetto({"mostra_oggetto": "chiave"})
     assert "chiave" in R.riassunto_effetto({"nascondi_oggetto": "chiave"})
+
+
+def test_cambia_immagine():
+    # assemblaggio, inverso (per la modifica) e riassunto leggibile: sia
+    # con un'immagine sia con il ripristino del default (campo vuoto)
+    assert R.ASSEMBLA["cambia_immagine"]({"stanza": "ingresso", "immagine": "buio.png"}) == \
+        {"cambia_immagine": "ingresso", "immagine": "buio.png"}
+    assert R.da_dict({"cambia_immagine": "ingresso", "immagine": "buio.png"}) == \
+        ("cambia_immagine", {"stanza": "ingresso", "immagine": "buio.png"})
+    assert "buio.png" in R.riassunto_effetto(
+        {"cambia_immagine": "ingresso", "immagine": "buio.png"})
+    assert "default" in R.riassunto_effetto(
+        {"cambia_immagine": "ingresso", "immagine": ""})
+
+
+def test_immagini_regole():
+    """immagini_regole raccoglie i file usati da cambia_immagine nelle
+    regole (utile a compila.py per impacchettarli): un ripristino al
+    default (immagine vuota) non produce un file da cercare."""
+    m = Mondo()
+    m.regole.append(Regola(
+        id="r1", quando={"verbo": "apri", "oggetto": "porta"},
+        allora=[{"cambia_immagine": "ingresso", "immagine": "aperta.png"}]))
+    m.regole.append(Regola(
+        id="r2", quando={"verbo": "chiudi", "oggetto": "porta"},
+        allora=[{"cambia_immagine": "ingresso", "immagine": ""}]))
+    assert R.immagini_regole(m) == {"aperta.png"}
 
 
 def test_val_da_testo():

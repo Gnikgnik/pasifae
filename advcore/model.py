@@ -30,6 +30,9 @@ class Stanza:
     # illustrazione opzionale: nome file relativo al JSON dell'avventura.
     # Il motore la ignora; la mostrano le interfacce che sanno farlo.
     immagine: str = ""
+    # sostituisce "immagine" a runtime (effetto di regola cambia_immagine);
+    # vuota = nessuna sostituzione, resta l'illustrazione di default.
+    immagine_attuale: str = ""
 
 
 @dataclass

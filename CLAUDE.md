@@ -52,6 +52,8 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
 ## Mappa dei moduli
 **`advcore/` — il motore (niente I/O):**
 - `model.py` — dataclass del mondo: Mondo, Stanza, Oggetto, Verbo, Regola.
+  `Stanza.immagine_attuale` è runtime (non nei dati statici): sostituisce
+  `immagine` quando l'effetto `cambia_immagine` la imposta.
 - `engine.py` — `Motore`: parser + applicazione regole + verbi predefiniti,
   movimento, dialoghi, combattimento, timer. Il congedo di un dialogo è
   `props["congedo"]` (fallback: `"Saluti «nome»."`, invariato).
@@ -64,9 +66,13 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   agganciandolo al verbo che l'autore preferisce, es. "usa" su un
   terminale: si usa, non si parla). La voce «0.» del menu dialogo è
   `props["etichetta_uscita"]` (fallback: `"saluta e vai"`, invariato).
+  L'effetto `cambia_immagine` sostituisce `Stanza.immagine_attuale`
+  (vuota = ripristina il default).
 - `testo.py` — testo dinamico: `{flag}` e frammenti `[flag: ...]`.
 - `storage.py` — carica/salva l'avventura (JSON).
-- `salvataggio.py` — salva/carica lo stato della partita.
+- `salvataggio.py` — salva/carica lo stato della partita: flag, posizione
+  oggetti, stanze visitate e (come `visitate`) le sostituzioni di
+  illustrazione a runtime (`immagini`, popolato da `cambia_immagine`).
 - `validazione.py` — controlli statici (`valida -> list[Problema]`).
 - `mappa.py` — mappa testuale (ASCII); anche `uscite_visibili(mondo, stanza)`,
   le uscite attualmente sbloccate come coppie (direzione, destinazione) —
@@ -80,7 +86,9 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   Strumenti; da staccata, `topLevelChanged` le assegna i flag di finestra
   nativa (min/max/chiudi), altrimenti il `Qt::Tool` di default non mostra il
   pulsante di massimizza; le modifiche riallineano la mappa in modo differito
-  (`_segna_modifica` → `QTimer.singleShot(0, _aggiorna_mappa)`).
+  (`_segna_modifica` → `QTimer.singleShot(0, _aggiorna_mappa)`). `CATEGORIE`
+  include anche **"Timer"** (fra "Flag iniziali" e "Metadati"): stessa
+  logica +Nuovo/Elimina dei flag, non più una finestra a parte da Strumenti.
 - `player.py` — Pasifae Play. Splitter a tre colonne: illustrazione |
   trascrizione | mini-mappa (`self.mappa`, `MiniMappa`); quest'ultima si
   aggiorna in `_aggiorna_stato()` (come l'illustrazione) e si nasconde da
@@ -103,9 +111,13 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
 - `regole.py` — costruzione/serializzazione regole nell'editor; catalogo
   degli effetti (`TIPI_EFFETTO`/`CAMPI`/`ASSEMBLA`/`da_dict`) allineato a
   `advcore/rules.py`, incluso `avvia_dialogo` (campo di tipo "oggetto",
-  non "png": funziona su qualunque oggetto).
-- `analisi.py` — riferimenti incrociati, "Dove è usato", problemi,
-  catena dei puzzle (`catena_puzzle`).
+  non "png": funziona su qualunque oggetto) e `cambia_immagine`; anche
+  `immagini_regole(mondo)`, i file usati da `cambia_immagine` in regole/
+  dialoghi/sconfitte (per `compila.py`, sullo stesso schema di `nomi_timer`).
+- `analisi.py` — riferimenti incrociati, "Dove è usato", problemi
+  (inclusi i riferimenti di `cambia_immagine`: stanza inesistente o file
+  mancante, come l'illustrazione di default), catena dei puzzle
+  (`catena_puzzle`).
 - `catena.py` — finestra "Concatenazione dei puzzle" (albero dai finali).
 - `anteprima.py` — finestra "Prova l'avventura" dentro l'editor.
 - `mappa.py` — `PannelloMappa`, il piano di lavoro nel dock della mappa:
@@ -116,7 +128,9 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   distruzione della finestra: GC sicuro).
 - `tema.py` — temi chiaro/scuro.
 - `risorse.py` — icona, loghi, dialogo "Informazioni" condiviso.
-- `compila.py` — logica pura per "Compila gioco autonomo" (PyInstaller).
+- `compila.py` — logica pura per "Compila gioco autonomo" (PyInstaller);
+  impacchetta le illustrazioni di default delle stanze e quelle alternative
+  usate da `cambia_immagine` (`regole.immagini_regole`).
 - `editor_riassunti.py` — riepiloghi testuali degli elementi.
 - `assets/` — icona e loghi Pasifae.
 
@@ -156,11 +170,13 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   scena vanno aperti con `QTimer.singleShot(0, ...)`.
 
 ## Stato attuale
-- `advcore` **1.19.0** · interfaccia `gui` **2.4.0** (oggetti nascosti,
-  rivelabili con l'effetto `mostra_oggetto`; dialoghi apribili da
-  qualunque verbo/oggetto con l'effetto `avvia_dialogo`, non solo dal
-  "parla" sui png; congedo e voce di uscita del menu personalizzabili).
-- Suite: **85 test GUI + 10 script**, tutti verdi.
+- `advcore` **1.20.0** · interfaccia `gui` **2.5.0** (illustrazione di
+  stanza sostituibile a runtime con l'effetto `cambia_immagine`; timer
+  come categoria dell'editor; oggetti nascosti, rivelabili con l'effetto
+  `mostra_oggetto`; dialoghi apribili da qualunque verbo/oggetto con
+  l'effetto `avvia_dialogo`, non solo dal "parla" sui png; congedo e voce
+  di uscita del menu personalizzabili).
+- Suite: **91 test GUI + 10 script**, tutti verdi.
 - Documentazione: `README.md`, `advcore/DOCUMENTAZIONE.md`, `COSTRUIRE.md`,
   manuale d'uso (Word/PDF).
 
@@ -206,6 +222,16 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   verso l'ignoto solo accennate (trattino o etichetta), mai svelate —
   vedi mappa dei moduli. Richiesta dall'utente dopo aver visto la mappa
   come piano di lavoro nell'editor.
+- **Timer come categoria dell'editor — FATTO (2.5.0)**: "Gestione timer…"
+  lascia il menu Strumenti (finestra `DialogoTimer` rimossa) e diventa una
+  voce di `CATEGORIE`, fra "Flag iniziali" e "Metadati", con lo stesso
+  +Nuovo/Elimina dei flag.
+- **Illustrazione di stanza condizionabile — FATTO (2.5.0)**: nuovo
+  effetto di regola `cambia_immagine` (`Stanza.immagine_attuale`, campo
+  runtime, persiste nei salvataggi) sostituisce l'illustrazione di una
+  stanza; un'immagine vuota ripristina il default. Bundling automatico in
+  "Compila gioco autonomo" e controllo nel pannello problemi, come per
+  l'illustrazione di default.
 - **Validazione più profonda**: avvisi su timer mai avviati, dialoghi senza
   uscita, oggetti irraggiungibili, finali non collegati.
 - **Anteprima con "stato di gioco" ispezionabile**: pannello che mostra flag,

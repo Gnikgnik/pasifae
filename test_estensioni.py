@@ -343,6 +343,35 @@ def test_immagine_stanza_opzionale():
     assert all(s.immagine == "" for s in m3.stanze.values())
 
 
+def test_cambia_immagine_sostituisce_e_ripristina():
+    """L'effetto cambia_immagine sostituisce l'illustrazione di una stanza
+    a runtime (stanza.immagine_attuale), senza toccare il valore di default
+    dichiarato dall'autore (stanza.immagine); un'immagine vuota ripristina
+    il default."""
+    m = Mondo(meta={"stanza_iniziale": "ingresso"})
+    m.stanze["ingresso"] = Stanza(id="ingresso", nome="Ingresso", desc="",
+                                  immagine="ingresso.png")
+    m.oggetti["porta"] = Oggetto(id="porta", nome="porta", nomi=["porta"],
+                                 posizione="ingresso", props={"contenitore": True,
+                                                              "aperto": False})
+    m.regole.append(Regola(
+        id="r_apri", quando={"verbo": "apri", "oggetto": "porta"},
+        allora=[{"cambia_immagine": "ingresso", "immagine": "ingresso_aperta.png"}]))
+    m.regole.append(Regola(
+        id="r_chiudi", quando={"verbo": "chiudi", "oggetto": "porta"},
+        allora=[{"cambia_immagine": "ingresso", "immagine": ""}]))
+    mot = Motore(m)
+    mot.avvia()
+
+    assert m.stanze["ingresso"].immagine_attuale == ""
+    mot.esegui("apri porta")
+    assert m.stanze["ingresso"].immagine_attuale == "ingresso_aperta.png"
+    assert m.stanze["ingresso"].immagine == "ingresso.png"    # default intatto
+
+    mot.esegui("chiudi porta")
+    assert m.stanze["ingresso"].immagine_attuale == ""
+
+
 def _mondo_nascondino():
     m = Mondo(meta={"stanza_iniziale": "studio"})
     m.stanze["studio"] = Stanza(id="studio", nome="Studio",

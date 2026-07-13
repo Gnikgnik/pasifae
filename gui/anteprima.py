@@ -167,11 +167,12 @@ class FinestraGioco(QDialog):
         self.stato.setText(
             f"punteggio {self.mondo.punteggio}    ·    turni {self.mondo.mosse}")
         stanza = self.mondo.stanze.get(self.mondo.stanza_corrente)
-        if stanza is None or not getattr(stanza, "immagine", "") or not self.percorso:
+        nome = ((getattr(stanza, "immagine_attuale", "") or getattr(stanza, "immagine", ""))
+                if stanza is not None else "")
+        if not nome or not self.percorso:
             self.immagine.mostra_file(None)
         else:
-            self.immagine.mostra_file(
-                str(Path(self.percorso).parent / stanza.immagine))
+            self.immagine.mostra_file(str(Path(self.percorso).parent / nome))
 
 
 class DialogoProvaDa(QDialog):

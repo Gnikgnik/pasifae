@@ -49,6 +49,7 @@ TIPI_EFFETTO = [
     ("avvia un timer", "avvia_timer"),
     ("ferma un timer", "ferma_timer"),
     ("avvia dialogo (saluto + battute)", "avvia_dialogo"),
+    ("cambia illustrazione di una stanza", "cambia_immagine"),
 ]
 
 # ----- campi per ciascun tipo: (id_campo, etichetta, genere_widget) -----
@@ -86,6 +87,8 @@ CAMPI = {
     # non "png": funziona su qualunque oggetto (un terminale non è un
     # personaggio, ma può avere un dialogo suo)
     "avvia_dialogo": [("oggetto", "apre il dialogo di", "oggetto")],
+    "cambia_immagine": [("stanza", "stanza", "stanza"),
+                        ("immagine", "immagine (nome file, vuoto = default)", "testo")],
 }
 
 # ----- assemblaggio: valori {id_campo: valore} -> dizionario del motore -----
@@ -120,6 +123,8 @@ ASSEMBLA = {
     "avvia_timer": lambda v: {"avvia_timer": v["nome"], "turni": v["turni"]},
     "ferma_timer": lambda v: {"ferma_timer": v["nome"]},
     "avvia_dialogo": lambda v: {"avvia_dialogo": v["oggetto"]},
+    "cambia_immagine": lambda v: {"cambia_immagine": v["stanza"],
+                                  "immagine": v["immagine"].strip()},
 }
 
 
@@ -186,6 +191,28 @@ def riferimenti_timer(mondo) -> dict:
     return conteggio
 
 
+def immagini_regole(mondo) -> set:
+    """Nomi file delle illustrazioni alternative usate dall'effetto
+    cambia_immagine (nelle regole e nei dialoghi): servono anche a chi
+    impacchetta il gioco (compila.py), non solo alle illustrazioni di
+    default delle stanze."""
+    nomi = set()
+
+    def scan(effetti):
+        for e in effetti or []:
+            if e.get("cambia_immagine") and e.get("immagine"):
+                nomi.add(e["immagine"])
+
+    for r in mondo.regole:
+        scan(r.allora)
+        scan(r.altrimenti)
+    for o in mondo.oggetti.values():
+        for b in o.props.get("dialogo", []) or []:
+            scan(b.get("allora"))
+        scan(o.props.get("sconfitto"))
+    return nomi
+
+
 def da_dict(voce: dict):
     """Inverso di ASSEMBLA: dato un dizionario condizione/effetto ritorna
     (tipo_key, {id_campo: valore}) per pre-compilare il dialogo in modifica."""
@@ -248,6 +275,9 @@ def da_dict(voce: dict):
         return "ferma_timer", {"nome": e["ferma_timer"]}
     if "avvia_dialogo" in e:
         return "avvia_dialogo", {"oggetto": e["avvia_dialogo"]}
+    if "cambia_immagine" in e:
+        return "cambia_immagine", {"stanza": e["cambia_immagine"],
+                                   "immagine": e.get("immagine", "")}
     return None, {}
 
 
@@ -341,6 +371,10 @@ def riassunto_effetto(e: dict) -> str:
         return f"ferma timer «{e['ferma_timer']}»"
     if "avvia_dialogo" in e:
         return f"avvia il dialogo di «{e['avvia_dialogo']}»"
+    if "cambia_immagine" in e:
+        if e.get("immagine"):
+            return f"cambia l'illustrazione di «{e['cambia_immagine']}» in «{e['immagine']}»"
+        return f"ripristina l'illustrazione di default di «{e['cambia_immagine']}»"
     return "(effetto)"
 
 

@@ -49,6 +49,8 @@ def stato_partita(mondo: Mondo) -> dict:
         "flags": dict(mondo.flags),
         "oggetti": {oid: _stato_oggetto(o) for oid, o in mondo.oggetti.items()},
         "visitate": [sid for sid, s in mondo.stanze.items() if s.visitata],
+        "immagini": {sid: s.immagine_attuale for sid, s in mondo.stanze.items()
+                    if s.immagine_attuale},
     }
 
 
@@ -78,6 +80,9 @@ def applica_stato(mondo: Mondo, stato: dict) -> None:
     visitate = set(stato.get("visitate", []))
     for sid, s in mondo.stanze.items():
         s.visitata = sid in visitate
+    immagini = stato.get("immagini", {})
+    for sid, s in mondo.stanze.items():
+        s.immagine_attuale = immagini.get(sid, "")
 
 
 def salva_partita(mondo: Mondo, percorso: str | Path) -> None:
