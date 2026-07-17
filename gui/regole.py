@@ -88,7 +88,7 @@ CAMPI = {
     # personaggio, ma può avere un dialogo suo)
     "avvia_dialogo": [("oggetto", "apre il dialogo di", "oggetto")],
     "cambia_immagine": [("stanza", "stanza", "stanza"),
-                        ("immagine", "immagine (nome file, vuoto = default)", "testo")],
+                        ("immagine", "illustrazione", "immagine")],
 }
 
 # ----- assemblaggio: valori {id_campo: valore} -> dizionario del motore -----

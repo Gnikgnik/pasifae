@@ -160,6 +160,8 @@ def test_cambia_innesco_non_crasha(qtbot):
     (R.TIPI_EFFETTO, {"sposta_oggetto": "lampada", "a": "inventario"}),
     (R.TIPI_EFFETTO, {"scarta_oggetto": "lampada", "stampa": "Si spegne."}),
     (R.TIPI_EFFETTO, {"avvia_timer": "cera", "turni": 3}),
+    (R.TIPI_EFFETTO, {"cambia_immagine": "sala", "immagine": "sala_buia.png"}),
+    (R.TIPI_EFFETTO, {"cambia_immagine": "sala", "immagine": ""}),
 ])
 def test_modifica_voce_round_trip(qtbot, tipi, voce):
     m = mondo_semplice()
@@ -689,6 +691,38 @@ def test_editor_immagine_stanza(qtbot, monkeypatch, tmp_path):
     dett.findChild(QPushButton, "primario").click()
     assert e.mondo.stanze["sala"].immagine == ""
     assert (tmp_path / "sala.png").exists()        # il file resta
+
+
+def test_effetto_cambia_immagine_ha_sfoglia_e_togli(qtbot, monkeypatch, tmp_path):
+    """Il campo «immagine» dell'effetto cambia_immagine ha Sfoglia…/Togli e
+    copia il file accanto al JSON, esattamente come l'illustrazione della
+    stanza — non più un campo di testo libero da scrivere a mano. Il
+    percorso del JSON si trova risalendo dall'effetto fino all'editor
+    (_percorso_avventura), non passato direttamente al dialogo."""
+    from PySide6.QtGui import QPixmap
+    img = tmp_path / "buio.png"
+    pm = QPixmap(16, 16); pm.fill(Qt.black); pm.save(str(img))
+
+    e = Editor(None)
+    qtbot.addWidget(e)
+    e.mondo = mondo_semplice()
+    e.percorso = str(tmp_path / "avv.json")
+
+    d = DialogoVoce(e, e.mondo, R.TIPI_EFFETTO, "scuro")
+    qtbot.addWidget(d)
+    d.cb_tipo.setCurrentIndex(d.cb_tipo.findData("cambia_immagine"))
+    w, kind = d._campi["immagine"]
+    assert kind == "immagine"
+
+    monkeypatch.setattr(QFileDialog, "getOpenFileName",
+                        lambda *a, **k: (str(img), ""))
+    w.findChild(QPushButton, "sfoglia_immagine").click()
+    assert w.campo.text() == "buio.png"
+    assert (tmp_path / "buio.png").exists()          # copiata accanto al JSON
+
+    w.findChild(QPushButton, "togli_immagine").click()
+    assert w.campo.text() == ""
+    assert d.valore()["immagine"] == ""
 
 
 def test_player_cornice_input_segue_il_fuoco(qtbot):

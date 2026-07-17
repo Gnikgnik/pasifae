@@ -1,5 +1,16 @@
 # Pasifae — cronologia delle versioni
 
+## gui 2.6.2
+Il campo **immagine** dell'effetto di regola "cambia illustrazione di una
+stanza" non è più un campo di testo libero: ora ha **Sfoglia…**/**Togli**
+e miniatura, esattamente come l'illustrazione di default della stanza.
+Il campo condiviso (`_widget_immagine`) è stato estratto a funzione di
+modulo in `gui/editor.py`, riusata sia dal form Stanza sia da
+`DialogoVoce`; nuova `_percorso_avventura(widget)` risale la catena dei
+parent Qt per trovare il percorso del JSON anche quando il dialogo è
+annidato (es. un effetto dentro una battuta di dialogo, dove il parent
+diretto non è l'editor).
+
 ## gui 2.6.1
 Lo splash d'avvio non si chiude più a tempo: resta aperto finché l'utente
 non clicca il pulsante **Chiudi** (niente `QSplashScreen`/`QEventLoop` a

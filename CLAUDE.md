@@ -89,6 +89,11 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   (`_segna_modifica` → `QTimer.singleShot(0, _aggiorna_mappa)`). `CATEGORIE`
   include anche **"Timer"** (fra "Flag iniziali" e "Metadati"): stessa
   logica +Nuovo/Elimina dei flag, non più una finestra a parte da Strumenti.
+  `_widget_immagine` (nome file + Sfoglia…/Togli/miniatura) è condiviso fra
+  il form Stanza e il campo "immagine" dell'effetto `cambia_immagine` in
+  `DialogoVoce`; `_percorso_avventura(widget)` risale i parent Qt per
+  trovare il percorso del JSON anche da un dialogo annidato (es. un
+  effetto dentro una battuta di dialogo).
 - `player.py` — Pasifae Play. Splitter a tre colonne: illustrazione |
   trascrizione | mini-mappa (`self.mappa`, `MiniMappa`); quest'ultima si
   aggiorna in `_aggiorna_stato()` (come l'illustrazione) e si nasconde da
@@ -176,14 +181,15 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   scena vanno aperti con `QTimer.singleShot(0, ...)`.
 
 ## Stato attuale
-- `advcore` **1.20.0** · interfaccia `gui` **2.6.1** (splash d'avvio
-  dell'editor, chiuso da un pulsante "Chiudi" e non a tempo; illustrazione
-  di stanza sostituibile a runtime con l'effetto `cambia_immagine`; timer
-  come categoria dell'editor; oggetti nascosti, rivelabili con l'effetto
-  `mostra_oggetto`; dialoghi apribili da qualunque verbo/oggetto con
-  l'effetto `avvia_dialogo`, non solo dal "parla" sui png; congedo e voce
-  di uscita del menu personalizzabili).
-- Suite: **94 test GUI + 10 script**, tutti verdi.
+- `advcore` **1.20.0** · interfaccia `gui` **2.6.2** (illustrazione di
+  stanza sostituibile a runtime con l'effetto `cambia_immagine`, il cui
+  campo immagine si sceglie con Sfoglia… come quella di default; splash
+  d'avvio dell'editor, chiuso da un pulsante "Chiudi" e non a tempo;
+  timer come categoria dell'editor; oggetti nascosti, rivelabili con
+  l'effetto `mostra_oggetto`; dialoghi apribili da qualunque verbo/oggetto
+  con l'effetto `avvia_dialogo`, non solo dal "parla" sui png; congedo e
+  voce di uscita del menu personalizzabili).
+- Suite: **97 test GUI + 10 script**, tutti verdi.
 - Documentazione: `README.md`, `advcore/DOCUMENTAZIONE.md`, `COSTRUIRE.md`,
   manuale d'uso (Word/PDF).
 

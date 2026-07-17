@@ -44,6 +44,77 @@ def copia_immagine_accanto(sorgente: str, percorso_json: str | None) -> str:
         shutil.copy2(src, dest)
     return src.name
 
+
+def _percorso_avventura(widget):
+    """Risale la catena dei parent Qt fino a trovare l'editor (l'unico che
+    conosce il percorso del JSON): serve per copiare un'immagine scelta da
+    un dialogo annidato, es. un effetto di regola dentro una battuta di
+    dialogo, dove il parent diretto non è l'Editor ma DialogoBattuta."""
+    w = widget
+    while w is not None and not hasattr(w, "percorso"):
+        w = w.parent()
+    return getattr(w, "percorso", None)
+
+
+def _widget_immagine(ottieni_percorso, nome_attuale: str = "",
+                     segnaposto: str = "(nessuna illustrazione)"):
+    """Campo illustrazione riusabile: nome file (relativo al JSON),
+    Sfoglia… (copia l'immagine scelta accanto al JSON), Togli e miniatura.
+    `ottieni_percorso()` restituisce il percorso del JSON al momento in cui
+    serve (non un valore fisso): usato sia per l'illustrazione di default
+    di una stanza sia per l'effetto di regola cambia_immagine. Ritorna
+    (e_img, box): e_img per leggere/scrivere il valore, box da inserire
+    nel form."""
+    box = QWidget()
+    v = QVBoxLayout(box)
+    v.setContentsMargins(0, 0, 0, 0)
+    v.setSpacing(8)
+    riga = QHBoxLayout()
+    e_img = QLineEdit(nome_attuale)
+    e_img.setObjectName("campo_immagine")
+    e_img.setReadOnly(True)
+    e_img.setPlaceholderText(segnaposto)
+    b_sfoglia = QPushButton("Sfoglia…")
+    b_sfoglia.setObjectName("sfoglia_immagine")
+    b_togli = QPushButton("Togli")
+    b_togli.setObjectName("togli_immagine")
+    riga.addWidget(e_img, 1); riga.addWidget(b_sfoglia); riga.addWidget(b_togli)
+    v.addLayout(riga)
+    miniatura = QLabel()
+    miniatura.setObjectName("miniatura_immagine")
+    v.addWidget(miniatura)
+
+    def aggiorna_miniatura():
+        pm = QPixmap()
+        nome = e_img.text().strip()
+        percorso = ottieni_percorso()
+        if nome and percorso:
+            pm = QPixmap(str(Path(percorso).parent / nome))
+        if pm.isNull():
+            miniatura.clear(); miniatura.hide()
+        else:
+            miniatura.setPixmap(pm.scaledToHeight(
+                90, Qt.SmoothTransformation))
+            miniatura.show()
+
+    def sfoglia():
+        f, _ = QFileDialog.getOpenFileName(
+            box, "Scegli illustrazione", _dir_default(),
+            "Immagini (*.png *.jpg *.jpeg *.gif *.bmp *.webp)")
+        if not f:
+            return
+        try:
+            e_img.setText(copia_immagine_accanto(f, ottieni_percorso()))
+        except (ValueError, OSError) as err:
+            QMessageBox.warning(box, "Illustrazione", str(err))
+
+    b_sfoglia.clicked.connect(sfoglia)
+    b_togli.clicked.connect(e_img.clear)
+    e_img.textChanged.connect(lambda _: aggiorna_miniatura())
+    aggiorna_miniatura()
+    return e_img, box
+
+
 from advcore import carica_mondo, salva_mondo, Oggetto, Verbo, Stanza, Regola  # noqa: E402
 from advcore.model import Mondo  # noqa: E402
 from advcore.validazione import valida  # noqa: E402
@@ -146,6 +217,8 @@ class DialogoVoce(QDialog):
             elif kind == "valore":
                 w.setCurrentText("vero" if val is True
                                  else "falso" if val is False else str(val))
+            elif kind == "immagine":
+                w.campo.setText("" if val is None else str(val))
             elif isinstance(w, QComboBox):
                 w.setCurrentText("" if val is None else str(val))
             elif isinstance(w, QPlainTextEdit):
@@ -175,6 +248,12 @@ class DialogoVoce(QDialog):
         if kind == "testo_lungo":
             t = QPlainTextEdit(); t.setMinimumHeight(70)
             t.setToolTip(SUGG_TESTO); return t
+        if kind == "immagine":
+            e_img, box = _widget_immagine(
+                lambda: _percorso_avventura(self),
+                segnaposto="(vuoto = illustrazione di default della stanza)")
+            box.campo = e_img
+            return box
         return QLineEdit()
 
     def valore(self) -> dict:
@@ -185,6 +264,8 @@ class DialogoVoce(QDialog):
                 vals[pid] = w.value()
             elif kind == "valore":
                 vals[pid] = R.val_da_testo(w.currentText())
+            elif kind == "immagine":
+                vals[pid] = w.campo.text().strip()
             elif isinstance(w, QComboBox):
                 vals[pid] = w.currentText().strip()
             elif isinstance(w, QPlainTextEdit):
@@ -859,58 +940,7 @@ class Editor(QMainWindow):
     def _immagine_widget(self, nome_attuale: str):
         """Campo illustrazione della stanza: nome file (relativo al JSON),
         Sfoglia… che copia l'immagine accanto al JSON, Togli, e miniatura."""
-        box = QWidget()
-        v = QVBoxLayout(box)
-        v.setContentsMargins(0, 0, 0, 0)
-        v.setSpacing(8)
-        riga = QHBoxLayout()
-        e_img = QLineEdit(nome_attuale)
-        e_img.setObjectName("campo_immagine")
-        e_img.setReadOnly(True)
-        e_img.setPlaceholderText("(nessuna illustrazione)")
-        b_sfoglia = QPushButton("Sfoglia…")
-        b_sfoglia.setObjectName("sfoglia_immagine")
-        b_togli = QPushButton("Togli")
-        b_togli.setObjectName("togli_immagine")
-        riga.addWidget(e_img, 1); riga.addWidget(b_sfoglia); riga.addWidget(b_togli)
-        v.addLayout(riga)
-        miniatura = QLabel()
-        miniatura.setObjectName("miniatura_immagine")
-        v.addWidget(miniatura)
-
-        def aggiorna_miniatura():
-            pm = QPixmap()
-            nome = e_img.text().strip()
-            if nome and self.percorso:
-                pm = QPixmap(str(Path(self.percorso).parent / nome))
-            if pm.isNull():
-                miniatura.clear(); miniatura.hide()
-            else:
-                miniatura.setPixmap(pm.scaledToHeight(
-                    90, Qt.SmoothTransformation))
-                miniatura.show()
-
-        def sfoglia():
-            f, _ = QFileDialog.getOpenFileName(
-                self, "Scegli illustrazione", _dir_default(),
-                "Immagini (*.png *.jpg *.jpeg *.gif *.bmp *.webp)")
-            if not f:
-                return
-            try:
-                e_img.setText(copia_immagine_accanto(f, self.percorso))
-            except (ValueError, OSError) as err:
-                QMessageBox.warning(self, "Illustrazione", str(err))
-                return
-            aggiorna_miniatura()
-
-        def togli():
-            e_img.clear()               # il file accanto al JSON non si tocca
-            aggiorna_miniatura()
-
-        b_sfoglia.clicked.connect(sfoglia)
-        b_togli.clicked.connect(togli)
-        aggiorna_miniatura()
-        return e_img, box
+        return _widget_immagine(lambda: self.percorso, nome_attuale)
 
     def _uscite_widget(self, uscite):
         box = QWidget()
