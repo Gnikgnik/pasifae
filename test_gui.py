@@ -1696,5 +1696,23 @@ def test_splash_immagine_compone_copertina_e_piede(qtbot):
     assert pix.height() > base.height()
 
 
+def test_splash_si_chiude_col_pulsante(qtbot):
+    """Niente temporizzazione: la finestra di avvio resta aperta finché
+    non si clicca «Chiudi»."""
+    from gui import risorse
+    from PySide6.QtWidgets import QDialog, QPushButton
+    dlg = risorse._finestra_splash("Pasifae Editor")
+    qtbot.addWidget(dlg)
+    dlg.show()
+    assert dlg.isVisible()
+
+    chiudi = dlg.findChild(QPushButton, "chiudi_splash")
+    assert chiudi is not None and chiudi.text() == "Chiudi"
+    qtbot.mouseClick(chiudi, Qt.LeftButton)
+
+    assert dlg.result() == QDialog.Accepted
+    assert not dlg.isVisible()
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))

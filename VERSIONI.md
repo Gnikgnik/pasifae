@@ -1,13 +1,19 @@
 # Pasifae — cronologia delle versioni
 
+## gui 2.6.1
+Lo splash d'avvio non si chiude più a tempo: resta aperto finché l'utente
+non clicca il pulsante **Chiudi** (niente `QSplashScreen`/`QEventLoop` a
+tempo, sostituito da un `QDialog` senza cornice con l'immagine e il
+pulsante). `costruisci_splash`/`_righe_splash` restano invariati; la
+nuova `_finestra_splash` costruisce il dialogo senza mostrarlo (per i
+test), `mostra_splash` lo apre e aspetta la chiusura.
+
 ## gui 2.6.0
 Splash screen all'avvio dell'editor: la copertina Pasifae (logo, nome,
 tagline) più un piede con le versioni di `gui`/`advcore`, l'autore e la
 licenza. Composizione pura in `gui/risorse.py` (`costruisci_splash`,
-`_righe_splash`), testabile senza aprire finestre; resta visibile almeno
-1,2 secondi (si chiude prima con un clic, comportamento di default di
-`QSplashScreen`) e si chiude da sola non appena la finestra principale è
-pronta. Solo l'editor per ora, non il player.
+`_righe_splash`), testabile senza aprire finestre. Solo l'editor per
+ora, non il player.
 
 ## gui 2.5.0
 Due cambiamenti nell'editor:

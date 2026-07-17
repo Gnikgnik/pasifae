@@ -70,20 +70,44 @@ def costruisci_splash(componente: str) -> "QPixmap":
     return tela
 
 
-def mostra_splash(app, componente: str, durata_ms: int = 1200):
-    """Mostra lo splash d'avvio per almeno `durata_ms` (si può chiudere
-    prima con un clic: comportamento di default di QSplashScreen) e lo
-    ritorna, ancora visibile: il chiamante lo chiude con
-    `splash.finish(finestra_principale)` non appena questa è pronta."""
-    from PySide6.QtCore import QEventLoop, QTimer
-    from PySide6.QtWidgets import QSplashScreen
-    splash = QSplashScreen(costruisci_splash(componente))
-    splash.show()
-    app.processEvents()
-    attesa = QEventLoop()
-    QTimer.singleShot(durata_ms, attesa.quit)
-    attesa.exec()
-    return splash
+def _finestra_splash(componente: str, parent=None):
+    """Costruisce (senza mostrarla) la finestra di avvio: l'immagine più un
+    pulsante «Chiudi» — nessuna temporizzazione, resta finché l'utente non
+    la chiude lui. Separata da `mostra_splash` per essere testabile senza
+    dover bloccare su `exec()`."""
+    from PySide6.QtGui import QGuiApplication
+    from PySide6.QtWidgets import QDialog, QHBoxLayout, QPushButton, QLabel, QVBoxLayout
+
+    dlg = QDialog(parent)
+    dlg.setWindowTitle("Pasifae")
+    dlg.setWindowFlag(Qt.FramelessWindowHint)
+    v = QVBoxLayout(dlg)
+    v.setContentsMargins(0, 0, 0, 12)
+    v.setSpacing(12)
+    immagine = QLabel()
+    immagine.setPixmap(costruisci_splash(componente))
+    v.addWidget(immagine)
+    riga = QHBoxLayout()
+    riga.setContentsMargins(16, 0, 16, 0)
+    riga.addStretch(1)
+    chiudi = QPushButton("Chiudi")
+    chiudi.setObjectName("chiudi_splash")
+    chiudi.setAutoDefault(True)
+    chiudi.clicked.connect(dlg.accept)
+    riga.addWidget(chiudi)
+    v.addLayout(riga)
+    dlg.adjustSize()
+    schermo = QGuiApplication.primaryScreen()
+    if schermo is not None:
+        dlg.move(schermo.availableGeometry().center() - dlg.rect().center())
+    return dlg
+
+
+def mostra_splash(componente: str, parent=None) -> None:
+    """Apre la finestra di avvio (logo, versioni dei pacchetti, autore,
+    licenza) e aspetta che l'utente clicchi «Chiudi»: nessuna chiusura a
+    tempo."""
+    _finestra_splash(componente, parent).exec()
 
 
 def mostra_informazioni(parent, componente: str) -> None:
