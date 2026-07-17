@@ -127,7 +127,11 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   `imposta_tema()`, `evidenzia()`, `scollega()` (da chiamare prima della
   distruzione della finestra: GC sicuro).
 - `tema.py` — temi chiaro/scuro.
-- `risorse.py` — icona, loghi, dialogo "Informazioni" condiviso.
+- `risorse.py` — icona, loghi, dialogo "Informazioni" e splash d'avvio
+  condivisi. `costruisci_splash`/`_righe_splash` sono pura composizione
+  (nessuna finestra), testabili senza mostrare nulla a schermo;
+  `mostra_splash` apre il `QSplashScreen` vero e proprio (solo editor.py
+  per ora).
 - `compila.py` — logica pura per "Compila gioco autonomo" (PyInstaller);
   impacchetta le illustrazioni di default delle stanze e quelle alternative
   usate da `cambia_immagine` (`regole.immagini_regole`).
@@ -170,13 +174,13 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   scena vanno aperti con `QTimer.singleShot(0, ...)`.
 
 ## Stato attuale
-- `advcore` **1.20.0** · interfaccia `gui` **2.5.0** (illustrazione di
-  stanza sostituibile a runtime con l'effetto `cambia_immagine`; timer
-  come categoria dell'editor; oggetti nascosti, rivelabili con l'effetto
-  `mostra_oggetto`; dialoghi apribili da qualunque verbo/oggetto con
-  l'effetto `avvia_dialogo`, non solo dal "parla" sui png; congedo e voce
-  di uscita del menu personalizzabili).
-- Suite: **91 test GUI + 10 script**, tutti verdi.
+- `advcore` **1.20.0** · interfaccia `gui` **2.6.0** (splash d'avvio
+  dell'editor; illustrazione di stanza sostituibile a runtime con
+  l'effetto `cambia_immagine`; timer come categoria dell'editor; oggetti
+  nascosti, rivelabili con l'effetto `mostra_oggetto`; dialoghi apribili
+  da qualunque verbo/oggetto con l'effetto `avvia_dialogo`, non solo dal
+  "parla" sui png; congedo e voce di uscita del menu personalizzabili).
+- Suite: **93 test GUI + 10 script**, tutti verdi.
 - Documentazione: `README.md`, `advcore/DOCUMENTAZIONE.md`, `COSTRUIRE.md`,
   manuale d'uso (Word/PDF).
 

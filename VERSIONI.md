@@ -1,5 +1,14 @@
 # Pasifae — cronologia delle versioni
 
+## gui 2.6.0
+Splash screen all'avvio dell'editor: la copertina Pasifae (logo, nome,
+tagline) più un piede con le versioni di `gui`/`advcore`, l'autore e la
+licenza. Composizione pura in `gui/risorse.py` (`costruisci_splash`,
+`_righe_splash`), testabile senza aprire finestre; resta visibile almeno
+1,2 secondi (si chiude prima con un clic, comportamento di default di
+`QSplashScreen`) e si chiude da sola non appena la finestra principale è
+pronta. Solo l'editor per ora, non il player.
+
 ## gui 2.5.0
 Due cambiamenti nell'editor:
 - **"Gestione timer…" lascia il menu Strumenti**: i timer sono ora una

@@ -1669,5 +1669,32 @@ def test_minimappa_svuota_con_imposta_mondo_none(qtbot):
     assert mm.nodi == {}
 
 
+# ------------------------------ splash d'avvio -------------------------------
+
+def test_splash_contiene_versioni_autore_licenza(qtbot):
+    """Le righe di testo dello splash citano le versioni dei pacchetti,
+    l'autore e la licenza (verificabili senza leggere i pixel disegnati)."""
+    from gui import risorse
+    from gui import __version__ as v_gui
+    import advcore
+    riga1, riga2 = risorse._righe_splash("Pasifae Editor")
+    assert "Pasifae Editor" in riga1
+    assert v_gui in riga1
+    assert advcore.__version__ in riga1
+    assert "Vito Antonio Raimondi" in riga2
+    assert "GPL-3.0-or-later" in riga2
+
+
+def test_splash_immagine_compone_copertina_e_piede(qtbot):
+    """costruisci_splash è pura composizione (nessuna finestra aperta):
+    stessa larghezza della copertina, più alta per il piede col testo."""
+    from gui import risorse
+    pix = risorse.costruisci_splash("Pasifae Editor")
+    assert not pix.isNull()
+    base = risorse.pixmap("pasifae_cover.png", larghezza=560)
+    assert pix.width() == base.width()
+    assert pix.height() > base.height()
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))

@@ -1831,7 +1831,10 @@ def main():
     from gui import risorse
     app.setWindowIcon(risorse.icona_app())
     app.setFont(QFont("Segoe UI", 10))
-    Editor(percorso).show()
+    splash = risorse.mostra_splash(app, "Pasifae Editor")
+    finestra = Editor(percorso)
+    finestra.show()
+    splash.finish(finestra)
     sys.exit(app.exec())
 
 
