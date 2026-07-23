@@ -43,8 +43,45 @@ def test_mappa_collegamenti_speciali_e_isolate():
     testo = mappa_testuale(m)
     # «giu» non sta sulla griglia: deve finire nei collegamenti speciali
     assert "giu" in testo and "tesoro" in testo
-    # tesoro/cripta raggiungibili solo via giu -> non posizionate
-    assert "non collegate" in testo
+    # tesoro/cripta sono collegate fra loro (est/ovest): pur raggiungibili
+    # dal resto solo via «giu», hanno una propria area della griglia, non
+    # finiscono fra le stanze isolate
+    assert "non collegate" not in testo
+
+
+def test_mappa_gruppo_raggiunto_solo_da_uscita_non_cardinale_resta_in_griglia():
+    """Un gruppo di stanze collegate fra loro cardinalmente, ma raggiungibile
+    dal resto del mondo solo tramite un'uscita non cardinale (dentro/fuori/
+    su/giu), non deve essere appiattito in un'unica riga «isolate»: la sua
+    struttura interna (est/ovest/nord/sud) va preservata in un'area propria
+    della griglia."""
+    from advcore.mappa import _layout
+    m = Mondo(meta={"stanza_iniziale": "a"})
+    m.stanze["a"] = Stanza(id="a", nome="A", desc="", uscite={"dentro": "x"})
+    m.stanze["x"] = Stanza(id="x", nome="X", desc="",
+                           uscite={"fuori": "a", "est": "y"})
+    m.stanze["y"] = Stanza(id="y", nome="Y", desc="",
+                           uscite={"ovest": "x", "est": "z"})
+    m.stanze["z"] = Stanza(id="z", nome="Z", desc="", uscite={"ovest": "y"})
+
+    coord, isolate = _layout(m)
+    # «a» non ha uscite cardinali (solo «dentro»): resta isolata a sé; il
+    # gruppo x/y/z invece, pur raggiunto solo da un'uscita non cardinale,
+    # non lo è più
+    assert isolate == ["a"]
+    assert "x" in coord and "y" in coord and "z" in coord
+    # y è a est di x, z è a est di y: la geometria relativa è preservata
+    xx, xy = coord["x"]
+    yx, yy = coord["y"]
+    zx, zy = coord["z"]
+    assert (yx, yy) == (xx + 1, xy)
+    assert (zx, zy) == (xx + 2, xy)
+
+    testo = mappa_testuale(m)
+    assert "X" in testo and "Y" in testo and "Z" in testo
+    # solo «a» (senza uscite cardinali) finisce fra le stanze isolate
+    riga_isolate = testo.split("Stanze non collegate alla griglia:")[1]
+    assert "a" in riga_isolate and "x" not in riga_isolate
 
 
 def test_mappa_vuota():

@@ -1340,11 +1340,15 @@ def test_mappa_stanze_trascinabili(qtbot):
 
     nodo = f.nodi["corridoio"]
     prima = nodo.pos()
-    nodo.setPos(prima.x() + 300, prima.y() + 120)
+    # solo sull'asse est-ovest: corridoio è vincolato a restare a nord di
+    # sala (uscita cardinale sala--nord-->corridoio), quindi qui si sposta
+    # solo lungo l'asse libero (vedi test_mappa_vincolo_direzione_morbido
+    # per il vincolo sull'asse nord-sud)
+    nodo.setPos(prima.x() + 300, prima.y())
 
     # posizione registrata nei metadati dell'editor
     assert m.meta["editor"]["mappa"]["corridoio"] == [
-        round(prima.x() + 300), round(prima.y() + 120)]
+        round(prima.x() + 300), round(prima.y())]
 
     # il collegamento segue: un estremo raggiunge il bordo del nodo spostato
     # (gli item sono persistenti: durante il drag cambia solo la geometria)
@@ -1467,6 +1471,96 @@ def test_mappa_trascinamento_destro_crea_uscita(qtbot, monkeypatch):
     qtbot.waitUntil(
         lambda: m.stanze["sala"].uscite.get("est") == "corridoio",
         timeout=1000)
+
+
+def test_mappa_uscita_direzione_inferita_senza_dialogo(qtbot, monkeypatch):
+    """Se la posizione delle stanze indica una direzione libera e univoca,
+    l'uscita (col ritorno) si crea subito, senza il dialogo di scelta."""
+    from gui.mappa import PannelloMappa
+    m = mondo_semplice()
+    m.stanze["cantina"] = Stanza(id="cantina", nome="Cantina", desc="")
+    f = PannelloMappa(m, "scuro")
+    qtbot.addWidget(f)
+    # cantina a est di sala: direzione univoca e libera
+    f.nodi["cantina"].setPos(f.nodi["sala"].pos().x() + 400,
+                             f.nodi["sala"].pos().y())
+    chiamato = []
+    monkeypatch.setattr(PannelloMappa, "_chiedi_uscita",
+                        lambda self, src, dst: chiamato.append(1) or None)
+
+    f._proponi_uscita("sala", "cantina")
+
+    assert m.stanze["sala"].uscite.get("est") == "cantina"
+    assert m.stanze["cantina"].uscite.get("ovest") == "sala"    # il ritorno
+    assert not chiamato          # niente dialogo: la direzione era univoca
+
+
+def test_mappa_uscita_direzione_occupata_ricade_sul_dialogo(qtbot, monkeypatch):
+    """Se la direzione inferita è già occupata, si ricade sul dialogo di
+    scelta (nessuna sovrascrittura silenziosa)."""
+    from gui.mappa import PannelloMappa
+    m = mondo_semplice()          # sala--nord-->corridoio: già occupata
+    f = PannelloMappa(m, "scuro")
+    qtbot.addWidget(f)
+    monkeypatch.setattr(PannelloMappa, "_chiedi_uscita",
+                        lambda self, src, dst: ("est", False))
+
+    f._proponi_uscita("sala", "corridoio")
+
+    assert m.stanze["sala"].uscite.get("nord") == "corridoio"   # intatta
+    assert m.stanze["sala"].uscite.get("est") == "corridoio"    # dal dialogo
+
+
+def test_mappa_trascinamento_su_vuoto_crea_stanza_collegata(qtbot, monkeypatch):
+    """Trascinare col tasto destro dal riquadro di una stanza a un punto
+    vuoto crea una nuova stanza, collegata con la direzione inferita dalla
+    posizione del rilascio (qui, ben a destra → est)."""
+    from PySide6.QtCore import QPointF
+    from gui.mappa import PannelloMappa, BOX_W, BOX_H
+    m = mondo_semplice()
+    f = PannelloMappa(m, "scuro")
+    qtbot.addWidget(f)
+    f.show()
+    monkeypatch.setattr(PannelloMappa, "_chiedi_id_nome",
+                        lambda self: ("cantina", "Cantina"))
+
+    centro_sala = f.nodi["sala"].pos() + QPointF(BOX_W / 2, BOX_H / 2)
+    vuoto = centro_sala + QPointF(500, 0)     # ben a destra: vuoto sicuro
+
+    qtbot.mousePress(f.vista.viewport(), Qt.RightButton,
+                     pos=f.vista.mapFromScene(centro_sala))
+    qtbot.mouseMove(f.vista.viewport(), pos=f.vista.mapFromScene(vuoto))
+    qtbot.mouseRelease(f.vista.viewport(), Qt.RightButton,
+                       pos=f.vista.mapFromScene(vuoto))
+
+    qtbot.waitUntil(lambda: "cantina" in m.stanze, timeout=1000)
+    assert "cantina" in f.nodi
+    assert m.stanze["sala"].uscite.get("est") == "cantina"
+    assert m.stanze["cantina"].uscite.get("ovest") == "sala"    # il ritorno
+
+
+def test_mappa_vincolo_direzione_morbido(qtbot):
+    """Trascinare una stanza collegata da un'uscita cardinale non può
+    superare il limite che contraddirebbe la direzione dell'uscita, ma
+    resta libera sull'asse trasversale (vincolo morbido sull'asse
+    pertinente)."""
+    from gui.mappa import PannelloMappa, BOX_H, _MARGINE_VINCOLO
+    m = mondo_semplice()          # sala--nord-->corridoio: corridoio a nord
+    f = PannelloMappa(m, "scuro")
+    qtbot.addWidget(f)
+
+    corridoio = f.nodi["corridoio"]
+    sala_y = f.nodi["sala"].pos().y()
+    limite = sala_y - BOX_H - _MARGINE_VINCOLO
+
+    # trascinata ben a sud di sala: si ferma al limite, non lo supera
+    corridoio.setPos(corridoio.pos().x(), sala_y + 200)
+    assert corridoio.pos().y() == pytest.approx(limite)
+
+    # ma resta libera sull'asse est-ovest
+    x_prima = corridoio.pos().x()
+    corridoio.setPos(x_prima + 250, corridoio.pos().y())
+    assert corridoio.pos().x() == pytest.approx(x_prima + 250)
 
 
 def test_mappa_nuova_stanza_dal_canvas(qtbot, monkeypatch):

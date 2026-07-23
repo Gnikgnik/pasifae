@@ -68,6 +68,20 @@ def _posizioni_pixel(mondo):
     return pos
 
 
+_MARGINE_VINCOLO = 40   # scarto minimo perché una direzione resti leggibile
+
+
+def _direzione_da_vettore(dx, dy):
+    """La direzione cardinale dominante dello spostamento (dx,dy): decide
+    l'asse con lo scarto maggiore in valore assoluto (nord/sud contro
+    est/ovest). None se il punto non si è spostato affatto (dx=dy=0)."""
+    if dx == 0 and dy == 0:
+        return None
+    if abs(dx) >= abs(dy):
+        return "est" if dx > 0 else "ovest"
+    return "sud" if dy > 0 else "nord"
+
+
 class VistaMappa(QGraphicsView):
     """QGraphicsView con zoom alla rotellina e trascinamento per scorrere."""
 
@@ -122,6 +136,8 @@ class NodoStanza(QGraphicsRectItem):
         self.setZValue(1)
 
     def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemPositionChange and self._pannello is not None:
+            return self._pannello._vincola_posizione(self.sid, value)
         if (change == QGraphicsItem.ItemScenePositionHasChanged
                 and self._pannello is not None):
             self._pannello._nodo_spostato(self.sid)
@@ -198,8 +214,9 @@ class PannelloMappa(QWidget):
 
         legenda = QLabel(
             "clic seleziona · trascina i riquadri · tasto destro e trascina "
-            "= nuova uscita · destro su stanza = uscite · destro sul vuoto "
-            "= nuova stanza\n"
+            "= nuova uscita (anche verso il vuoto: crea la stanza) · destro "
+            "su stanza fermo = uscite · destro sul vuoto fermo = nuova "
+            "stanza\n"
             "→ senso unico    —  doppio senso    ┄ condizionata (flag)    "
             "◆ personaggio    • oggetto")
         legenda.setObjectName("stato")
@@ -471,6 +488,56 @@ class PannelloMappa(QWidget):
         self._spostati.add(sid)
         self._traccia_collegamenti()
 
+    def _vincoli_direzione(self, sid):
+        """Coppie (direzione, altro) che sid deve rispettare rispetto a
+        un'altra stanza già posizionata: la direzione in cui sid deve
+        restare (non quella dell'uscita, ma il verso da mantenere). Copre
+        sia le uscite cardinali proprie di sid (vincolo = opposto della
+        direzione dell'uscita, perché se sid è a est di dst allora sid
+        deve restare a ovest di dst) sia le uscite cardinali di altre
+        stanze che puntano a sid (vincolo = la stessa direzione)."""
+        vincoli = []
+        stanza = self.mondo.stanze.get(sid)
+        if stanza is not None:
+            for direz, u in stanza.uscite.items():
+                if direz not in CARD:
+                    continue
+                dest = _destinazione(u)
+                if dest in self.mondo.stanze and dest != sid:
+                    vincoli.append((OPPOSTE[direz], dest))
+        for altro_sid, altra in self.mondo.stanze.items():
+            if altro_sid == sid:
+                continue
+            for direz, u in altra.uscite.items():
+                if direz not in CARD:
+                    continue
+                if _destinazione(u) == sid:
+                    vincoli.append((direz, altro_sid))
+        return vincoli
+
+    def _vincola_posizione(self, sid, value):
+        """Vincolo morbido: sul trascinamento, una stanza collegata da
+        un'uscita cardinale resta libera sull'asse trasversale ma non può
+        superare il limite che contraddirebbe la direzione dell'uscita
+        (una stanza a est non può finire a ovest, e viceversa)."""
+        if not self._pronta:
+            return value
+        x, y = value.x(), value.y()
+        for direz, altro in self._vincoli_direzione(sid):
+            if altro not in self.nodi or altro == sid:
+                continue
+            ap = self.nodi[altro].pos()
+            ax, ay = ap.x(), ap.y()
+            if direz == "est":
+                x = max(x, ax + BOX_W + _MARGINE_VINCOLO)
+            elif direz == "ovest":
+                x = min(x, ax - BOX_W - _MARGINE_VINCOLO)
+            elif direz == "sud":
+                y = max(y, ay + BOX_H + _MARGINE_VINCOLO)
+            elif direz == "nord":
+                y = min(y, ay - BOX_H - _MARGINE_VINCOLO)
+        return QPointF(x, y)
+
     def _fine_trascinamento(self, sid):
         """Al rilascio del mouse: se il nodo si è davvero mosso, una sola
         segnalazione di modifica all'editor."""
@@ -515,22 +582,57 @@ class PannelloMappa(QWidget):
             self.scena.removeItem(self._linea_tmp)
             self._linea_tmp = None
         dst = self._nodo_a(punto)
+        fermo = press is not None and (punto - press).manhattanLength() < 8
         # menu e dialoghi vanno aperti DOPO che il gestore dell'evento è
         # tornato e il grab del mouse è stato rilasciato: su Wayland un
         # popup dentro il gestore fallisce il grab e può andare in crash.
         if dst is None or dst == src:
-            # clic destro fermo sulla stanza: menu delle sue uscite
-            if press is not None and (punto - press).manhattanLength() < 8:
+            if dst is None and not fermo:
+                # trascinato sul vuoto: propone una nuova stanza collegata
+                QTimer.singleShot(
+                    0, lambda: self._proponi_nuova_stanza_collegata(src, punto))
+                return
+            if fermo:
+                # clic destro fermo sulla stanza: menu delle sue uscite
                 QTimer.singleShot(0, lambda: self._menu_stanza(src,
                                                                punto_schermo))
             return
         QTimer.singleShot(0, lambda: self._proponi_uscita(src, dst))
 
+    def _direzione_inferita(self, src, dst):
+        cx1, cy1 = self._centro(src)
+        cx2, cy2 = self._centro(dst)
+        return _direzione_da_vettore(cx2 - cx1, cy2 - cy1)
+
     def _proponi_uscita(self, src, dst):
+        direz = self._direzione_inferita(src, dst)
+        if direz is not None and direz not in self.mondo.stanze[src].uscite:
+            self._crea_uscita(src, dst, direz, True)
+            return
         scelta = self._chiedi_uscita(src, dst)
         if scelta:
             direz, ritorno = scelta
             self._crea_uscita(src, dst, direz, ritorno)
+
+    def _proponi_nuova_stanza_collegata(self, src, punto):
+        """Trascinato dal tasto destro sul vuoto: nuova stanza nella
+        direzione (inferita dalla posizione del rilascio) collegata a src."""
+        cx1, cy1 = self._centro(src)
+        cx2, cy2 = punto.x() + BOX_W / 2, punto.y() + BOX_H / 2
+        direz = _direzione_da_vettore(cx2 - cx1, cy2 - cy1)
+        if direz is not None and direz in self.mondo.stanze[src].uscite:
+            QMessageBox.information(
+                self, "Direzione occupata",
+                f"«{self.mondo.stanze[src].nome}» ha già un'uscita verso "
+                f"{direz}. Eliminala prima (clic destro sulla stanza).")
+            return
+        dati = self._chiedi_id_nome()
+        if dati is None:
+            return
+        sid, nome = dati
+        self._crea_stanza(sid, nome, punto)
+        if direz is not None:
+            self._crea_uscita(src, sid, direz, True)
 
     def _nodo_a(self, punto):
         """L'id della stanza il cui riquadro contiene il punto di scena."""
@@ -629,21 +731,30 @@ class PannelloMappa(QWidget):
             # i dialoghi si aprono a menu ormai chiuso (grab Wayland)
             QTimer.singleShot(0, lambda: self._chiedi_stanza(punto_scena))
 
-    def _chiedi_stanza(self, punto):
+    def _chiedi_id_nome(self):
+        """Chiede id e nome di una nuova stanza. Ritorna (id, nome) o None
+        se l'autore annulla o l'id è vuoto/già usato."""
         sid, ok = QInputDialog.getText(self, "Nuova stanza",
                                        "Identificatore (id) univoco:")
         sid = sid.strip()
         if not (ok and sid):
-            return
+            return None
         if sid in self.mondo.stanze:
             QMessageBox.information(self, "Nuova stanza",
                                     "Esiste già una stanza con questo id.")
-            return
+            return None
         nome, ok = QInputDialog.getText(
             self, "Nuova stanza", "Nome della stanza (mostrato al giocatore):",
             text=sid)
         nome = nome.strip()
-        self._crea_stanza(sid, nome if (ok and nome) else sid, punto)
+        return sid, (nome if (ok and nome) else sid)
+
+    def _chiedi_stanza(self, punto):
+        dati = self._chiedi_id_nome()
+        if dati is None:
+            return
+        sid, nome = dati
+        self._crea_stanza(sid, nome, punto)
 
     def _crea_stanza(self, sid, nome, punto):
         """Crea la stanza e il suo riquadro con l'angolo nel punto di scena."""

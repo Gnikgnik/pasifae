@@ -41,31 +41,60 @@ def uscite_visibili(mondo: Mondo, stanza) -> list[tuple[str, str]]:
     return out
 
 
+def _bfs_cardinale(mondo: Mondo, radice: str):
+    """BFS locale sulle sole uscite cardinali, a partire da radice: coordinate
+    relative con radice in (0,0)."""
+    locale = {radice: (0, 0)}
+    occupato = {(0, 0): radice}
+    coda = [radice]
+    while coda:
+        sid = coda.pop(0)
+        x, y = locale[sid]
+        for direz, u in mondo.stanze[sid].uscite.items():
+            t = _destinazione(u)
+            if t not in mondo.stanze or direz not in _CARD or t in locale:
+                continue
+            dx, dy = _CARD[direz]
+            cella = (x + dx, y + dy)
+            if cella not in occupato:
+                locale[t] = cella
+                occupato[cella] = t
+                coda.append(t)
+    return locale
+
+
 def _layout(mondo: Mondo):
     """Assegna coordinate (x,y) alle stanze via BFS sulle uscite cardinali.
-    Ritorna (coord, isolate)."""
+    Un gruppo di stanze collegate cardinalmente fra loro ottiene una propria
+    area della griglia, una sotto l'altra (a partire dal gruppo della stanza
+    iniziale) — anche quando l'intero gruppo è raggiungibile dal resto del
+    mondo solo tramite un'uscita non cardinale (dentro/fuori/su/giu): la sua
+    geometria interna non va persa appiattendola in una riga «isolate».
+    Restano isolate solo le stanze senza alcuna uscita cardinale (né in
+    entrata né in uscita). Ritorna (coord, isolate)."""
     if not mondo.stanze:
         return {}, []
     start = mondo.meta.get("stanza_iniziale")
     if start not in mondo.stanze:
         start = next(iter(mondo.stanze))
-    coord = {start: (0, 0)}
-    occupato = {(0, 0): start}
-    coda = [start]
-    while coda:
-        sid = coda.pop(0)
-        x, y = coord[sid]
-        for direz, u in mondo.stanze[sid].uscite.items():
-            t = _destinazione(u)
-            if t not in mondo.stanze or direz not in _CARD or t in coord:
-                continue
-            dx, dy = _CARD[direz]
-            cella = (x + dx, y + dy)
-            if cella not in occupato:
-                coord[t] = cella
-                occupato[cella] = t
-                coda.append(t)
-    isolate = [s for s in mondo.stanze if s not in coord]
+
+    coord: dict[str, tuple[int, int]] = {}
+    isolate = []
+    visitate: set[str] = set()
+    riga = 0
+    for sid in [start] + [s for s in mondo.stanze if s != start]:
+        if sid in visitate:
+            continue
+        gruppo = _bfs_cardinale(mondo, sid)
+        visitate |= gruppo.keys()
+        if len(gruppo) == 1:
+            isolate.append(sid)
+            continue
+        miny = min(y for _, y in gruppo.values())
+        maxy = max(y for _, y in gruppo.values())
+        for s2, (x, y) in gruppo.items():
+            coord[s2] = (x, riga + (y - miny))
+        riga += (maxy - miny) + 2      # una riga vuota di distacco fra i gruppi
     return coord, isolate
 
 

@@ -1,5 +1,43 @@
 # Pasifae — cronologia delle versioni
 
+## advcore 1.20.1
+Corretto `_layout` (`advcore/mappa.py`), il calcolo automatico della griglia
+usato sia dalla mappa ASCII sia dalla mappa dell'editor/player: un gruppo di
+stanze collegate cardinalmente fra loro, ma raggiungibile dal resto del
+mondo solo tramite un'uscita **non** cardinale (dentro/fuori/su/giù), veniva
+appiattito in un'unica riga "stanze isolate", perdendo tutta la sua
+geometria interna (est/ovest/nord/sud). Ora ogni gruppo del genere ottiene
+una propria area della griglia (una sotto l'altra, a partire da quello della
+stanza iniziale); restano isolate solo le stanze senza alcuna uscita
+cardinale, né in entrata né in uscita. Bug scoperto aprendo un'avventura
+reale (Hyperion) con più aree collegate da passaggi non cardinali: tutte le
+stanze apparivano sullo stesso piano nella mappa dell'editor.
+
+## gui 2.7.0
+La mappa dell'editor (`gui/mappa.py`) diventa coerente con le direzioni
+cardinali, in creazione e in trascinamento:
+- **Inferenza della direzione**: trascinando col tasto destro da una
+  stanza a un'altra già posizionata, se la posizione relativa indica una
+  direzione libera e univoca (nord/sud/est/ovest, dedotta dal verso
+  dominante fra i due centri) l'uscita — col ritorno — si crea subito,
+  senza il dialogo di scelta; il dialogo resta come ripiego solo quando
+  la direzione inferita è già occupata (`_direzione_inferita`,
+  `_proponi_uscita`).
+- **Trascinamento sul vuoto crea una stanza collegata**: prima non
+  succedeva nulla; ora chiede id/nome (`_chiedi_id_nome`, estratta da
+  `_chiedi_stanza`) e crea la nuova stanza nella direzione inferita dal
+  punto di rilascio (`_proponi_nuova_stanza_collegata`).
+- **Vincolo morbido sul trascinamento**: una stanza già collegata da
+  un'uscita cardinale non può, trascinandola, superare il limite che
+  contraddirebbe quella direzione (una stanza a est non può finire a
+  ovest) — resta però libera sull'asse trasversale. Intercettato in
+  `NodoStanza.itemChange` (`ItemPositionChange`) e applicato da
+  `PannelloMappa._vincola_posizione`/`_vincoli_direzione`.
+- La mini-mappa del player (`gui/mappa_player.py`) e il layout
+  automatico (`advcore/mappa.py::_layout`) erano già coerenti con le
+  direzioni per costruzione (griglia BFS dalle sole uscite cardinali):
+  nessuna modifica necessaria lì.
+
 ## gui 2.6.2
 Il campo **immagine** dell'effetto di regola "cambia illustrazione di una
 stanza" non è più un campo di testo libero: ora ha **Sfoglia…**/**Togli**

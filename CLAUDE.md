@@ -76,7 +76,13 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
 - `validazione.py` — controlli statici (`valida -> list[Problema]`).
 - `mappa.py` — mappa testuale (ASCII); anche `uscite_visibili(mondo, stanza)`,
   le uscite attualmente sbloccate come coppie (direzione, destinazione) —
-  usata dalla mini-mappa del player, non solo dalla mappa ASCII.
+  usata dalla mini-mappa del player, non solo dalla mappa ASCII. `_layout`
+  fa un BFS sulle sole uscite cardinali, ma per gruppi (non più stanza per
+  stanza): ogni insieme di stanze collegate cardinalmente fra loro ottiene
+  una propria area della griglia anche se raggiunto dal resto del mondo
+  solo con un'uscita non cardinale (dentro/fuori/su/giù) — restano isolate
+  solo le stanze senza alcuna uscita cardinale. Condiviso da `gui/mappa.py`
+  e `gui/mappa_player.py`.
 
 **`gui/` — la suite grafica (PySide6/Qt), solo viste:**
 - `editor.py` — Pasifae Editor (file grande, ~1850 righe; vedi insidie).
@@ -130,7 +136,19 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   ignora), clic → selezione nel dettaglio, uscite col trascinamento destro,
   nuova stanza dal canvas; API per l'editor: `aggiorna()`, `imposta_mondo()`,
   `imposta_tema()`, `evidenzia()`, `scollega()` (da chiamare prima della
-  distruzione della finestra: GC sicuro).
+  distruzione della finestra: GC sicuro). Coerente con le direzioni
+  cardinali (`_direzione_da_vettore`): trascinare col destro verso una
+  stanza in una direzione libera e univoca crea subito l'uscita (col
+  ritorno), senza dialogo — che resta come ripiego se la direzione è già
+  occupata (`_proponi_uscita`/`_direzione_inferita`); trascinare sul
+  vuoto crea una stanza collegata nella direzione inferita dal punto di
+  rilascio (`_proponi_nuova_stanza_collegata`, id/nome con
+  `_chiedi_id_nome`, condivisa con `_chiedi_stanza`). Trascinare una
+  stanza già collegata da un'uscita cardinale applica un vincolo morbido
+  sull'asse pertinente (non può superare il limite che contraddirebbe la
+  direzione, resta libera sull'asse trasversale): intercettato in
+  `NodoStanza.itemChange` (`ItemPositionChange`) e applicato da
+  `PannelloMappa._vincola_posizione`/`_vincoli_direzione`.
 - `tema.py` — temi chiaro/scuro.
 - `risorse.py` — icona, loghi, dialogo "Informazioni" e splash d'avvio
   condivisi. `costruisci_splash`/`_righe_splash` sono pura composizione
@@ -181,15 +199,23 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   scena vanno aperti con `QTimer.singleShot(0, ...)`.
 
 ## Stato attuale
-- `advcore` **1.20.0** · interfaccia `gui` **2.6.2** (illustrazione di
-  stanza sostituibile a runtime con l'effetto `cambia_immagine`, il cui
-  campo immagine si sceglie con Sfoglia… come quella di default; splash
-  d'avvio dell'editor, chiuso da un pulsante "Chiudi" e non a tempo;
-  timer come categoria dell'editor; oggetti nascosti, rivelabili con
-  l'effetto `mostra_oggetto`; dialoghi apribili da qualunque verbo/oggetto
-  con l'effetto `avvia_dialogo`, non solo dal "parla" sui png; congedo e
-  voce di uscita del menu personalizzabili).
-- Suite: **97 test GUI + 10 script**, tutti verdi.
+- `advcore` **1.20.1** · interfaccia `gui` **2.7.0** (layout automatico
+  della mappa (`_layout`) corretto: un gruppo di stanze cardinalmente
+  collegate fra loro non si appiattisce più in "isolate" solo perché
+  raggiunto dal resto del mondo con un'uscita non cardinale; mappa
+  dell'editor coerente con le direzioni cardinali, in creazione —
+  trascinamento destro con inferenza automatica della direzione, anche
+  verso il vuoto — e in trascinamento — vincolo morbido sull'asse
+  pertinente per le stanze già collegate; illustrazione di stanza
+  sostituibile a runtime
+  con l'effetto `cambia_immagine`, il cui campo immagine si sceglie con
+  Sfoglia… come quella di default; splash d'avvio dell'editor, chiuso da
+  un pulsante "Chiudi" e non a tempo; timer come categoria dell'editor;
+  oggetti nascosti, rivelabili con l'effetto `mostra_oggetto`; dialoghi
+  apribili da qualunque verbo/oggetto con l'effetto `avvia_dialogo`, non
+  solo dal "parla" sui png; congedo e voce di uscita del menu
+  personalizzabili).
+- Suite: **101 test GUI + 10 script**, tutti verdi.
 - Documentazione: `README.md`, `advcore/DOCUMENTAZIONE.md`, `COSTRUIRE.md`,
   manuale d'uso (Word/PDF).
 
@@ -228,8 +254,15 @@ Avventure di esempio in `avventure/`: `caverna`, `faro`, `duello`, `tutorial`.
   centrale con i form a pannello di dettaglio (2.0.0); il layout a colonna
   fissa lasciava troppo poco spazio al form su schermi non ampi, quindi la
   mappa è passata a un `QDockWidget` ridimensionabile/richiudibile/flottante
-  (2.1.0). Possibile rifinitura: evidenziare sulla mappa le uscite della
-  stanza selezionata.
+  (2.1.0). **Coerenza con le direzioni cardinali — FATTO (2.7.0)**: nord
+  sopra, sud sotto, est a destra, ovest a sinistra, sia nella creazione
+  (trascinamento destro con inferenza automatica della direzione, anche
+  verso il vuoto) sia nel trascinamento di stanze già esistenti (vincolo
+  morbido: non si può contraddire la direzione di un'uscita cardinale già
+  tracciata, ma resta libero il movimento sull'asse trasversale) — vedi
+  `gui/mappa.py` nella mappa dei moduli. La mini-mappa del player era già
+  coerente per costruzione (sempre a griglia automatica). Possibile
+  rifinitura: evidenziare sulla mappa le uscite della stanza selezionata.
 - **Mini-mappa nel player — FATTO (2.2.0)**: le stanze visitate compaiono
   via via in un pannello a destra (`gui/mappa_player.py`), con le uscite
   verso l'ignoto solo accennate (trattino o etichetta), mai svelate —
